@@ -1,7 +1,3 @@
-# This is the desired format, which doesn't use importall
-# For now, there's a metaprogramming bug, so we keep importall
-# temporarily
-
 const unary_operators = [:(Base.(:+)),
                          :(Base.(:-)),
                          :(Base.(:!)),
@@ -52,45 +48,32 @@ const two_argument_elementary_functions = [:(Base.round),
 
 const special_comparison_operators = [:(Base.isless)]
 
-# const comparison_operators = [:(Base.(:(==))),
-#                               :(Base.(:(.==))),
-#                               :(Base.(:(!=))),
-#                               :(Base.(:(.!=))),
-#                               :(Base.(:(>))),
-#                               :(Base.(:(.>))),
-#                               :(Base.(:(>=))),
-#                               :(Base.(:(.>=))),
-#                               :(Base.(:(<))),
-#                               :(Base.(:(.<))),
-#                               :(Base.(:(<=))),
-#                               :(Base.(:(.<=)))]
+const comparison_operators = [:(Base.(:(==))),
+                              :(Base.(:(.==))),
+                              :(Base.(:(!=))),
+                              :(Base.(:(.!=))),
+                              :(Base.(:(>))),
+                              :(Base.(:(.>))),
+                              :(Base.(:(>=))),
+                              :(Base.(:(.>=))),
+                              :(Base.(:(<))),
+                              :(Base.(:(.<))),
+                              :(Base.(:(<=))),
+                              :(Base.(:(.<=)))]
 
-# const scalar_comparison_operators = [:(Base.(:(==))),
-#                                      :(Base.(:(!=))),
-#                                      :(Base.(:(>))),
-#                                      :(Base.(:(>=))),
-#                                      :(Base.(:(<))),
-#                                      :(Base.(:(<=)))]
+const scalar_comparison_operators = [:(Base.(:(==))),
+                                     :(Base.(:(!=))),
+                                     :(Base.(:(>))),
+                                     :(Base.(:(>=))),
+                                     :(Base.(:(<))),
+                                     :(Base.(:(<=)))]
 
-# const array_comparison_operators = [:(Base.(:(.==))),
-#                                     :(Base.(:(.!=))),
-#                                     :(Base.(:(.>))),
-#                                     :(Base.(:(.>=))),
-#                                     :(Base.(:(.<))),
-#                                     :(Base.(:(.<=)))]
-
-import Base.==, Base.(.==), Base.!=,
-       Base.(.!=), Base.>, Base.(.>),
-       Base.>=, Base.(.>=), Base.<,
-       Base.(.<), Base.<=, Base.(.<=)
-
-const comparison_operators = [:(==), :(.==), :(!=),
-                              :(.!=), :(>), :(.>),
-                              :(>=), :(.>=),
-                              :(<), :(.<), :(<=), :(.<=)]
-
-const scalar_comparison_operators = [:(==), :(!=), :(>), :(>=), :(<), :(<=)]
-const array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
+const array_comparison_operators = [:(Base.(:(.==))),
+                                    :(Base.(:(.!=))),
+                                    :(Base.(:(.>))),
+                                    :(Base.(:(.>=))),
+                                    :(Base.(:(.<))),
+                                    :(Base.(:(.<=)))]
 
 const vectorized_comparison_operators = [:(Base.(:(.==))),
                                          :(Base.(:(==))),
@@ -105,75 +88,40 @@ const vectorized_comparison_operators = [:(Base.(:(.==))),
                                          :(Base.(:(.<=))),
                                          :(Base.(:(<=)))]
 
-# const binary_operators = [:(Base.(:+)),
-#                           :(Base.(:.+)),
-#                           :(Base.(:-)),
-#                           :(Base.(:.-)),
-#                           :(Base.(:*)),
-#                           :(Base.(:.*)),
-#                           :(Base.(:/)),
-#                           :(Base.(:./)),
-#                           :(Base.(:.^)),
-#                           :(Base.div),
-#                           :(Base.mod),
-#                           :(Base.fld),
-#                           :(Base.rem)]
-
-import Base.+, Base.(.+), Base.-, Base.(.-),
-       Base.*, Base.(.*), Base./, Base.(./),
-       Base.(.^), Base.div, Base.mod, Base.fld, Base.rem
-
-const binary_operators = [:+,
-                          :(.+),
-                          :-,
-                          :(.-),
-                          :*,
-                          :(.*),
-                          :/,
-                          :(./),
-                          :(.^),
-                          :div,
-                          :mod,
-                          :fld,
-                          :rem]
+const binary_operators = [:(Base.(:+)),
+                          :(Base.(:.+)),
+                          :(Base.(:-)),
+                          :(Base.(:.-)),
+                          :(Base.(:*)),
+                          :(Base.(:.*)),
+                          :(Base.(:/)),
+                          :(Base.(:./)),
+                          :(Base.(:.^)),
+                          :(Base.div),
+                          :(Base.mod),
+                          :(Base.fld),
+                          :(Base.rem)]
 
 const induced_binary_operators = [:(Base.(:^))]
 
-# const arithmetic_operators = [:(Base.(:+)),
-#                               :(Base.(:.+)),
-#                               :(Base.(:-)),
-#                               :(Base.(:.-)),
-#                               :(Base.(:*)),
-#                               :(Base.(:.*)),
-#                               :(Base.(:/)),
-#                               :(Base.(:./)),
-#                               :(Base.(:.^)),
-#                               :(Base.div),
-#                               :(Base.mod),
-#                               :(Base.fld),
-#                               :(Base.rem)]
-
-const arithmetic_operators = [:+,
-                              :(.+),
-                              :-,
-                              :(.-),
-                              :*,
-                              :(.*),
-                              :/,
-                              :(./),
-                              :(.^),
-                              :div,
-                              :mod,
-                              :fld,
-                              :rem]
+const arithmetic_operators = [:(Base.(:+)),
+                              :(Base.(:.+)),
+                              :(Base.(:-)),
+                              :(Base.(:.-)),
+                              :(Base.(:*)),
+                              :(Base.(:.*)),
+                              :(Base.(:/)),
+                              :(Base.(:./)),
+                              :(Base.(:.^)),
+                              :(Base.div),
+                              :(Base.mod),
+                              :(Base.fld),
+                              :(Base.rem)]
 
 const induced_arithmetic_operators = [:(Base.(:^))]
 
-# const biscalar_operators = [:(Base.max),
-#                             :(Base.min)]
-
-import Base.max, Base.min
-const biscalar_operators = [:max, :min]
+const biscalar_operators = [:(Base.max),
+                            :(Base.min)]
 
 const scalar_arithmetic_operators = [:(Base.(:+)),
                                      :(Base.(:-)),
@@ -256,7 +204,6 @@ const boolean_operators = [:(Base.any),
 
 # Swap arguments to fname() anywhere in AST. Returns the number of
 # arguments swapped
-# function swapargs(ast::Expr, fname::Symbol)
 function swapargs(ast::Expr, fname::Union(Expr, Symbol))
     if ast.head == :call &&
        (ast.args[1] == fname ||
@@ -274,7 +221,6 @@ function swapargs(ast::Expr, fname::Union(Expr, Symbol))
         n
     end
 end
-# function swapargs(ast, fname::Symbol)
 function swapargs(ast, fname::Union(Expr, Symbol))
     ast
     0
@@ -291,12 +237,8 @@ macro swappable(func, syms...)
     
     func2 = deepcopy(func)
     fname = func2.args[1].args[1]
-    if isa(fname, Expr)
-        if fname.head == :curly
-            fname = fname.args[1]
-        else
-            error("Unexpected function name $fname")
-        end
+    if isa(fname, Expr) && fname.head == :curly
+        fname = fname.args[1]
     end
 
     for s in unique([fname, syms...])
@@ -419,11 +361,11 @@ end
 
 # Unary operators, DataArrays. Definitions in base should be adequate
 # for AbstractDataArrays. These are just optimizations
-!(d::DataArray{Bool}) = DataArray(!d.data, copy(d.na))
--(d::DataArray) = DataArray(-d.data, copy(d.na))
+Base.(:!)(d::DataArray{Bool}) = DataArray(!d.data, copy(d.na))
+Base.(:-)(d::DataArray) = DataArray(-d.data, copy(d.na))
 
 # Treat ctranspose and * in a special way for now
-for f in (:ctranspose, :transpose)
+for f in (:(Base.ctranspose), :(Base.transpose))
     @eval $(f)(d::DataArray) = DataArray($(f)(d.data), d.na')
 end
 
@@ -433,8 +375,8 @@ end
 # But we're getting 10x R while maintaining NA's
 for (adata, bdata) in ((true, false), (false, true), (true, true))
     @eval begin
-        function (*)(a::$(adata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))),
-                     b::$(bdata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))))
+        function Base.(:*)(a::$(adata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))),
+                           b::$(bdata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))))
             c = $(adata ? :(a.data) : :a) * $(bdata ? :(b.data) : :b)
             res = DataArray(c, falses(size(c)))
             # Propagation can be made more efficient by storing record of corrupt
@@ -478,7 +420,7 @@ end
 
 # One-argument elementary functions that return the same type as their
 # inputs
-for f in (:abs, :sign)
+for f in (:(Base.abs), :(Base.sign))
     @eval begin
         $(f)(::NAtype) = NA
         @dataarray_unary $(f) Number T
@@ -486,10 +428,11 @@ for f in (:abs, :sign)
 end
 
 # One-argument elementary functions that always return floating points
-for f in (:acos, :acosh, :asin, :asinh, :atan, :atanh, :sin, :sinh, :cos,
-          :cosh, :tan, :tanh, :ceil, :floor, :round, :trunc, :exp, :exp2,
-          :expm1, :log, :log10, :log1p, :log2, :exponent, :sqrt, :gamma,
-          :lgamma, :digamma, :erf, :erfc)
+for f in (:(Base.acos), :(Base.acosh), :(Base.asin), :(Base.asinh), :(Base.atan), :(Base.atanh),
+          :(Base.sin), :(Base.sinh), :(Base.cos), :(Base.cosh), :(Base.tan), :(Base.tanh),
+          :(Base.ceil), :(Base.floor), :(Base.round), :(Base.trunc), :(Base.exp), :(Base.exp2),
+          :(Base.expm1), :(Base.log), :(Base.log10), :(Base.log1p), :(Base.log2), :(Base.exponent),
+          :(Base.sqrt), :(Base.gamma), :(Base.lgamma), :(Base.digamma), :(Base.erf), :(Base.erfc))
     @eval begin
         ($f)(::NAtype) = NA
         @dataarray_unary $(f) FloatingPoint T
@@ -498,7 +441,7 @@ for f in (:acos, :acosh, :asin, :asinh, :atan, :atanh, :sin, :sinh, :cos,
 end
 
 # Elementary functions that take varargs
-for f in (:round, :ceil, :floor, :trunc)
+for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
     @eval begin
         ($f)(::NAtype, args::Integer...) = NA
 
@@ -525,14 +468,14 @@ end
 # Bit operators
 #
 
-@swappable (&)(a::NAtype, b::Bool) = b ? NA : false
-@swappable (|)(a::NAtype, b::Bool) = b ? true : NA
-@swappable ($)(a::NAtype, b::Bool) = NA
+@swappable Base.(:&)(a::NAtype, b::Bool) = b ? NA : false
+@swappable Base.(:|)(a::NAtype, b::Bool) = b ? true : NA
+@swappable Base.(:$)(a::NAtype, b::Bool) = NA
 
 # To avoid ambiguity warning
-@swappable (|)(a::NAtype, b::Function) = NA
+@swappable Base.(:|)(a::NAtype, b::Function) = NA
 
-for f in (:&, :|, :$)
+for f in (:(Base.(:&)), :(Base.(:|)), :(Base.(:$)))
     @eval begin
         # Scalar with NA
         ($f)(::NAtype, ::NAtype) = NA
@@ -541,20 +484,20 @@ for f in (:&, :|, :$)
 end
 
 # DataArray with DataArray
-(&)(a::DataArray{Bool}, b::DataArray{Bool}) =
+Base.(:&)(a::DataArray{Bool}, b::DataArray{Bool}) =
     DataArray(a.data & b.data, (a.na & b.data) | (b.na & a.data))
-(|)(a::DataArray{Bool}, b::DataArray{Bool}) =
+Base.(:|)(a::DataArray{Bool}, b::DataArray{Bool}) =
     DataArray(a.data | b.data, (a.na & !b.data) | (b.na & !a.data))
-($)(a::DataArray{Bool}, b::DataArray{Bool}) =
+Base.(:$)(a::DataArray{Bool}, b::DataArray{Bool}) =
     DataArray(a.data $ b.data, a.na | b.na)
 
 # DataArray with non-DataArray
 # Need explicit definition for BitArray to avoid ambiguity
 for t in (:(BitArray), :(Union(AbstractArray{Bool}, Bool)))
     @eval begin
-        @swappable (&)(a::DataArray{Bool}, b::$t) = DataArray(a.data & b, a.na & b)
-        @swappable (|)(a::DataArray{Bool}, b::$t) = DataArray(a.data | b, a.na & !b)
-        @swappable ($)(a::DataArray{Bool}, b::$t) = DataArray(a.data $ b, a.na)
+        @swappable Base.(:&)(a::DataArray{Bool}, b::$t) = DataArray(a.data & b, a.na & b)
+        @swappable Base.(:|)(a::DataArray{Bool}, b::$t) = DataArray(a.data | b, a.na & !b)
+        @swappable Base.(:$)(a::DataArray{Bool}, b::$t) = DataArray(a.data $ b, a.na)
     end
 end
 
@@ -607,8 +550,8 @@ end
 #
 
 # Necessary to avoid ambiguity warnings
-.^(::MathConst{:e}, B::DataArray) = exp(B)
-.^(::MathConst{:e}, B::AbstractDataArray) = exp(B)
+Base.(:.^)(::MathConst{:e}, B::DataArray) = exp(B)
+Base.(:.^)(::MathConst{:e}, B::AbstractDataArray) = exp(B)
 
 for f in arithmetic_operators
     @eval begin
@@ -625,13 +568,17 @@ for f in arithmetic_operators
     end
 end
 
-^(::NAtype, ::NAtype) = NA
-^(a, ::NAtype) = NA
-^(::NAtype, ::Integer) = NA
-^(::NAtype, ::Number) = NA
+Base.(:^)(::NAtype, ::NAtype) = NA
+Base.(:^)(a, ::NAtype) = NA
+Base.(:^)(::NAtype, ::Integer) = NA
+Base.(:^)(::NAtype, ::Number) = NA
 
-for (vf, sf) in ((:(+), :(+)), (:(.+), :(+)), (:(-), :(-)), (:(.-), :(-)), (:(.*), :(*)),
-                 (:(.^), :(^)))
+for (vf, sf) in ((:(Base.(:+)), :(Base.(:+))),
+                 (:(Base.(:.+)), :(Base.(:+))),
+                 (:(Base.(:-)), :(Base.(:-))),
+                 (:(Base.(:.-)), :(Base.(:-))),
+                 (:(Base.(:.*)), :(Base.(:*))),
+                 (:(Base.(:.^)), :(Base.(:^))))
     @eval begin
         # Necessary to avoid ambiguity warnings
         @swappable ($vf)(A::BitArray, B::AbstractDataArray) = ($vf)(bitunpack(A), B)
@@ -641,11 +588,11 @@ for (vf, sf) in ((:(+), :(+)), (:(.+), :(+)), (:(-), :(-)), (:(.-), :(-)), (:(.*
     end
 end
 
-@swappable ./(A::BitArray, B::AbstractDataArray) = ./(bitunpack(A), B)
-@swappable ./(A::BitArray, B::DataArray) = ./(bitunpack(A), B)
+@swappable Base.(:./)(A::BitArray, B::AbstractDataArray) = ./(bitunpack(A), B)
+@swappable Base.(:./)(A::BitArray, B::DataArray) = ./(bitunpack(A), B)
 
-@dataarray_binary_array (./) (/) isa(a, FloatingPoint) || isa(b, FloatingPoint) ?
-                                 promote_type(a, b) : Float64
+@dataarray_binary_array Base.(:./) Base.(:/) isa(a, FloatingPoint) || isa(b, FloatingPoint) ?
+                                             promote_type(a, b) : Float64
 
 for f in biscalar_operators
     @eval begin
@@ -697,7 +644,8 @@ for f in binary_vector_operators
             any(dv1.na) || any(dv2.na) ? NA : ($f)(dv1.data, dv2.data)
 end
 
-for f in (:min, :max, :prod, :sum, :mean, :median, :std, :var, :norm)
+for f in (:(Base.min), :(Base.max), :(Base.prod), :(Base.sum), :(Base.mean), :(Base.median),
+          :(Base.std), :(Base.var), :(Base.norm))
     colf = symbol("col$(f)s")
     rowf = symbol("row$(f)s")
     @eval begin
