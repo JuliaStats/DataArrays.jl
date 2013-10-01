@@ -15,7 +15,7 @@ my_tests = ["test/abstractarray.jl",
             "test/datamatrix.jl",
             "test/linalg.jl",
             #"test/nas.jl",
-            #"test/operators.jl",
+            "test/operators.jl",
             "test/padding.jl",
             "test/pooleddataarray.jl"]
             #"test/statistics.jl"]
