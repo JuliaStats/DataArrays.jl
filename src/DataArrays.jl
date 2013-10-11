@@ -3,7 +3,6 @@ using Stats
 module DataArrays
     using Stats
 
-    const DEFAULT_COLUMN_TYPE = Float64
     const DEFAULT_POOLED_REF_TYPE = Uint32
 
     export NAtype,
@@ -48,7 +47,6 @@ module DataArrays
            PooledDataVector,
            PooledDataMatrix,
            compact,
-           values, # EXPORT?
            levels,
            get_indices,
            index_to_level,

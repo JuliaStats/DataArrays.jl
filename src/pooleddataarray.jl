@@ -219,7 +219,7 @@ function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
 end
 
 # Convert a PooledDataVector{T} to a DataVector{T}
-function values{T}(pda::PooledDataArray{T})
+function Base.values{T}(pda::PooledDataArray{T})
     res = DataArray(T, size(pda)...)
     for i in 1:length(pda)
         r = pda.refs[i]
@@ -232,8 +232,8 @@ function values{T}(pda::PooledDataArray{T})
     return res
 end
 DataArray(pda::PooledDataArray) = values(pda)
-values(da::DataArray) = copy(da)
-values(a::Array) = copy(a)
+Base.values(da::DataArray) = copy(da)
+Base.values(a::Array) = copy(a)
 
 function Base.unique{T}(x::PooledDataArray{T})
     if any(x.refs .== 0)
