@@ -329,9 +329,14 @@ end
 
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
+
 ## # There are two definitions in order to remove ambiguity warnings
-Base.getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool})) = DataArray(d.data[inds], d.na[inds])
-Base.getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, Range1, BitVector)) = DataArray(d.data[inds], d.na[inds])
+
+function Base.getindex{T<:Number,N}(d::DataArray{T,N},
+                                    inds::Union(BitVector, Vector{Bool}))
+    DataArray(d.data[inds], d.na[inds])
+end
+
 function Base.getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res = similar(d, sum(inds))
     j = 1
@@ -346,7 +351,12 @@ function Base.getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res
 end
 
-function Base.getindex(d::DataArray, inds::Union(Vector, Ranges, Range1))
+function Base.getindex{T<:Number,N}(d::DataArray{T,N},
+                                    inds::Union(Vector, Ranges, Range1, BitVector))
+    DataArray(d.data[inds], d.na[inds])
+end
+
+function Base.getindex(d::DataArray, inds::Union(Vector, Ranges, Range1, BitVector))
     res = similar(d, length(inds))
     for i in 1:length(inds)
         ix = inds[i]
