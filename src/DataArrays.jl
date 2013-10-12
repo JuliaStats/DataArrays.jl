@@ -62,7 +62,9 @@ module DataArrays
            head,
            tail,
            dataeye,
-           datadiagm
+           datadiagm,
+           cut,
+           rep
 
     include("utils.jl")
     include("natype.jl")
@@ -72,4 +74,5 @@ module DataArrays
     include("datamatrix.jl")
     include("linalg.jl")
     include("operators.jl")
+    include("extras.jl")
 end

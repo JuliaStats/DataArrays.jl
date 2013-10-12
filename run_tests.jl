@@ -17,7 +17,8 @@ my_tests = ["test/abstractarray.jl",
             #"test/nas.jl",
             "test/operators.jl",
             "test/padding.jl",
-            "test/pooleddataarray.jl"]
+            "test/pooleddataarray.jl",
+            "test/extras.jl"]
             #"test/statistics.jl"]
 
 println("Running tests:")
