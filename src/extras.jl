@@ -14,7 +14,7 @@ function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})
     if !issorted(breaks)
         sort!(breaks)
     end
-    min_x, max_x = min(x), max(x)
+    min_x, max_x = minimum(x), maximum(x)
     if breaks[1] > min_x
         unshift!(breaks, min_x)
     end

@@ -120,8 +120,8 @@ const arithmetic_operators = [:(Base.(:+)),
 
 const induced_arithmetic_operators = [:(Base.(:^))]
 
-const biscalar_operators = [:(Base.max),
-                            :(Base.min)]
+const biscalar_operators = [:(Base.maximum),
+                            :(Base.minimum)]
 
 const scalar_arithmetic_operators = [:(Base.(:+)),
                                      :(Base.(:-)),
@@ -145,8 +145,8 @@ const bit_operators = [:(Base.(:&)),
                        :(Base.(:|)),
                        :(Base.(:$))]
 
-const unary_vector_operators = [:(Base.min),
-                                :(Base.max),
+const unary_vector_operators = [:(Base.minimum),
+                                :(Base.maximum),
                                 :(Base.prod),
                                 :(Base.sum),
                                 :(Base.mean),
@@ -177,7 +177,7 @@ const binary_vector_operators = [:(Base.dot),
                                  :(Base.cov),
                                  :(Stats.cor_spearman)]
 
-const rowwise_operators = [:rowmins,
+const rowwise_operators = [:rowminimums,
                            :rowmaxs,
                            :rowprods,
                            :rowsums,
@@ -188,7 +188,7 @@ const rowwise_operators = [:rowmins,
                            :rowffts,
                            :rownorms]
 
-const columnar_operators = [:colmins,
+const columnar_operators = [:colminimums,
                             :colmaxs,
                             :colprods,
                             :colsums,
@@ -644,8 +644,9 @@ for f in binary_vector_operators
             any(dv1.na) || any(dv2.na) ? NA : ($f)(dv1.data, dv2.data)
 end
 
-for f in (:(Base.min), :(Base.max), :(Base.prod), :(Base.sum), :(Base.mean), :(Base.median),
-          :(Base.std), :(Base.var), :(Base.norm))
+for f in (:(Base.minimum), :(Base.maximum), :(Base.prod), :(Base.sum),
+          :(Base.mean), :(Base.median), :(Base.std), :(Base.var),
+          :(Base.norm))
     colf = symbol("col$(f)s")
     rowf = symbol("row$(f)s")
     @eval begin
@@ -724,7 +725,7 @@ function Base.any(dv::AbstractDataArray{Bool})
     has_na ? NA : false
 end
 
-Stats.range{T}(dv::AbstractDataVector{T}) = max(dv) - min(dv)
+Stats.range{T}(dv::AbstractDataVector{T}) = maximum(dv) - minimum(dv)
 
 function rle{T}(v::AbstractVector{T})
     n = length(v)
