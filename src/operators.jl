@@ -445,7 +445,7 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
     @eval begin
         ($f)(::NAtype, args::Integer...) = NA
 
-        function $(f){T<:Number}(d::DataArray{T}, args::Integer...)
+        function $(f){T<:Real}(d::DataArray{T}, args::Integer...)
             data = similar(d.data)
             for i = 1:length(data)
                 if !d.na[i]
@@ -454,7 +454,7 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
             end
             DataArray(data, copy(d.na))
         end
-        function $(f){T<:Number}(adv::AbstractDataArray{T}, args::Integer...)
+        function $(f){T<:Real}(adv::AbstractDataArray{T}, args::Integer...)
             res = similar(adv)
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i], args...)
