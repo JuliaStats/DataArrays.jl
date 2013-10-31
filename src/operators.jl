@@ -255,9 +255,9 @@ end
 
 # Apply unary operator to non-NA members of a DataArray or
 # AbstractDataArray
-macro dataarray_unary(f, intype, outtype)
+macro dataarray_unary(f, intype, outtype, N...)
     esc(quote
-        function $(f){T<:$(intype)}(d::DataArray{T})
+        function $(f){T<:$(intype)}(d::$(isempty(N) ? :(DataArray{T}) : :(DataArray{T,$(N[1])})))
             data = similar(d.data, $(outtype))
             for i = 1:length(data)
                 if !d.na[i]
@@ -266,7 +266,7 @@ macro dataarray_unary(f, intype, outtype)
             end
             DataArray(data, copy(d.na))
         end
-        function $(f){T<:$(intype)}(adv::AbstractDataArray{T})
+        function $(f){T<:$(intype)}(adv::$(isempty(N) ? :(AbstractDataArray{T}) : :(AbstractDataArray{T,$(N[1])})))
             res = similar(adv, $(outtype))
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i])
@@ -430,9 +430,9 @@ end
 # One-argument elementary functions that always return floating points
 for f in (:(Base.acos), :(Base.acosh), :(Base.asin), :(Base.asinh), :(Base.atan), :(Base.atanh),
           :(Base.sin), :(Base.sinh), :(Base.cos), :(Base.cosh), :(Base.tan), :(Base.tanh),
-          :(Base.ceil), :(Base.floor), :(Base.round), :(Base.trunc), :(Base.exp), :(Base.exp2),
-          :(Base.expm1), :(Base.log), :(Base.log10), :(Base.log1p), :(Base.log2), :(Base.exponent),
-          :(Base.sqrt), :(Base.gamma), :(Base.lgamma), :(Base.digamma), :(Base.erf), :(Base.erfc))
+          :(Base.exp), :(Base.exp2), :(Base.expm1), :(Base.log), :(Base.log10), :(Base.log1p),
+          :(Base.log2), :(Base.exponent), :(Base.sqrt), :(Base.gamma), :(Base.lgamma),
+          :(Base.digamma), :(Base.erf), :(Base.erfc))
     @eval begin
         ($f)(::NAtype) = NA
         @dataarray_unary $(f) FloatingPoint T
@@ -445,8 +445,13 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
     @eval begin
         ($f)(::NAtype, args::Integer...) = NA
 
+        # ambiguity
+        @dataarray_unary $(f) Real T 1
+        @dataarray_unary $(f) Real T 2
+        @dataarray_unary $(f) Real T
+
         function $(f){T<:Real}(d::DataArray{T}, args::Integer...)
-            data = similar(d.data)
+            data = similar(d.data, Float64)
             for i = 1:length(data)
                 if !d.na[i]
                     data[i] = $(f)(d[i], args...)
@@ -455,7 +460,7 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
             DataArray(data, copy(d.na))
         end
         function $(f){T<:Real}(adv::AbstractDataArray{T}, args::Integer...)
-            res = similar(adv)
+            res = similar(adv, Fl)
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i], args...)
             end
