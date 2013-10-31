@@ -451,7 +451,7 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
         @dataarray_unary $(f) Real T
 
         function $(f){T<:Real}(d::DataArray{T}, args::Integer...)
-            data = similar(d.data, Float64)
+            data = similar(d.data)
             for i = 1:length(data)
                 if !d.na[i]
                     data[i] = $(f)(d[i], args...)
