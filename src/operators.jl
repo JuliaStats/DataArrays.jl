@@ -460,7 +460,7 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
             DataArray(data, copy(d.na))
         end
         function $(f){T<:Real}(adv::AbstractDataArray{T}, args::Integer...)
-            res = similar(adv, Fl)
+            res = similar(adv)
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i], args...)
             end
