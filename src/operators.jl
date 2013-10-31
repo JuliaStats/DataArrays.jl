@@ -158,7 +158,7 @@ const unary_vector_operators = [:(Base.min),
                                 :(Stats.skewness),
                                 :(Stats.kurtosis)]
 
-# TODO: dist, iqr, rle, inverse_rle
+# TODO: dist, iqr
 
 const pairwise_vector_operators = [:(Base.diff)]
                                    #:(Base.reldiff),
