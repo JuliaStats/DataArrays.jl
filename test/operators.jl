@@ -141,6 +141,22 @@ module DataArraysOperators
         end
     end
 
+    # Division (special case since return type for Int is a Float64)
+    for i in 1:length(dv)
+        @assert isna((dv./dv)[i]) && isna(dv[i]) ||
+                isequal((dv./dv)[i], (dv[i]./dv[i]))
+    end
+    dv = dataint(dv)
+    for i in 1:length(dv)
+        @assert isna((dv./dv)[i]) && isna(dv[i]) ||
+                isequal((dv./dv)[i], (dv[i]./dv[i]))
+    end
+    dv = convert(DataVector{Float32}, dv)
+    for i in 1:length(dv)
+        @assert isna((dv./dv)[i]) && isna(dv[i]) ||
+                isequal((dv./dv)[i], (dv[i]./dv[i]))
+    end
+
     # Unary vector operators on DataVector's
     N = 5
     dv = dataones(5)

@@ -611,8 +611,8 @@ end
 @swappable Base.(:./)(A::BitArray, B::AbstractDataArray) = ./(bitunpack(A), B)
 @swappable Base.(:./)(A::BitArray, B::DataArray) = ./(bitunpack(A), B)
 
-@dataarray_binary_array Base.(:./) Base.(:/) isa(a, FloatingPoint) || isa(b, FloatingPoint) ?
-                                             promote_type(a, b) : Float64
+@dataarray_binary_array Base.(:./) Base.(:/) eltype(a) <: FloatingPoint || eltype(b) <: FloatingPoint ?
+                                             promote_type(eltype(a), eltype(b)) : Float64
 
 for f in biscalar_operators
     @eval begin
