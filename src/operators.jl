@@ -249,6 +249,17 @@ macro swappable(func, syms...)
     esc(Expr(:block, func, func2))
 end
 
+# Enumerate a BitArray. This is faster than using enumerate()
+macro bitenumerate(ba, i, x, code)
+    esc(quote
+        $i = 1
+        for $x in $ba
+            $code
+            $i += 1
+        end
+    end)
+end
+
 #
 # Unary operator macros for DataArrays
 #
@@ -258,13 +269,14 @@ end
 macro dataarray_unary(f, intype, outtype, N...)
     esc(quote
         function $(f){T<:$(intype)}(d::$(isempty(N) ? :(DataArray{T}) : :(DataArray{T,$(N[1])})))
-            data = similar(d.data, $(outtype))
-            for i = 1:length(data)
-                if !d.na[i]
-                    data[i] = $(f)(d.data[i])
+            data = d.data
+            res = similar(data, $(outtype))
+            @bitenumerate d.na i na begin
+                if !na
+                    @inbounds res[i] = $(f)(data[i])
                 end
             end
-            DataArray(data, copy(d.na))
+            DataArray(res, copy(d.na))
         end
         function $(f){T<:$(intype)}(adv::$(isempty(N) ? :(AbstractDataArray{T}) : :(AbstractDataArray{T,$(N[1])})))
             res = similar(adv, $(outtype))
@@ -290,13 +302,14 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype)
         {
             quote
                 @swappable function $(vectorfunc)(a::DataArray, b::$t)
-                    res = DataArray(similar(a.data, $outtype), copy(a.na))
-                    for i = 1:length(a)
-                        if !res.na[i]
-                            res.data[i] = $(scalarfunc)(a.data[i], b)
+                    data = a.data
+                    res = similar(data, $outtype)
+                    @bitenumerate a.na i na begin
+                        if !na
+                            @inbounds res[i] = $(scalarfunc)(data[i], b)
                         end
                     end
-                    res
+                    DataArray(res, copy(a.na))
                 end $scalarfunc
                 @swappable function $(vectorfunc)(a::AbstractDataArray, b::$t)
                     res = similar(a, $outtype)
@@ -319,14 +332,16 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
             quote
                 function $(vectorfunc)(a::$(adata ? :DataArray : :AbstractArray),
                                        b::$(bdata ? :DataArray : :AbstractArray))
-                    res = DataArray(Array($outtype, promote_shape(size(a), size(b))), $narule)
-                    for i = 1:length(res)
-                        if !res.na[i]
-                            res.data[i] = $(scalarfunc)($(adata ? :(a.data) : :a)[i],
-                                                        $(bdata ? :(b.data) : :b)[i])
+                    data1 = $(adata ? :(a.data) : :a)
+                    data2 = $(bdata ? :(b.data) : :b)
+                    res = Array($outtype, promote_shape(size(a), size(b)))
+                    resna = $narule
+                    @bitenumerate resna i na begin
+                        if !na
+                            @inbounds res[i] = $(scalarfunc)(data1[i], data2[i])
                         end
                     end
-                    res
+                    DataArray(res, resna)
                 end
             end
             for (adata, bdata, narule) in ((true, true, :(a.na | b.na)),
@@ -452,9 +467,9 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
 
         function $(f){T<:Real}(d::DataArray{T}, args::Integer...)
             data = similar(d.data)
-            for i = 1:length(data)
-                if !d.na[i]
-                    data[i] = $(f)(d[i], args...)
+            @bitenumerate d.na i na begin
+                if !na
+                    @inbounds data[i] = $(f)(d[i], args...)
                 end
             end
             DataArray(data, copy(d.na))
@@ -520,8 +535,8 @@ function Base.isequal(a::DataArray, b::DataArray)
     if size(a) != size(b) || a.na != b.na
         return false
     end
-    for i = 1:length(a)
-        if !a.na[i] && a.data[i] != b.data[i]
+    @bitenumerate a.na i na begin
+        @inbounds if !na && !isequal(a.data[i], b.data[i])
             return false
         end
     end
@@ -628,10 +643,8 @@ for f in cumulative_vector_operators
         new_data = ($f)(dv.data)
         new_na = falses(length(dv))
         hitna = false
-        for i = 1:length(dv)
-            if dv.na[i]
-                hitna = true
-            end
+        @bitenumerate dv.na i na begin
+            hitna |= na
             if hitna
                 new_na[i] = true
             end
@@ -678,14 +691,11 @@ end
 # Boolean operators
 #
 
-function Base.all(dv::AbstractDataArray{Bool})
-    for i in 1:length(dv)
-        if dv.na[i]
-            return NA
-        end
-        if !dv.data[i]
-            return false
-        end
+function Base.all(dv::DataArray{Bool})
+    data = dv.data
+    @bitenumerate dv.na i na begin
+        !na || return NA
+        data[i] || return false
     end
     true
 end
@@ -704,8 +714,8 @@ end
 
 function Base.any(dv::DataArray{Bool})
     has_na = false
-    for i in 1:length(dv)
-        if !dv.na[i]
+    @bitenumerate dv.na i na begin
+        if !na
             if dv.data[i]
                 return true
             end
