@@ -693,23 +693,28 @@ end
 
 function Base.all(dv::DataArray{Bool})
     data = dv.data
+    has_na = false
     @bitenumerate dv.na i na begin
-        !na || return NA
-        data[i] || return false
+        if !na
+            data[i] || return false
+        else
+            has_na = true
+        end
     end
-    true
+    has_na ? NA : true
 end
 
 function Base.all(dv::AbstractDataArray{Bool})
+    has_na = false
     for i in 1:length(dv)
-        if isna(dv[i])
-            return NA
-        end
-        if !dv[i]
-            return false
+        x = dv[i]
+        if !isna(x)
+            x || return false
+        else
+            has_na = true
         end
     end
-    true
+    has_na ? NA : true
 end
 
 function Base.any(dv::DataArray{Bool})

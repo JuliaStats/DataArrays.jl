@@ -254,6 +254,13 @@ module DataArraysOperators
     end
 
     dv = datafalses(N)
+    dv[1] = NA
+    @test_da_pda dv begin
+        @assert isna(any(dv))
+        @assert all(dv) == false
+    end
+
+    dv = datafalses(N)
     dv[2] = NA
     dv[3] = true
     @test_da_pda dv begin
@@ -272,6 +279,20 @@ module DataArraysOperators
     dv[1] = NA
     @test_da_pda dv begin
         @assert isna(any(dv))
+        @assert isna(all(dv))
+    end
+
+    dv = datatrues(N)
+    dv[1] = NA
+    @test_da_pda dv begin
+        @assert any(dv) == true
+        @assert isna(all(dv))
+    end
+
+    dv = datatrues(N)
+    dv[2] = NA
+    @test_da_pda dv begin
+        @assert any(dv) == true
         @assert isna(all(dv))
     end
 
