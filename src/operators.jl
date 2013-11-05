@@ -543,9 +543,84 @@ function Base.isequal(a::DataArray, b::DataArray)
     return true
 end
 
-for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
-    #vf = symbol(".$sf")
+# ambiguity
+@swappable ==(a::DataArray{Bool}, b::BitArray) =
+    invoke(==, (DataArray, AbstractArray), a, b)
+@swappable ==(a::DataArray, b::BitArray) =
+    invoke(==, (DataArray, AbstractArray), a, b)
+@swappable ==(a::AbstractDataArray{Bool}, b::BitArray) =
+    invoke(==, (DataArray, AbstractArray), a, b)
+@swappable ==(a::AbstractDataArray, b::BitArray) =
+    invoke(==, (DataArray, AbstractArray), a, b)
 
+function Base.(:(==))(a::DataArray, b::DataArray)
+    size(a) == size(b) || return false
+    adata = a.data
+    bdata = b.data
+    bchunks = b.na.chunks
+    has_na = false
+    @bitenumerate a.na i na begin
+        if na || Base.getindex_unchecked(bchunks, i)
+            has_na = true
+        else
+            @inbounds adata[i] == bdata[i] || return false
+        end
+    end
+    has_na ? NA : true
+end
+
+# ambiguity
+@swappable ==(a::DataArray, b::AbstractDataArray) =
+    invoke(==, (AbstractDataArray, AbstractDataArray), a, b)
+
+@swappable function Base.(:(==))(a::DataArray, b::AbstractArray)
+    size(a) == size(b) || return false
+    adata = a.data
+    has_na = false
+    @bitenumerate a.na i na begin
+        if na
+            has_na = true
+        else
+            @inbounds adata[i] == b[i] || return false
+        end
+    end
+    has_na ? NA : true
+end
+
+function Base.(:(==))(a::AbstractDataArray, b::AbstractDataArray)
+    size(a) == size(b) || return false
+    has_na = false
+    for i = 1:length(a)
+        if isna(a[i]) || isna(b[i])
+            has_na = true
+        else
+            a[i] == b[i] || return false
+        end
+    end
+    has_na ? NA : true
+end
+
+@swappable function Base.(:(==))(a::AbstractDataArray, b::AbstractArray)
+    size(a) == size(b) || return false
+    has_na = false
+    for i = 1:length(a)
+        if isna(a[i])
+            has_na = true
+        else
+            a[i] == b[i] || return false
+        end
+    end
+    has_na ? NA : true
+end
+
+for sf in (:(Base.(:(>))), :(Base.(:(>=))), :(Base.(:(<))), :(Base.(:(<=))))
+    @eval begin
+        $(sf)(a::AbstractDataArray, b::AbstractDataArray) =
+            error("$sf not defined for AbstractDataArrays. Try $vf")
+    end
+end
+
+for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
         # Array with NA
         @swappable ($(vf)){T,N}(::NAtype, b::AbstractArray{T,N}) =
@@ -559,9 +634,6 @@ for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
 
         @dataarray_binary_scalar $(vf) $(sf) Bool
         @dataarray_binary_array $(vf) $(sf) Bool
-
-        $(sf)(a::AbstractDataArray, b::AbstractDataArray) =
-            error("$sf not defined for AbstractDataArrays. Try $vf")
     end
 end
 
