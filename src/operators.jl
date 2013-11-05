@@ -613,13 +613,6 @@ end
     has_na ? NA : true
 end
 
-for sf in (:(Base.(:(>))), :(Base.(:(>=))), :(Base.(:(<))), :(Base.(:(<=))))
-    @eval begin
-        $(sf)(a::AbstractDataArray, b::AbstractDataArray) =
-            error("$sf not defined for AbstractDataArrays. Try $vf")
-    end
-end
-
 for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
         # Array with NA
