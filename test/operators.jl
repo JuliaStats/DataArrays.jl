@@ -254,6 +254,13 @@ module DataArraysOperators
     end
 
     dv = datafalses(N)
+    dv[1] = NA
+    @test_da_pda dv begin
+        @assert isna(any(dv))
+        @assert all(dv) == false
+    end
+
+    dv = datafalses(N)
     dv[2] = NA
     dv[3] = true
     @test_da_pda dv begin
@@ -275,10 +282,25 @@ module DataArraysOperators
         @assert isna(all(dv))
     end
 
+    dv = datatrues(N)
+    dv[1] = NA
+    @test_da_pda dv begin
+        @assert any(dv) == true
+        @assert isna(all(dv))
+    end
+
+    dv = datatrues(N)
+    dv[2] = NA
+    @test_da_pda dv begin
+        @assert any(dv) == true
+        @assert isna(all(dv))
+    end
+
     #
     # Equality tests
     #
 
+    v = [1, 2]
     dv = DataVector[1, NA]
     alt_dv = DataVector[2, NA]
     pdv = PooledDataArray(DataVector[1, NA])
@@ -287,8 +309,37 @@ module DataArraysOperators
     @assert isna(NA == NA)
     @assert isna(NA != NA)
 
-    # @assert isna(dv == dv) # SHOULD RAISE ERROR
-    # @assert isna(dv != dv) # SHOULD RAISE ERROR
+    function test_da_eq(v1, v2, out)
+        for a in (v1, DataArray(v1), PooledDataArray(v1))
+            for b in (v2, DataArray(v2), PooledDataArray(v2))
+                try
+                    @assert isequal(a == b, out)
+                    @assert isequal(b == a, out)
+                    if size(a) == size(b)
+                        @assert isequal(all(a .== b), out)
+                        @assert isequal(all(b .== a), out)
+                    end
+                catch e
+                    println("a = $a")
+                    println("b = $b")
+                    rethrow(e)
+                end
+            end
+        end
+    end
+
+    # Comparing two otherwise equal DataArray with NAs returns NA
+    test_da_eq(dv, dv, NA)
+    test_da_eq(dv, v, NA)
+    test_da_eq(dv, DataVector[NA, 1], NA)
+    # Comparing two equal arrays with no NAs returns true
+    test_da_eq(v, v, true)
+    # Comparing two unequal arrays with no NAs returns false
+    test_da_eq(v, DataVector[1, 3], false)
+    # Comparing two otherwise unequal arrays with NAs returns false
+    test_da_eq(dv, alt_dv, false)
+    # Comparing two arrays of unequal sizes returns false
+    test_da_eq(dv, [1], false)
 
     @assert isequal(dv, dv)
     @assert isequal(pdv, pdv)
