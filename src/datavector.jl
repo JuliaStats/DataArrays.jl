@@ -93,7 +93,7 @@ function Base.unshift!{S, T}(dv::DataVector{S}, v::T)
 end
 
 function Base.shift!{T}(dv::DataVector{T})
-    d, m = shift!(dv.data), shift(dv.na)
+    d, m = shift!(dv.data), shift!(dv.na)
     if m
         return NA
     else

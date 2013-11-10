@@ -8,7 +8,7 @@ using DataArrays
 my_tests = ["test/abstractarray.jl",
             "test/booleans.jl",
             "test/constructors.jl",
-            #"test/containers.jl",
+            "test/containers.jl",
             "test/conversions.jl",
             "test/data.jl",
             "test/dataarray.jl",

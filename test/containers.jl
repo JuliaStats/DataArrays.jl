@@ -12,12 +12,12 @@ module DataArraysContainers
 	@assert isna(a)
 	@assert b == 3.0
 
-	enqueue!(dv, 3.0)
-	enqueue!(dv, NA)
+	unshift!(dv, 3.0)
+	unshift!(dv, NA)
 
 	@assert isequal(dv, DataVector[NA, 3.0, 1.0, 1.0, 1.0])
 
-	a, b = shift(dv), shift(dv)
+	a, b = shift!(dv), shift!(dv)
 	@assert isna(a)
 	@assert b == 3.0
 end
