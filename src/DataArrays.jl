@@ -83,4 +83,5 @@ module DataArrays
     include("extras.jl")
     include("grouping.jl")
     include("statistics.jl")
+    include("predicates.jl")
 end
