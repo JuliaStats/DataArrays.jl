@@ -64,7 +64,13 @@ module DataArrays
            dataeye,
            datadiagm,
            cut,
-           rep
+           rep,
+           reldiff,
+           percent_change,
+           autocor,
+           gl,
+           xtab,
+           xtabs
 
     include("utils.jl")
     include("natype.jl")
@@ -75,4 +81,6 @@ module DataArrays
     include("linalg.jl")
     include("operators.jl")
     include("extras.jl")
+    include("grouping.jl")
+    include("statistics.jl")
 end
