@@ -362,6 +362,8 @@ function Base.getindex(d::DataArray, inds::Union(Vector, Ranges, Range1, BitVect
         ix = inds[i]
         if !d.na[ix]
             res[i] = d.data[ix]
+        else
+            res[i] = NA # We could also change this in similar
         end
     end
     res
