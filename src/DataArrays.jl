@@ -15,6 +15,7 @@ module DataArrays
            AbstractDataMatrix,
            DataVector,
            DataMatrix,
+           RefArray,
            datazeros,
            dataones,
            datafalses,
