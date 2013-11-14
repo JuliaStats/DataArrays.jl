@@ -70,7 +70,9 @@ module DataArrays
            autocor,
            gl,
            xtab,
-           xtabs
+           xtabs,
+           @data,
+           @pdata
 
     include("utils.jl")
     include("natype.jl")
@@ -84,4 +86,5 @@ module DataArrays
     include("grouping.jl")
     include("statistics.jl")
     include("predicates.jl")
+    include("literals.jl")
 end

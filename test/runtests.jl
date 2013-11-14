@@ -19,7 +19,8 @@ my_tests = ["abstractarray.jl",
             "padding.jl",
             "pooleddataarray.jl",
             "extras.jl",
-            "statistics.jl"]
+            "statistics.jl",
+            "literals.jl"]
 
 println("Running tests:")
 
