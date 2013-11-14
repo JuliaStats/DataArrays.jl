@@ -49,4 +49,12 @@ module TestLiterals
     pdm1 = @pdata zeros(4, 4)
     pdm2 = @pdata ones(4, 4)
     pdm3 = @pdata rand(4, 4)
+
+    mixed1 = @data ["x", 1, 1.23, NA]
+    mixed2 = @data [NA, "x", 1, 1.23, NA]
+
+    @test isequal(mixed1, DataArray({"x", 1, 1.23, 0},
+                                    [false, false, false, true]))
+    @test isequal(mixed2, DataArray({NA, "x", 1, 1.23, 0},
+                                    [true, false, false, false, true]))
 end
