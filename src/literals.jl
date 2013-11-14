@@ -5,12 +5,12 @@ function parsedata(ex::Expr)
 	n = length(ex.args)
 	if ex.head == :vcat
 		if typeof(ex.args[1]) != Expr
-			restype = DataArrays.typeloop(ex.args)
+			restype = typeloop(ex.args)
 			data = Array(restype, n)
 			na = BitArray(n)
 			for i in 1:n
 				if ex.args[i] == :NA
-					data[i] = zero(restype)
+					data[i] = baseval(restype)
 					na[i] = true
 				else
 					data[i] = ex.args[i]
@@ -25,7 +25,7 @@ function parsedata(ex::Expr)
 			for i in 1:n
 				for j in 1:n
 					if ex.args[i].args[j] == :NA
-						data[i, j] = zero(restype)
+						data[i, j] = baseval(restype)
 						na[i, j] = true
 					else
 						data[i, j] = ex.args[i].args[j]
