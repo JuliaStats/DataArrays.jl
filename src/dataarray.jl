@@ -70,18 +70,6 @@ DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
 DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims...), 
                                                  trues(dims...))
 
-# Wrap a scalar in a DataArray w/ repetition
-function DataArray(val::Any, dims::Integer...)
-    vals = Array(typeof(val), dims...)
-    for i in 1:length(vals)
-        vals[i] = val
-    end
-    DataArray(vals, falses(dims...))
-end
-
-# Wrap a scalar in a DataArray w/o repetition
-DataArray(val::Any) = DataArray([val], falses(1))
-
 ##############################################################################
 ##
 ## Initialized constructors
