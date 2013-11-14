@@ -33,4 +33,20 @@ module TestLiterals
     @test isequal(pdm,
                   PooledDataArray([1 0; 3 4],
                                   [false true; false false]))
+
+    dv1 = @data zeros(4)
+    dv2 = @data ones(4)
+    dv3 = @data rand(4)
+
+    dm1 = @data zeros(4, 4)
+    dm2 = @data ones(4, 4)
+    dm3 = @data rand(4, 4)
+
+    pdv1 = @pdata zeros(4)
+    pdv2 = @pdata ones(4)
+    pdv3 = @pdata rand(4)
+
+    pdm1 = @pdata zeros(4, 4)
+    pdm2 = @pdata ones(4, 4)
+    pdm3 = @pdata rand(4, 4)
 end
