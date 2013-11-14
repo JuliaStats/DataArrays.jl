@@ -72,28 +72,6 @@ DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims...),
 
 ##############################################################################
 ##
-## Initialized constructors
-##
-##############################################################################
-
-# Initialized constructors with 0's, 1's
-for (f, basef) in ((:datazeros, :zeros), (:dataones, :ones))
-    @eval begin
-        ($f)(dims::Int...) = DataArray(($basef)(dims...), falses(dims...))
-        ($f)(t::Type, dims::Int...) = DataArray(($basef)(t, dims...),
-                                                falses(dims...))
-    end
-end
-
-# Initialized constructors with false's or true's
-for (f, basef) in ((:datafalses, :falses), (:datatrues, :trues))
-    @eval begin
-        ($f)(dims::Int...) = DataArray(($basef)(dims...), falses(dims...))
-    end
-end
-
-##############################################################################
-##
 ## Copying
 ##
 ##############################################################################
@@ -772,7 +750,7 @@ end
 ##
 ##############################################################################
 
-function padNA(dv::AbstractDataVector, front::Int, back::Int)
+function padNA(dv::AbstractDataVector, front::Integer, back::Integer)
     n = length(dv)
     res = similar(dv, front + n + back)
     for i in 1:n

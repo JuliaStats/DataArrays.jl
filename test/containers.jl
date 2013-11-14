@@ -2,7 +2,7 @@ module TestContainers
 	using Base.Test
 	using DataArrays
 
-	dv = dataones(3)
+	dv = @data ones(3)
 	push!(dv, 3.0)
 	push!(dv, NA)
 

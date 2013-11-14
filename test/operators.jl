@@ -52,8 +52,7 @@ module TestOperators
 
     # Unary operators on DataVector's should be equivalent to elementwise
     # application of those same operators
-    N = 5
-    dv = dataones(N)
+    dv = @data ones(5)
     @test_da_pda dv begin
         for f in map(eval, DataArrays.numeric_unary_operators)
             for i in 1:length(dv)
@@ -61,7 +60,7 @@ module TestOperators
             end
         end
     end
-    dv = datatrues(N)
+    dv = @data trues(5)
     @test_da_pda dv begin
         for f in map(eval, DataArrays.logical_unary_operators)
             for i in 1:length(dv)
@@ -71,8 +70,7 @@ module TestOperators
     end
 
     # Elementary functions on DataVector's
-    N = 5
-    dv = dataones(N)
+    dv = @data ones(5)
     @test_da_pda dv begin
         for f in map(eval, DataArrays.elementary_functions)
             for i in 1:length(dv)
@@ -82,8 +80,7 @@ module TestOperators
     end
 
     # Broadcasting operations between NA's and DataVector's
-    N = 5
-    dv = dataones(N)
+    dv = @data ones(5)
     @test_da_pda dv begin
         for f in map(eval, DataArrays.arithmetic_operators)
             for i in 1:length(dv)
@@ -94,8 +91,7 @@ module TestOperators
     end
 
     # Broadcasting operations between scalars and DataVector's
-    N = 5
-    dv = dataones(N)
+    dv = @data ones(5)
     @test_da_pda dv begin
         for f in map(eval, DataArrays.arithmetic_operators)
             for i in 1:length(dv)
@@ -104,7 +100,7 @@ module TestOperators
             end
         end
     end
-    dv = DataVector[false, true, false, true, false]
+    dv = @data [false, true, false, true, false]
     for f in map(eval, DataArrays.bit_operators)
         for i in 1:length(dv)
             @assert f(dv, true)[i] == f(dv[i], true)
@@ -113,9 +109,8 @@ module TestOperators
     end
 
     # Binary operations on (DataVector, Vector) or (Vector, DataVector)
-    N = 5
-    v = ones(N)
-    dv = dataones(N)
+    v = ones(5)
+    dv = @data ones(5)
     dv[1] = NA
     @test_da_pda dv begin
         for f in map(eval, DataArrays.array_arithmetic_operators)
@@ -129,8 +124,7 @@ module TestOperators
     end
 
     # Binary operations on pairs of DataVector's
-    N = 5
-    dv = dataones(N)
+    dv = @data ones(5)
     dv[1] = NA
     @test_da_pda dv begin
         for f in map(eval, DataArrays.array_arithmetic_operators)
@@ -158,8 +152,7 @@ module TestOperators
     end
 
     # Unary vector operators on DataVector's
-    N = 5
-    dv = dataones(5)
+    dv = @data ones(5)
     for f in map(eval, DataArrays.unary_vector_operators)
         @assert isequal(f(dv), f(dv.data))
     end
@@ -169,25 +162,24 @@ module TestOperators
     end
 
     # Pairwise vector operators on DataVector's
-    N = 5
-    dv = DataVector[911, 269, 835.0, 448, 772]
+    dv = @data [911, 269, 835.0, 448, 772]
     for f in map(eval, DataArrays.pairwise_vector_operators)
         @assert isequal(f(dv), f(dv.data))
     end
-    dv = DataVector[NA, 269, 835.0, 448, 772]
+    dv = @data [NA, 269, 835.0, 448, 772]
     for f in map(eval, DataArrays.pairwise_vector_operators)
         v = f(dv)
         @assert isna(v[1])
         @assert isequal(v[2:4], f(dv.data)[2:4])
     end
-    dv = DataVector[911, NA, 835.0, 448, 772]
+    dv = @data [911, NA, 835.0, 448, 772]
     for f in map(eval, DataArrays.pairwise_vector_operators)
         v = f(dv)
         @assert isna(v[1])
         @assert isna(v[2])
         @assert isequal(v[3:4], f(dv.data)[3:4])
     end
-    dv = DataVector[911, 269, 835.0, 448, NA]
+    dv = @data [911, 269, 835.0, 448, NA]
     for f in map(eval, DataArrays.pairwise_vector_operators)
         v = f(dv)
         @assert isna(v[4])
@@ -195,8 +187,7 @@ module TestOperators
     end
 
     # Cumulative vector operators on DataVector's
-    N = 5
-    dv = dataones(N)
+    dv = @data ones(5)
     for f in map(eval, DataArrays.cumulative_vector_operators)
         for i in 1:length(dv)
             @assert f(dv)[i] == f(dv.data)[i]
@@ -207,14 +198,13 @@ module TestOperators
         for i in 1:3
             @assert f(dv)[i] == f(dv.data)[i]
         end
-        for i in 4:N
+        for i in 4:5
             @assert isna(f(dv)[i])
         end
     end
 
     # FFT's on DataVector's
-    N = 5
-    dv = dataones(5)
+    dv = @data ones(5)
     for f in map(eval, DataArrays.ffts)
         @assert f(dv) == f(dv.data)
     end
@@ -224,8 +214,7 @@ module TestOperators
     end
 
     # Binary vector operators on DataVector's
-    N = 5
-    dv = dataones(5)
+    dv = @data ones(5)
     for f in map(eval, DataArrays.binary_vector_operators)
         @assert f(dv, dv) == f(dv.data, dv.data) ||
                 (isnan(f(dv, dv)) && isnan(f(dv.data, dv.data)))
@@ -236,31 +225,30 @@ module TestOperators
     end
 
     # Boolean operators on DataVector's
-    N = 5
-    @assert any(datafalses(N)) == false
-    @assert any(datatrues(N)) == true
-    @assert all(datafalses(N)) == false
-    @assert all(datatrues(N)) == true
-    @assert any(PooledDataArray(datafalses(N))) == false
-    @assert any(PooledDataArray(datatrues(N))) == true
-    @assert all(PooledDataArray(datafalses(N))) == false
-    @assert all(PooledDataArray(datatrues(N))) == true
+    @assert any((@data falses(5))) == false
+    @assert any((@data trues(5))) == true
+    @assert all((@data falses(5))) == false
+    @assert all((@data trues(5))) == true
+    @assert any(PooledDataArray((@data falses(5)))) == false
+    @assert any(PooledDataArray((@data trues(5)))) == true
+    @assert all(PooledDataArray((@data falses(5)))) == false
+    @assert all(PooledDataArray((@data trues(5)))) == true
 
-    dv = datafalses(N)
+    dv = @data falses(5)
     dv[3] = true
     @test_da_pda dv begin
         @assert any(dv) == true
         @assert all(dv) == false
     end
 
-    dv = datafalses(N)
+    dv = @data falses(5)
     dv[1] = NA
     @test_da_pda dv begin
         @assert isna(any(dv))
         @assert all(dv) == false
     end
 
-    dv = datafalses(N)
+    dv = @data falses(5)
     dv[2] = NA
     dv[3] = true
     @test_da_pda dv begin
@@ -268,28 +256,28 @@ module TestOperators
         @assert all(dv) == false
     end
 
-    dv = datafalses(N)
+    dv = @data falses(5)
     dv[2] = NA
     @test_da_pda dv begin
         @assert isna(any(dv))
         @assert all(dv) == false
     end
 
-    dv = datafalses(1)
+    dv = @data falses(1)
     dv[1] = NA
     @test_da_pda dv begin
         @assert isna(any(dv))
         @assert isna(all(dv))
     end
 
-    dv = datatrues(N)
+    dv = @data trues(5)
     dv[1] = NA
     @test_da_pda dv begin
         @assert any(dv) == true
         @assert isna(all(dv))
     end
 
-    dv = datatrues(N)
+    dv = @data trues(5)
     dv[2] = NA
     @test_da_pda dv begin
         @assert any(dv) == true
@@ -301,10 +289,10 @@ module TestOperators
     #
 
     v = [1, 2]
-    dv = DataVector[1, NA]
-    alt_dv = DataVector[2, NA]
-    pdv = PooledDataArray(DataVector[1, NA])
-    alt_pdv = PooledDataArray(DataVector[2, NA])
+    dv = @data [1, NA]
+    alt_dv = @data [2, NA]
+    pdv = PooledDataArray(@data [1, NA])
+    alt_pdv = PooledDataArray(@data [2, NA])
 
     @assert isna(NA == NA)
     @assert isna(NA != NA)
@@ -331,11 +319,11 @@ module TestOperators
     # Comparing two otherwise equal DataArray with NAs returns NA
     test_da_eq(dv, dv, NA)
     test_da_eq(dv, v, NA)
-    test_da_eq(dv, DataVector[NA, 1], NA)
+    test_da_eq(dv, (@data [NA, 1]), NA)
     # Comparing two equal arrays with no NAs returns true
     test_da_eq(v, v, true)
     # Comparing two unequal arrays with no NAs returns false
-    test_da_eq(v, DataVector[1, 3], false)
+    test_da_eq(v, (@data [1, 3]), false)
     # Comparing two otherwise unequal arrays with NAs returns false
     test_da_eq(dv, alt_dv, false)
     # Comparing two arrays of unequal sizes returns false
@@ -347,20 +335,20 @@ module TestOperators
     @assert !isequal(dv, alt_dv)
     @assert !isequal(pdv, alt_pdv)
 
-    @assert isequal(DataVector[1, NA] .== DataVector[1, NA], DataVector[true, NA])
-    @assert isequal(PooledDataVector[1, NA] .== PooledDataVector[1, NA], DataVector[true, NA])
+    @assert isequal((@data [1, NA]) .== (@data [1, NA]), (@data [true, NA]))
+    @assert isequal((@pdata [1, NA]) .== (@pdata [1, NA]), (@data [true, NA]))
 
-    @assert all(isna(NA .== dataones(5)))
-    @assert all(isna(dataones(5) .== NA))
-    @assert all(isna(NA .== PooledDataArray(dataones(5))))
-    @assert all(isna(PooledDataArray(dataones(5)) .== NA))
+    @assert all(isna(NA .== (@data ones(5))))
+    @assert all(isna((@data ones(5)) .== NA))
+    @assert all(isna(NA .== PooledDataArray((@data ones(5)))))
+    @assert all(isna(PooledDataArray((@data ones(5))) .== NA))
 
     # Run length encoding
-    dv = dataones(5)
+    dv = @data ones(5)
     dv[3] = NA
 
     v, l = DataArrays.rle(dv)
-    @assert isequal(v, DataVector[1.0, NA, 1.0])
+    @assert isequal(v, (@data [1.0, NA, 1.0]))
     @assert (l == [2, 1, 2])
 
     rdv = DataArrays.inverse_rle(v, l)

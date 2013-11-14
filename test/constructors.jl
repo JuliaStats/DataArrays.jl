@@ -32,18 +32,18 @@ module TestConstructors
 	@assert isequal(eltype(dv), Int)
 	@assert isequal(dv.na, trues(3))
 
-	@assert isequal(datazeros(3), DataArray(zeros(3)))
-	@assert isequal(datazeros(Int, 3), DataArray(zeros(Int, 3)))
-	@assert isequal(dataones(3), DataArray(ones(3)))
-	@assert isequal(dataones(Int, 3), DataArray(ones(Int, 3)))
-	@assert isequal(datafalses(3), DataArray(falses(3)))
-	@assert isequal(datatrues(3), DataArray(trues(3)))
-
-	dv = DataVector[1, 2, NA]
-	@assert dv[1] == 1
-	@assert dv[2] == 2
-	@assert isna(dv[3])
-	@assert isequal(eltype(dv), Int)
+	dv = @data zeros(3)
+	@assert isequal(dv, DataArray(zeros(3)))
+	dv = @data zeros(Int, 3)
+	@assert isequal(dv, DataArray(zeros(Int, 3)))
+	dv = @data ones(3)
+	@assert isequal(dv, DataArray(ones(3)))
+	dv = @data ones(Int, 3)
+	@assert isequal(dv, DataArray(ones(Int, 3)))
+	dv = @data falses(3)
+	@assert isequal(dv, DataArray(falses(3)))
+	dv = @data trues(3)
+	@assert isequal(dv, DataArray(trues(3)))
 
 	#
 	# PooledDataArray's
@@ -69,18 +69,18 @@ module TestConstructors
 	@assert isequal(eltype(pdv), Int)
 	@assert all(isna(pdv) .== trues(3))
 
-	@assert isequal(pdatazeros(3), PooledDataArray(zeros(3)))
-	@assert isequal(pdatazeros(Int, 3), PooledDataArray(zeros(Int, 3)))
-	@assert isequal(pdataones(3), PooledDataArray(ones(3)))
-	@assert isequal(pdataones(Int, 3), PooledDataArray(ones(Int, 3)))
-	@assert isequal(pdatafalses(3), PooledDataArray(falses(3)))
-	@assert isequal(pdatatrues(3), PooledDataArray(trues(3)))
-
-	pdv = PooledDataVector[1, 2, NA]
-	@assert pdv[1] == 1
-	@assert pdv[2] == 2
-	@assert isna(pdv[3])
-	@assert isequal(eltype(pdv), Int)
+	pdv = @pdata zeros(3)
+	@assert isequal(pdv, PooledDataArray(zeros(3)))
+	pdv = @pdata zeros(Int, 3)
+	@assert isequal(pdv, PooledDataArray(zeros(Int, 3)))
+	pdv = @pdata ones(3)
+	@assert isequal(pdv, PooledDataArray(ones(3)))
+	pdv = @pdata ones(Int, 3)
+	@assert isequal(pdv, PooledDataArray(ones(Int, 3)))
+	pdv = @pdata falses(3)
+	@assert isequal(pdv, PooledDataArray(falses(3)))
+	pdv = @pdata trues(3)
+	@assert isequal(pdv, PooledDataArray(trues(3)))
 
 	#
 	# DataMatrix
@@ -99,25 +99,22 @@ module TestConstructors
 
 	@assert isequal(dm, DataArray(trues(2, 2)))
 
-	#DataMatrix(dvzeros(3), dvzeros(3))
-	#DataMatrix(1:3, 1:3)
-
 	@assert isequal(DataArray([1 2; 3 4]), DataArray(DataArray([1 2; 3 4])))
 
 	dm = DataArray(Int, 2, 2)
 	@assert isequal(eltype(dm), Int)
 	@assert isequal(dm.na, trues(2, 2))
 
-	@assert isequal(datazeros(2, 2), DataArray(zeros(2, 2)))
-	@assert isequal(datazeros(Int, 2, 2), DataArray(zeros(Int, 2, 2)))
+	@assert isequal((@data zeros(2, 2)), DataArray(zeros(2, 2)))
+	@assert isequal((@data zeros(Int, 2, 2)), DataArray(zeros(Int, 2, 2)))
 
-	@assert isequal(dataones(2, 2), DataArray(ones(2, 2)))
-	@assert isequal(dataones(Int, 2, 2), DataArray(ones(Int, 2, 2)))
+	@assert isequal((@data ones(2, 2)), DataArray(ones(2, 2)))
+	@assert isequal((@data ones(Int, 2, 2)), DataArray(ones(Int, 2, 2)))
 
-	@assert isequal(datafalses(2, 2), DataArray(falses(2, 2)))
-	@assert isequal(datatrues(2, 2), DataArray(trues(2, 2)))
+	@assert isequal((@data falses(2, 2)), DataArray(falses(2, 2)))
+	@assert isequal((@data trues(2, 2)), DataArray(trues(2, 2)))
 
-	@assert isequal(dataeye(3, 2), DataArray(eye(3, 2)))
-	@assert isequal(dataeye(2), DataArray(eye(2)))
-	@assert isequal(datadiagm(Float64[pi, pi]), DataArray(diagm(Float64[pi, pi])))
+	@assert isequal((@data eye(3, 2)), DataArray(eye(3, 2)))
+	@assert isequal((@data eye(2)), DataArray(eye(2)))
+	@assert isequal((@data diagm(Float64[pi, pi])), DataArray(diagm(Float64[pi, pi])))
 end
