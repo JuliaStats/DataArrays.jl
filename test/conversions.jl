@@ -1,4 +1,4 @@
-module DataArraysConversions
+module TestConversions
 	using Base.Test
 	using DataArrays
 

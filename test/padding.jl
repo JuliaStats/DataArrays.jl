@@ -1,4 +1,4 @@
-module DataArraysPadding
+module TestPadding
 	using Base.Test
 	using DataArrays
 

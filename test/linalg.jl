@@ -1,4 +1,4 @@
-module DataArraysLinAlg
+module TestLinAlg
 	using Base.Test
 	using DataArrays
 

@@ -1,4 +1,4 @@
-module DataArraysPDA
+module TestPDA
 	using Base.Test
 	using DataArrays
 

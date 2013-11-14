@@ -1,4 +1,4 @@
-module DataArraysContainers
+module TestContainers
 	using Base.Test
 	using DataArrays
 

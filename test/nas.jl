@@ -1,4 +1,4 @@
-module DataArraysNAs
+module TestNAs
 	using Base.Test
 	using DataArrays
 

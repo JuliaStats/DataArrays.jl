@@ -1,4 +1,4 @@
-module DataArraysOperators
+module TestOperators
 	using Base.Test
 	using DataArrays, Stats
 

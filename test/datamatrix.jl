@@ -1,4 +1,4 @@
-module DataArraysDataMatrix
+module TestDataMatrix
 	using Base.Test
 	using DataArrays
 

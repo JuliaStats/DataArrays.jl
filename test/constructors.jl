@@ -1,4 +1,4 @@
-module DataArraysConstructors
+module TestConstructors
 	using Base.Test
 	using DataArrays
 
@@ -31,14 +31,6 @@ module DataArraysConstructors
 	dv = DataArray(Int, 3)
 	@assert isequal(eltype(dv), Int)
 	@assert isequal(dv.na, trues(3))
-
-	# dv = DataArray(3)
-	# @assert isequal(eltype(dv), Float64)
-	# @assert isequal(dv.na, trues(3))
-
-	# dv = DataArray()
-	# @assert isequal(eltype(dv), Float64)
-	# @assert isequal(dv.na, trues(0))
 
 	@assert isequal(datazeros(3), DataArray(zeros(3)))
 	@assert isequal(datazeros(Int, 3), DataArray(zeros(Int, 3)))
@@ -76,14 +68,6 @@ module DataArraysConstructors
 	pdv = PooledDataArray(Int, 3)
 	@assert isequal(eltype(pdv), Int)
 	@assert all(isna(pdv) .== trues(3))
-
-	# pdv = PooledDataArray(3)
-	# @assert isequal(eltype(pdv), Float64)
-	# @assert all(isna(pdv) .== trues(3))
-
-	# pdv = PooledDataArray()
-	# @assert isequal(eltype(pdv), Float64)
-	# @assert all(isna(pdv) .== trues(0))
 
 	@assert isequal(pdatazeros(3), PooledDataArray(zeros(3)))
 	@assert isequal(pdatazeros(Int, 3), PooledDataArray(zeros(Int, 3)))
@@ -123,18 +107,6 @@ module DataArraysConstructors
 	dm = DataArray(Int, 2, 2)
 	@assert isequal(eltype(dm), Int)
 	@assert isequal(dm.na, trues(2, 2))
-
-	# dm = DataArray(2, 2)
-	# @assert isequal(eltype(dm), Float64)
-	# @assert isequal(dm.na, trues(2, 2))
-
-	# dm = DataArray(Int)
-	# @assert isequal(eltype(dm), Int)
-	# @assert isequal(dm.na, trues(0, 0))
-
-	# dm = DataArray()
-	# @assert isequal(eltype(dm), Float64)
-	# @assert isequal(dm.na, trues(0, 0))
 
 	@assert isequal(datazeros(2, 2), DataArray(zeros(2, 2)))
 	@assert isequal(datazeros(Int, 2, 2), DataArray(zeros(Int, 2, 2)))

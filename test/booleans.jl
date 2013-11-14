@@ -1,4 +1,4 @@
-module DataArraysBooleans
+module TestBooleans
 	using Base.Test
 	using DataArrays
 
