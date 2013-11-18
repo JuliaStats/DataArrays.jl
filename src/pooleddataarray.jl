@@ -138,21 +138,6 @@ for (f, basef) in ((:pdatazeros, :zeros), (:pdataones, :ones))
     end
 end
 
-# Initialized constructors with false's or true's
-for (f, basef) in ((:pdatafalses, :falses), (:pdatatrues, :trues))
-    @eval begin
-        ($f)(dims::Int...) = PooledDataArray(($basef)(dims...), falses(dims...), Uint8)
-        ($f){R<:Integer}(r::Type{R}, dims::Int...) = PooledDataArray(($basef)(dims...), falses(dims...), r)
-    end
-end
-
-# Super hacked-out constructor: PooledDataVector[1, 2, 2, NA]
-function Base.getindex(::Type{PooledDataVector}, vals...)
-    # For now, just create a DataVector and then convert it
-    # TODO: Rewrite for speed
-    PooledDataArray(DataVector[vals...])
-end
-
 ##############################################################################
 ##
 ## Basic size properties of all Data* objects
