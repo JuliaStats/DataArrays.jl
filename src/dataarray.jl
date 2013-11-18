@@ -25,11 +25,7 @@ function DataArray{T, N}(d::Array{T, N},
     return DataArray{T, N}(d, m)
 end
 
-# A no-op constructor
-# TODO: Remove this?
-DataArray(d::DataArray) = d
-
-# Handle DataArray with Array{Bool} NA values
+# Convert Array{Bool} NA values to a BitArray
 DataArray(d::Array, m::Array{Bool}) = DataArray(d, bitpack(m))
 
 # Convert a BitArray into a DataArray
