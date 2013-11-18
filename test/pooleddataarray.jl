@@ -2,13 +2,13 @@ module TestPDA
 	using Base.Test
 	using DataArrays
 
-	p = PooledDataArray(DataVector[9,9,8,NA,1,1])
+	p = PooledDataArray((@data [9, 9, 8, NA, 1, 1]))
 	pcopy = copy(p)
 	@assert levels(p) == [1,8,9]
 	@assert levels(set_levels(p, ["a", "b", "c"])) == ["a", "b", "c"]
-	@assert removeNA(set_levels(p, DataVector["a", "b", NA])) == ["b", "a", "a"]
-	@assert removeNA(set_levels(p, DataVector["a", "b", "a"])) == ["a", "a", "b", "a", "a"]
-	@assert levels(set_levels(p, DataVector["a", "b", "a"])) == ["a", "b"]
+	@assert removeNA(set_levels(p, (@data ["a", "b", NA]))) == ["b", "a", "a"]
+	@assert removeNA(set_levels(p, (@data ["a", "b", "a"]))) == ["a", "a", "b", "a", "a"]
+	@assert levels(set_levels(p, (@data ["a", "b", "a"]))) == ["a", "b"]
 	@assert levels(set_levels(p, [1 => 111])) == [111, 8, 9]
 	@assert levels(set_levels(p, [1 => 111, 8 => NA])) == [111, 9]
 	@assert levels(PooledDataArray(p, [9,8,1])) == [9,8,1]
@@ -22,7 +22,7 @@ module TestPDA
 
 	@assert levels(set_levels!(copy(p), [10,80,90])) == [10, 80, 90]
 	@assert levels(set_levels!(copy(p), [1,8,1])) == [1, 8]
-	@assert levels(set_levels!(copy(p), DataVector[1,8,NA])) == [1, 8]
+	@assert levels(set_levels!(copy(p), (@data [1, 8, NA]))) == [1, 8]
 	@assert levels(set_levels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
 	@assert levels(set_levels!(copy(p), [1 => 111])) == [111, 8, 9]
 	@assert levels(set_levels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
@@ -32,8 +32,8 @@ module TestPDA
 	@assert length(levels(pp)) == 0
 
 	# Test explicitly setting refs type
-	testarray = [1,1,2,2,0,0,3,3]
-	testdata = DataVector[1,1,2,2,0,0,3,3]
+	testarray = [1, 1, 2, 2, 0, 0, 3, 3]
+	testdata = @data [1, 1, 2, 2, 0, 0, 3, 3]
 	for t in Any[testarray, testdata]
 	    for R in [Uint8, Uint16, Uint32, Uint64]
 	        @assert eltype(PooledDataArray(t, R).refs) == R

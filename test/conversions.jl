@@ -2,8 +2,8 @@ module TestConversions
 	using Base.Test
 	using DataArrays
 
-	@assert isequal(DataVector[1, 2, NA],
-		            DataArray(PooledDataVector[1, 2, NA]))
+	@assert isequal((@data [1, 2, NA]),
+		            DataArray((@pdata [1, 2, NA])))
 
 	# Test vector() and matrix() conversion tools
 	dv = @data ones(5)

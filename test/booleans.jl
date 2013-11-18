@@ -14,13 +14,13 @@ module TestBooleans
 	@assert isna(true & NA)
 	@assert false & NA == false
 
-	@assert any(DataVector[1, 2, NA] .== 1) == true
-	@assert any(DataVector[NA, 1, 2] .== 1) == true
-	@assert isna(any(DataVector[1, 2, NA] .== 3))
-	@assert any(DataVector[1, 2, 3] .== 4) == false
+	@assert any((@data [1, 2, NA]) .== 1) == true
+	@assert any((@data [NA, 1, 2]) .== 1) == true
+	@assert isna(any((@data [1, 2, NA]) .== 3))
+	@assert any((@data [1, 2, 3] ).== 4) == false
 
-	@assert isna(all(DataVector[1, 1, NA] .== 1))
-	@assert isna(all(DataVector[NA, 1, 1] .== 1))
-	@assert all(DataVector[1, 1, 1] .== 1) == true
-	@assert all(DataVector[1, 2, 1] .== 1) == false
+	@assert isna(all((@data [1, 1, NA]) .== 1))
+	@assert isna(all((@data [NA, 1, 1]) .== 1))
+	@assert all((@data [1, 1, 1]) .== 1) == true
+	@assert all((@data [1, 2, 1]) .== 1) == false
 end

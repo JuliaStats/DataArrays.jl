@@ -2,10 +2,10 @@ module TestDataMatrix
 	using Base.Test
 	using DataArrays
 
-	a = DataVector[1.0, 2.0, 3.0]
+	a = @data [1.0, 2.0, 3.0]
 	v_a = [1.0, 2.0, 3.0]
 
-	b = dataeye(3, 3)
+	b = @data eye(3, 3)
 	m_b = eye(3, 3)
 
 	#
@@ -77,7 +77,7 @@ module TestDataMatrix
 	@assert !isna(res[3, 2])
 	@assert !isna(res[3, 3])
 
-	res = b * dataeye(3)
+	res = b * @data eye(3)
 	# 3x3 Float64 DataMatrix:
 	#   NA   NA   NA
 	#  0.0  1.0  0.0
@@ -92,7 +92,7 @@ module TestDataMatrix
 	@assert !isna(res[3, 2])
 	@assert !isna(res[3, 3])
 
-	res = dataeye(3) * b
+	res = (@data eye(3)) * b
 	# julia> dataeye(3) * b
 	# 3x3 Float64 DataMatrix:
 	#  NA  0.0  0.0
@@ -109,21 +109,21 @@ module TestDataMatrix
 	@assert !isna(res[3, 3])
 
 	# Test row operations
-	dm = dataeye(6, 2)
+	dm = @data eye(6, 2)
 	# rowmeans(dm)
 
 	# Test column operations
-	dm = dataeye(6, 2)
+	dm = @data eye(6, 2)
 	# colmeans(dm)
 
 	# Test linear algebra
-	du, dd, dv = svd(dataeye(3, 3))
+	du, dd, dv = svd((@data eye(3, 3)))
 	u, d, v = svd(eye(3, 3))
 	@assert all(du .== u)
 	@assert all(dd .== d)
 	@assert all(dv .== v)
 
 	# Test elementary functions
-	dm = -dataeye(5, 5)
+	dm = -(@data eye(5, 5))
 	@assert all(abs(dm) .== eye(5, 5))
 end
