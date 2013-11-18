@@ -1,16 +1,4 @@
-##############################################################################
-##
-## AbstractDataArray is a type of AbstractArray that can handle NA's
-##
-##############################################################################
-
 abstract AbstractDataArray{T, N} <: AbstractArray{T, N}
-
-##############################################################################
-##
-## DataArray type definition
-##
-##############################################################################
 
 type DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
@@ -26,40 +14,28 @@ type DataArray{T, N} <: AbstractDataArray{T, N}
     end
 end
 
-##############################################################################
-##
-## DataVector and DataMatrix are typealiases for 1D and 2D DataArray's
-##
-##############################################################################
-
 typealias AbstractDataVector{T} AbstractDataArray{T, 1}
 typealias AbstractDataMatrix{T} AbstractDataArray{T, 2}
 typealias DataVector{T} DataArray{T, 1}
 typealias DataMatrix{T} DataArray{T, 2}
 
-##############################################################################
-##
-## DataArray constructors
-##
-##############################################################################
-
 # Need to redefine inner constructor as outer constuctor
-DataArray{T, N}(d::Array{T, N}, m::BitArray{N}) = DataArray{T, N}(d, m)
-
-# Convert an Array into a DataArray w/o NA's
-DataArray(d::Array) = DataArray(d, falses(size(d)))
+function DataArray{T, N}(d::Array{T, N},
+                         m::BitArray{N} = falses(size(d)))
+    return DataArray{T, N}(d, m)
+end
 
 # A no-op constructor
+# TODO: Remove this?
 DataArray(d::DataArray) = d
 
-# Convert Array{Bool}'s to BitArray's to save space
+# Handle DataArray with Array{Bool} NA values
 DataArray(d::Array, m::Array{Bool}) = DataArray(d, bitpack(m))
 
-# Convert a BitArray into a DataArray w/ NA's
-DataArray(d::BitArray, m::BitArray) = DataArray(convert(Array{Bool}, d), m)
-
-# Convert a BitArray into a DataArray w/o NA's
-DataArray(d::BitArray) = DataArray(convert(Array{Bool}, d), falses(size(d)))
+# Convert a BitArray into a DataArray
+function DataArray(d::BitArray, m::BitArray = falses(size(d)))
+    return DataArray(convert(Array{Bool}, d), m)
+end
 
 # Convert a Ranges object into a DataVector
 DataArray(r::Ranges) = DataArray([r], falses(length(r)))
@@ -70,12 +46,7 @@ DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
 DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims...), 
                                                  trues(dims...))
 
-##############################################################################
-##
-## Copying
-##
-##############################################################################
-
+# Copying
 Base.copy(d::DataArray) = DataArray(copy(d.data), copy(d.na))
 Base.deepcopy(d::DataArray) = DataArray(deepcopy(d.data), deepcopy(d.na))
 function Base.copy!(dest::DataArray, src::Any)
@@ -87,52 +58,19 @@ function Base.copy!(dest::DataArray, src::Any)
     return dest
 end
 
-##############################################################################
-##
-## similar()
-##
-##############################################################################
-
+# Similar array allocation
 function Base.similar(d::DataArray, T::Type, dims::Dims)
     DataArray(Array(T, dims), BitArray(dims))
 end
 
-##############################################################################
-##
-## Size information
-##
-##############################################################################
-
+# Size information
 Base.size(d::DataArray) = size(d.data)
 Base.ndims(d::DataArray) = ndims(d.data)
 Base.length(d::DataArray) = length(d.data)
 Base.endof(d::DataArray) = endof(d.data)
 Base.eltype{T, N}(d::DataArray{T, N}) = T
 
-##############################################################################
-##
-## Generic Strategies for dealing with NA's
-##
-## Editing Functions:
-##
-## * failNA: Operations should die on the presence of NA's.
-## * removeNA: What was once called FILTER.
-## * replaceNA: What was once called REPLACE.
-##
-## Iterator Functions:
-##
-## * each_failNA: Operations should die on the presence of NA's.
-## * each_removeNA: What was once called FILTER.
-## * each_replaceNA: What was once called REPLACE.
-##
-## v = failNA(dv)
-##
-## for v in each_failNA(dv)
-##     do_something_with_value(v)
-## end
-##
-##############################################################################
-
+# Dealing with NA's
 function failNA(da::DataArray)
     if anyna(da)
         throw(NAException())
@@ -141,7 +79,7 @@ function failNA(da::DataArray)
     end
 end
 
-# Can do strange things on DataArray of rank > 1
+# NB: Can do strange things on DataArray of rank > 1
 function removeNA(da::DataArray)
     return copy(da.data[!da.na])
 end
@@ -185,9 +123,7 @@ function removeNA{T}(da::AbstractDataVector{T})
     return res[1:total]
 end
 
-function removeNA(a::AbstractArray)
-    return a
-end
+removeNA(a::AbstractArray) = a
 
 function replaceNA{S, T}(da::AbstractDataArray{S}, replacement_val::T)
     res = Array(S, size(da))
@@ -201,9 +137,7 @@ function replaceNA{S, T}(da::AbstractDataArray{S}, replacement_val::T)
     return res
 end
 
-##
-## NA-aware iterators
-##
+# Iterators
 
 type EachFailNA{T}
     da::AbstractDataArray{T}
@@ -258,22 +192,42 @@ function Base.next(itr::EachReplaceNA, ind::Integer)
     end
 end
 
-##############################################################################
-##
-## getindex()
-##
-##############################################################################
+# Indexing
 
+typealias SingleIndex Real
+typealias MultiIndex Union(Vector, BitVector, Ranges, Range1)
+typealias BooleanIndex Union(BitVector, Vector{Bool})
+
+# TODO: Solve ambiguity warnings here without
+#       ridiculous accumulation of methods
 # v[dv]
-function Base.getindex(x::Vector, inds::AbstractDataVector{Bool})
+function Base.getindex(x::Vector,
+                       inds::AbstractDataVector{Bool})
     return x[find(replaceNA(inds, false))]
 end
-function Base.getindex{S, T}(x::Vector{S}, inds::AbstractDataVector{T})
+function Base.getindex(x::Vector,
+                       inds::AbstractDataArray{Bool})
+    return x[find(replaceNA(inds, false))]
+end
+function Base.getindex(x::Array,
+                       inds::AbstractDataVector{Bool})
+    return x[find(replaceNA(inds, false))]
+end
+function Base.getindex(x::Array,
+                       inds::AbstractDataArray{Bool})
+    return x[find(replaceNA(inds, false))]
+end
+function Base.getindex{S, T}(x::Vector{S},
+                             inds::AbstractDataArray{T})
+    return x[removeNA(inds)]
+end
+function Base.getindex{S, T}(x::Array{S},
+                             inds::AbstractDataArray{T})
     return x[removeNA(inds)]
 end
 
 # d[SingleItemIndex]
-function Base.getindex(d::DataArray, i::Real)
+function Base.getindex(d::DataArray, i::SingleIndex)
 	if d.na[i]
 		return NA
 	else
@@ -283,27 +237,26 @@ end
 
 # d[MultiItemIndex]
 # TODO: Return SubDataArray
-function Base.getindex(d::DataArray, inds::AbstractDataVector{Bool})
+function Base.getindex(d::DataArray,
+                       inds::AbstractDataVector{Bool})
     inds = find(replaceNA(inds, false))
     return d[inds]
 end
-# TODO: Return SubDataArray
-function Base.getindex(d::DataArray, inds::AbstractDataVector)
+function Base.getindex(d::DataArray,
+                       inds::AbstractDataVector)
     inds = removeNA(inds)
     return d[inds]
 end
 
+# There are two definitions in order to remove ambiguity warnings
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
-
-## # There are two definitions in order to remove ambiguity warnings
-
-function Base.getindex{T<:Number,N}(d::DataArray{T,N},
-                                    inds::Union(BitVector, Vector{Bool}))
+function Base.getindex{T <: Number, N}(d::DataArray{T,N},
+                                       inds::BooleanIndex)
     DataArray(d.data[inds], d.na[inds])
 end
 
-function Base.getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
+function Base.getindex(d::DataArray, inds::BooleanIndex)
     res = similar(d, sum(inds))
     j = 1
     for i in 1:length(inds)
@@ -314,15 +267,15 @@ function Base.getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
             j += 1
         end
     end
-    res
+    return res
 end
 
-function Base.getindex{T<:Number,N}(d::DataArray{T,N},
-                                    inds::Union(Vector, Ranges, Range1, BitVector))
-    DataArray(d.data[inds], d.na[inds])
+function Base.getindex{T <: Number, N}(d::DataArray{T, N},
+                                       inds::MultiIndex)
+    return DataArray(d.data[inds], d.na[inds])
 end
 
-function Base.getindex(d::DataArray, inds::Union(Vector, Ranges, Range1, BitVector))
+function Base.getindex(d::DataArray, inds::MultiIndex)
     res = similar(d, length(inds))
     for i in 1:length(inds)
         ix = inds[i]
@@ -332,164 +285,70 @@ function Base.getindex(d::DataArray, inds::Union(Vector, Ranges, Range1, BitVect
             res[i] = NA # We could also change this in similar
         end
     end
-    res
+    return res
 end
 
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
 ## # The following assumes that T<:Number won't have #undefs
 ## # There are two definitions in order to remove ambiguity warnings
-Base.getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool})) = DataArray(d.data[inds], d.na[inds])
-Base.getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, Range1, BitVector)) = DataArray(d.data[inds], d.na[inds])
-
-# dv[SingleItemIndex, SingleItemIndex)
-function Base.getindex(d::DataVector, i::Real, j::Real)
-    if j != 1
-        throw(ArgumentError())
-    end
-
-    if d.na[i]
-        return NA
-    else
-        return d.data[i]
-    end
+function Base.getindex{T <: Number, N}(d::DataArray{T, N},
+                                       inds::BooleanIndex)
+    DataArray(d.data[inds], d.na[inds])
+end
+function Base.getindex{T <: Number, N}(d::DataArray{T, N},
+                                       inds::MultiIndex)
+    DataArray(d.data[inds], d.na[inds])
 end
 
-# dm[SingleItemIndex, SingleItemIndex)
-function Base.getindex(d::DataMatrix, i::Real, j::Real)
-    if d.na[i, j]
-        return NA
-    else
-        return d.data[i, j]
-    end
-end
-
-# dm[SingleItemIndex, MultiItemIndex]
-function Base.getindex(x::DataMatrix, i::Real, col_inds::AbstractDataVector{Bool})
-    getindex(x, i, find(replaceNA(col_inds, false)))
-end
-function Base.getindex(x::DataMatrix, i::Real, col_inds::AbstractDataVector)
-    getindex(x, i, removeNA(col_inds))
-end
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-             i::Real,
-             col_inds::Union(Vector, BitVector, Ranges, Range1))
-    DataArray(x.data[i, col_inds], x.na[i, col_inds])
-end
-
-# dm[MultiItemIndex, SingleItemIndex]
-function Base.getindex(x::DataMatrix, row_inds::AbstractDataVector{Bool}, j::Real)
-    getindex(x, find(replaceNA(row_inds, false)), j)
-end
-function Base.getindex(x::DataMatrix, row_inds::AbstractVector, j::Real)
-    getindex(x, removeNA(row_inds), j)
-end
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-             row_inds::Union(Vector, BitVector, Ranges, Range1),
-             j::Real)
-    DataArray(x.data[row_inds, j], x.na[row_inds, j])
-end
-
-# dm[MultiItemIndex, MultiItemIndex]
-function Base.getindex(x::DataMatrix,
-             row_inds::AbstractDataVector{Bool},
-             col_inds::AbstractDataVector{Bool})
-    getindex(x, find(replaceNA(row_inds, false)), find(replaceNA(col_inds, false)))
-end
-function Base.getindex(x::DataMatrix,
-             row_inds::AbstractDataVector{Bool},
-             col_inds::AbstractDataVector)
-    getindex(x, find(replaceNA(row_inds, false)), removeNA(col_inds))
-end
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-             row_inds::AbstractDataVector{Bool},
-             col_inds::Union(Vector, BitVector, Ranges, Range1))
-    getindex(x, find(replaceNA(row_inds, false)), col_inds)
-end
-function Base.getindex(x::DataMatrix,
-             row_inds::AbstractDataVector,
-             col_inds::AbstractDataVector{Bool})
-    getindex(x, removeNA(row_inds), find(replaceNA(col_inds, false)))
-end
-function Base.getindex(x::DataMatrix,
-             row_inds::AbstractDataVector,
-             col_inds::AbstractDataVector)
-    getindex(x, removeNA(row_inds), removeNA(col_inds))
-end
-
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-             row_inds::AbstractDataVector,
-             col_inds::Union(Vector, BitVector, Ranges, Range1))
-    getindex(x, removeNA(row_inds), col_inds)
-end
-
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-             row_inds::Union(Vector, BitVector, Ranges, Range1),
-             col_inds::AbstractDataVector{Bool})
-    getindex(x, row_inds, find(replaceNA(col_inds, false)))
-end
-
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-             row_inds::Union(Vector, BitVector, Ranges, Range1),
-             col_inds::AbstractDataVector)
-    getindex(x, row_inds, removeNA(col_inds))
-end
-
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-             row_inds::Union(Vector, BitVector, Ranges, Range1),
-             col_inds::Union(Vector, BitVector, Ranges, Range1))
-    DataArray(x.data[row_inds, col_inds], x.na[row_inds, col_inds])
-end
-
-##############################################################################
-##
-## setindex!()
-##
-##############################################################################
+# setindex!()
 
 # d[SingleItemIndex] = NA
-function Base.setindex!(da::DataArray, val::NAtype, i::Real)
+function Base.setindex!(da::DataArray, val::NAtype, i::SingleIndex)
 	da.na[i] = true
+    return NA
 end
 
 # d[SingleItemIndex] = Single Item
-function Base.setindex!(da::DataArray, val::Any, i::Real)
+function Base.setindex!(da::DataArray, val::Any, i::SingleIndex)
 	da.data[i] = val
 	da.na[i] = false
+    return val
 end
 
 # d[MultiIndex] = NA
-function Base.setindex!(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector{Bool})
+function Base.setindex!(da::DataArray{NAtype},
+                        val::NAtype,
+                        inds::AbstractVector{Bool})
     throw(ArgumentError("DataArray{NAtype} is incoherent"))
 end
-function Base.setindex!(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector)
+function Base.setindex!(da::DataArray{NAtype},
+                        val::NAtype,
+                        inds::AbstractVector)
     throw(ArgumentError("DataArray{NAtype} is incoherent"))
 end
-function Base.setindex!(da::DataArray, val::NAtype, inds::AbstractVector{Bool})
+function Base.setindex!(da::DataArray,
+                        val::NAtype,
+                        inds::AbstractVector{Bool})
     da.na[find(inds)] = true
     return NA
 end
-function Base.setindex!(da::DataArray, val::NAtype, inds::AbstractVector)
+function Base.setindex!(da::DataArray,
+                        val::NAtype,
+                        inds::AbstractVector)
     da.na[inds] = true
     return NA
 end
 
 # d[MultiIndex] = Multiple Values
 function Base.setindex!(da::AbstractDataArray,
-                vals::AbstractVector,
-                inds::AbstractVector{Bool})
+                        vals::AbstractVector,
+                        inds::AbstractVector{Bool})
     setindex!(da, vals, find(inds))
 end
 function Base.setindex!(da::AbstractDataArray,
-                vals::AbstractVector,
-                inds::AbstractVector)
+                        vals::AbstractVector,
+                        inds::AbstractVector)
     for (val, ind) in zip(vals, inds)
         da[ind] = val
     end
@@ -498,13 +357,13 @@ end
 
 # x[MultiIndex] = Single Item
 function Base.setindex!{T}(da::AbstractDataArray{T},
-                   val::Union(Number, String, T),
-                   inds::AbstractVector{Bool})
+                           val::Union(Number, String, T),
+                           inds::AbstractVector{Bool})
     setindex!(da, val, find(inds))
 end
 function Base.setindex!{T}(da::AbstractDataArray{T},
-                   val::Union(Number, String, T),
-                   inds::AbstractVector)
+                           val::Union(Number, String, T),
+                           inds::AbstractVector)
     val = convert(T, val)
     for ind in inds
         da[ind] = val
@@ -512,13 +371,13 @@ function Base.setindex!{T}(da::AbstractDataArray{T},
     return val
 end
 function Base.setindex!(da::AbstractDataArray,
-                val::Any,
-                inds::AbstractVector{Bool})
+                        val::Any,
+                        inds::AbstractVector{Bool})
     setindex!(da, val, find(inds))
 end
 function Base.setindex!{T}(da::AbstractDataArray{T},
-                   val::Any,
-                   inds::AbstractVector)
+                           val::Any,
+                           inds::AbstractVector)
     val = convert(T, val)
     for ind in inds
         da[ind] = val
@@ -526,111 +385,7 @@ function Base.setindex!{T}(da::AbstractDataArray{T},
     return val
 end
 
-# dm[SingleItemIndex, SingleItemIndex] = NA
-function Base.setindex!(dm::DataMatrix, val::NAtype, i::Real, j::Real)
-    dm.na[i, j] = true
-    return NA
-end
-
-# dm[SingleItemIndex, SingleItemIndex] = Single Item
-function Base.setindex!(dm::DataMatrix, val::Any, i::Real, j::Real)
-    dm.data[i, j] = val
-    dm.na[i, j] = false
-    return val
-end
-
-# dm[MultiItemIndex, SingleItemIndex] = NA
-function Base.setindex!(dm::DataMatrix,
-                val::NAtype,
-                row_inds::Union(Vector, BitVector, Ranges, Range1),
-                j::Real)
-    dm.na[row_inds, j] = true
-    return NA
-end
-
-# dm[MultiItemIndex, SingleItemIndex] = Multiple Items
-function Base.setindex!{S, T}(dm::DataMatrix{S},
-                      vals::Vector{T},
-                      row_inds::Union(Vector, BitVector, Ranges, Range1),
-                      j::Real)
-    dm.data[row_inds, j] = vals
-    dm.na[row_inds, j] = false
-    return val
-end
-
-# dm[MultiItemIndex, SingleItemIndex] = Single Item
-function Base.setindex!(dm::DataMatrix,
-                val::Any,
-                row_inds::Union(Vector, BitVector, Ranges, Range1),
-                j::Real)
-    dm.data[row_inds, j] = val
-    dm.na[row_inds, j] = false
-    return val
-end
-
-# dm[SingleItemIndex, MultiItemIndex] = NA
-function Base.setindex!(dm::DataMatrix,
-                val::NAtype,
-                i::Real,
-                col_inds::Union(Vector, BitVector, Ranges, Range1))
-    dm.na[i, col_inds] = true
-    return NA
-end
-
-# dm[SingleItemIndex, MultiItemIndex] = Multiple Items
-function Base.setindex!{S, T}(dm::DataMatrix{S},
-                      vals::Vector{T},
-                      i::Real,
-                      col_inds::Union(Vector, BitVector, Ranges, Range1))
-    dm.data[i, col_inds] = vals
-    dm.na[i, col_inds] = false
-    return val
-end
-
-# dm[SingleItemIndex, MultiItemIndex] = Single Item
-function Base.setindex!(dm::DataMatrix,
-                val::Any,
-                i::Real,
-                col_inds::Union(Vector, BitVector, Ranges, Range1))
-    dm.data[i, col_inds] = val
-    dm.na[i, col_inds] = false
-    return val
-end
-
-# dm[MultiItemIndex, MultiItemIndex] = NA
-function Base.setindex!(dm::DataMatrix,
-                val::NAtype,
-                row_inds::Union(Vector, BitVector, Ranges, Range1),
-                col_inds::Union(Vector, BitVector, Ranges, Range1))
-    dm.na[row_inds, col_inds] = true
-    return NA
-end
-
-# dm[MultiIndex, MultiIndex] = Multiple Items
-function Base.setindex!{S, T}(dm::DataMatrix{S},
-                      vals::Vector{T},
-                      row_inds::Union(Vector, BitVector, Ranges, Range1),
-                      col_inds::Union(Vector, BitVector, Ranges, Range1))
-    dm.data[row_inds, col_inds] = vals
-    dm.na[row_inds, col_inds] = false
-    return val
-end
-
-# dm[MultiItemIndex, MultiItemIndex] = Single Item
-function Base.setindex!(dm::DataMatrix,
-                val::Any,
-                row_inds::Union(Vector, BitVector, Ranges, Range1),
-                col_inds::Union(Vector, BitVector, Ranges, Range1))
-    dm.data[row_inds, col_inds] = val
-    dm.na[row_inds, col_inds] = false
-    return val
-end
-
-##############################################################################
-##
-## Predicates
-##
-##############################################################################
+# Predicates
 
 isna(da::DataArray) = copy(da.na)
 
@@ -646,11 +401,7 @@ anyna(d::AbstractDataArray) = any(isna, d)
 allna(a::AbstractArray) = false
 allna(d::AbstractDataArray) = allp(isna, d)
 
-##############################################################################
-##
-## Generic iteration over AbstractDataArray's
-##
-##############################################################################
+# Generic iteration over AbstractDataArray's
 
 Base.start(x::AbstractDataArray) = 1
 
@@ -662,24 +413,17 @@ function Base.done(x::AbstractDataArray, state::Integer)
     return state > length(x)
 end
 
-##############################################################################
-##
-## Promotion rules
-##
-##############################################################################
+# Promotion rules
 
-## promote_rule{T, T}(::Type{AbstractDataArray{T}},
-##                    ::Type{T}) = promote_rule(T, T)
-## promote_rule{S, T}(::Type{AbstractDataArray{S}},
-##                    ::Type{T}) = promote_rule(S, T)
-## promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
+# promote_rule{T, T}(::Type{AbstractDataArray{T}},
+#                    ::Type{T}) = promote_rule(T, T)
+# promote_rule{S, T}(::Type{AbstractDataArray{S}},
+#                    ::Type{T}) = promote_rule(S, T)
+# promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
 
-##############################################################################
-##
-## Conversion rules
-##
-##############################################################################
+# Conversion rules
 
+# TODO: Remove this
 function Base.convert{N}(::Type{BitArray{N}}, d::DataArray{BitArray{N}, N})
     throw(ArgumentError("Can't convert to BitArray"))
 end
@@ -710,17 +454,13 @@ function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N})
     return DataArray(convert(Array{S}, x.data), x.na)
 end
 
-##############################################################################
-##
-## Conversion convenience functions
-##
-##############################################################################
+# Conversion convenience functions
 
 # TODO: Make sure these handle copying correctly
 # Data -> Not Data
 for f in (:(Base.int), :(Base.float), :(Base.bool))
     @eval begin
-        function ($f){T}(da::DataArray{T})
+        function ($f)(da::DataArray)
             if anyna(da)
                 err = "Cannot convert DataArray with NA's to desired type"
                 throw(NAException(err))
@@ -733,37 +473,20 @@ end
 
 # Not Data -> Data
 # Data{T} -> Data{S}
-for (f, basef) in ((:dataint, :int), (:datafloat, :float64), (:databool, :bool))
+for (f, basef) in ((:dataint, :int),
+                   (:datafloat, :float64),
+                   (:databool, :bool))
     @eval begin
-        function ($f){T}(a::Array{T})
+        function ($f)(a::Array)
             DataArray(($basef)(a))
         end
-        function ($f){T}(da::DataArray{T})
+        function ($f)(da::DataArray)
             DataArray(($basef)(da.data), copy(da.na))
         end
     end
 end
 
-##############################################################################
-##
-## padNA
-##
-##############################################################################
-
-function padNA(dv::AbstractDataVector, front::Integer, back::Integer)
-    n = length(dv)
-    res = similar(dv, front + n + back)
-    for i in 1:n
-        res[i + front] = dv[i]
-    end
-    return res
-end
-
-##############################################################################
-##
-## Conversion
-##
-##############################################################################
+# Conversion to Array
 
 # TODO: Review these
 function vector(adv::AbstractDataVector, t::Type, replacement_val::Any)
@@ -778,6 +501,7 @@ function vector(adv::AbstractDataVector, t::Type, replacement_val::Any)
     end
     return res
 end
+
 function vector(adv::AbstractDataVector, t::Type)
     n = length(adv)
     res = Array(t, n)
@@ -786,7 +510,9 @@ function vector(adv::AbstractDataVector, t::Type)
     end
     return res
 end
+
 vector{T}(adv::AbstractDataVector{T}) = vector(adv, T)
+
 vector{T}(v::Vector{T}) = v
 
 function matrix(adm::AbstractDataMatrix, t::Type, replacement_val::Any)
@@ -803,6 +529,7 @@ function matrix(adm::AbstractDataMatrix, t::Type, replacement_val::Any)
     end
     return res
 end
+
 function matrix(adm::AbstractDataMatrix, t::Type)
     n, p = size(adm)
     res = Array(t, n, p)
@@ -813,15 +540,11 @@ function matrix(adm::AbstractDataMatrix, t::Type)
     end
     return res
 end
+
 matrix{T}(adm::AbstractDataMatrix{T}) = matrix(adm, T)
 
-##############################################################################
-##
-## Hashing
-##
-## Make sure this agrees with is_equals()
-##
-##############################################################################
+# Hashing
+# TODO: Make sure this agrees with is_equals()
 
 function Base.hash(a::AbstractDataArray)
     h = hash(size(a)) + 1

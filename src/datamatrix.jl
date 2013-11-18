@@ -1,27 +1,224 @@
-##############################################################################
-##
-## Matrix constructors
-##
-##############################################################################
-
-for (f, basef) in ((:dataeye, :eye), )
-    @eval begin
-        ($f)(n::Int) = DataArray(($basef)(n), falses(n, n))
-        ($f)(n::Int, p::Int) = DataArray(($basef)(n, p), falses(n, p))
-    end
-end
-for (f, basef) in ((:datadiagm, :diagm), )
-    @eval begin
-        ($f)(vals::Vector) = DataArray(($basef)(vals), falses(length(vals), length(vals)))
+# dm[SingleItemIndex, SingleItemIndex)
+function Base.getindex(d::DataMatrix,
+                       i::SingleIndex,
+                       j::SingleIndex)
+    if d.na[i, j]
+        return NA
+    else
+        return d.data[i, j]
     end
 end
 
-##############################################################################
-##
-## Extract the matrix diagonal
-##
-##############################################################################
-
-function Base.diag{T}(dm::DataMatrix{T})
-    return DataArray(diag(dm.data), diag(dm.na))
+# dm[SingleItemIndex, MultiItemIndex]
+function Base.getindex(x::DataMatrix,
+                       i::SingleIndex,
+                       col_inds::AbstractDataVector{Bool})
+    getindex(x, i, find(replaceNA(col_inds, false)))
 end
+function Base.getindex(x::DataMatrix,
+                       i::SingleIndex,
+                       col_inds::AbstractDataVector)
+    getindex(x, i, removeNA(col_inds))
+end
+# TODO: Make inds::AbstractVector
+function Base.getindex(x::DataMatrix,
+                       i::SingleIndex,
+                       col_inds::MultiIndex)
+    DataArray(x.data[i, col_inds], x.na[i, col_inds])
+end
+
+# dm[MultiItemIndex, SingleItemIndex]
+function Base.getindex(x::DataMatrix,
+                       row_inds::AbstractDataVector{Bool},
+                       j::SingleIndex)
+    getindex(x, find(replaceNA(row_inds, false)), j)
+end
+function Base.getindex(x::DataMatrix,
+                       row_inds::AbstractVector,
+                       j::SingleIndex)
+    getindex(x, removeNA(row_inds), j)
+end
+# TODO: Make inds::AbstractVector
+function Base.getindex(x::DataMatrix,
+                       row_inds::MultiIndex,
+                       j::SingleIndex)
+    DataArray(x.data[row_inds, j], x.na[row_inds, j])
+end
+
+# dm[MultiItemIndex, MultiItemIndex]
+function Base.getindex(x::DataMatrix,
+                       row_inds::AbstractDataVector{Bool},
+                       col_inds::AbstractDataVector{Bool})
+    return getindex(x,
+                    find(replaceNA(row_inds, false)),
+                    find(replaceNA(col_inds, false)))
+end
+function Base.getindex(x::DataMatrix,
+                       row_inds::AbstractDataVector{Bool},
+                       col_inds::AbstractDataVector)
+    return getindex(x,
+                    find(replaceNA(row_inds, false)),
+                    removeNA(col_inds))
+end
+# TODO: Make inds::AbstractVector
+function Base.getindex(x::DataMatrix,
+                       row_inds::AbstractDataVector{Bool},
+                       col_inds::MultiIndex)
+    return getindex(x,
+                    find(replaceNA(row_inds, false)),
+                    col_inds)
+end
+function Base.getindex(x::DataMatrix,
+                       row_inds::AbstractDataVector,
+                       col_inds::AbstractDataVector{Bool})
+    return getindex(x,
+                    removeNA(row_inds),
+                    find(replaceNA(col_inds, false)))
+end
+function Base.getindex(x::DataMatrix,
+                       row_inds::AbstractDataVector,
+                       col_inds::AbstractDataVector)
+    return getindex(x,
+                    removeNA(row_inds),
+                    removeNA(col_inds))
+end
+
+# TODO: Make inds::AbstractVector
+function Base.getindex(x::DataMatrix,
+                       row_inds::AbstractDataVector,
+                       col_inds::MultiIndex)
+    return getindex(x, removeNA(row_inds), col_inds)
+end
+
+# TODO: Make inds::AbstractVector
+function Base.getindex(x::DataMatrix,
+                       row_inds::MultiIndex,
+                       col_inds::AbstractDataVector{Bool})
+    return getindex(x,
+                    row_inds,
+                    find(replaceNA(col_inds, false)))
+end
+
+# TODO: Make inds::AbstractVector
+function Base.getindex(x::DataMatrix,
+                       row_inds::MultiIndex,
+                       col_inds::AbstractDataVector)
+    return getindex(x, row_inds, removeNA(col_inds))
+end
+
+# TODO: Make inds::AbstractVector
+function Base.getindex(x::DataMatrix,
+                       row_inds::MultiIndex,
+                       col_inds::MultiIndex)
+    return DataArray(x.data[row_inds, col_inds],
+                     x.na[row_inds, col_inds])
+end
+
+# dm[SingleItemIndex, SingleItemIndex] = NA
+function Base.setindex!(dm::DataMatrix,
+                        val::NAtype,
+                        i::SingleIndex,
+                        j::SingleIndex)
+    dm.na[i, j] = true
+    return NA
+end
+
+# dm[SingleItemIndex, SingleItemIndex] = Single Item
+function Base.setindex!(dm::DataMatrix,
+                        val::Any,
+                        i::SingleIndex,
+                        j::SingleIndex)
+    dm.data[i, j] = val
+    dm.na[i, j] = false
+    return val
+end
+
+# dm[MultiItemIndex, SingleItemIndex] = NA
+function Base.setindex!(dm::DataMatrix,
+                        val::NAtype,
+                        row_inds::MultiIndex,
+                        j::SingleIndex)
+    dm.na[row_inds, j] = true
+    return NA
+end
+
+# dm[MultiItemIndex, SingleItemIndex] = Multiple Items
+function Base.setindex!{S, T}(dm::DataMatrix{S},
+                              vals::Vector{T},
+                              row_inds::MultiIndex,
+                              j::SingleIndex)
+    dm.data[row_inds, j] = vals
+    dm.na[row_inds, j] = false
+    return val
+end
+
+# dm[MultiItemIndex, SingleItemIndex] = Single Item
+function Base.setindex!(dm::DataMatrix,
+                        val::Any,
+                        row_inds::MultiIndex,
+                        j::SingleIndex)
+    dm.data[row_inds, j] = val
+    dm.na[row_inds, j] = false
+    return val
+end
+
+# dm[SingleItemIndex, MultiItemIndex] = NA
+function Base.setindex!(dm::DataMatrix,
+                        val::NAtype,
+                        i::SingleIndex,
+                        col_inds::MultiIndex)
+    dm.na[i, col_inds] = true
+    return NA
+end
+
+# dm[SingleItemIndex, MultiItemIndex] = Multiple Items
+function Base.setindex!{S, T}(dm::DataMatrix{S},
+                              vals::Vector{T},
+                              i::SingleIndex,
+                              col_inds::MultiIndex)
+    dm.data[i, col_inds] = vals
+    dm.na[i, col_inds] = false
+    return val
+end
+
+# dm[SingleItemIndex, MultiItemIndex] = Single Item
+function Base.setindex!(dm::DataMatrix,
+                        val::Any,
+                        i::SingleIndex,
+                        col_inds::MultiIndex)
+    dm.data[i, col_inds] = val
+    dm.na[i, col_inds] = false
+    return val
+end
+
+# dm[MultiItemIndex, MultiItemIndex] = NA
+function Base.setindex!(dm::DataMatrix,
+                        val::NAtype,
+                        row_inds::MultiIndex,
+                        col_inds::MultiIndex)
+    dm.na[row_inds, col_inds] = true
+    return NA
+end
+
+# dm[MultiIndex, MultiIndex] = Multiple Items
+function Base.setindex!{S, T}(dm::DataMatrix{S},
+                              vals::Vector{T},
+                              row_inds::MultiIndex,
+                              col_inds::MultiIndex)
+    dm.data[row_inds, col_inds] = vals
+    dm.na[row_inds, col_inds] = false
+    return val
+end
+
+# dm[MultiItemIndex, MultiItemIndex] = Single Item
+function Base.setindex!(dm::DataMatrix,
+                        val::Any,
+                        row_inds::MultiIndex,
+                        col_inds::MultiIndex)
+    dm.data[row_inds, col_inds] = val
+    dm.na[row_inds, col_inds] = false
+    return val
+end
+
+# Extract the matrix diagonal
+Base.diag{T}(dm::DataMatrix{T}) = DataArray(diag(dm.data), diag(dm.na))

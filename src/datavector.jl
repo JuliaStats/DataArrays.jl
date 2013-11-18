@@ -1,31 +1,18 @@
-# Super-hacked out constructor: DataVector[1, 2, NA]
-function Base.getindex(::Type{DataVector}, vals...)
-    # Get the most generic non-NA type
-    toptype = _dv_most_generic_type(vals)
-
-    # Allocate an empty DataVector
-    lenvals = length(vals)
-    res = DataArray(Array(toptype, lenvals), BitArray(lenvals))
-
-    # Copy from vals into data and mask
-    for i = 1:lenvals
-        if isna(vals[i])
-            res.data[i] = baseval(toptype)
-            res.na[i] = true
-        else
-            res.data[i] = vals[i]
-            res.na[i] = false
-        end
+# dv[SingleItemIndex, SingleItemIndex)
+function Base.getindex(d::DataVector,
+                       i::SingleIndex,
+                       j::SingleIndex)
+    if j != 1
+        throw(ArgumentError())
     end
-
-    return res
+    if d.na[i]
+        return NA
+    else
+        return d.data[i]
+    end
 end
 
-##############################################################################
-##
-## find()
-##
-##############################################################################
+# find()
 
 function Base.find(dv::AbstractDataVector{Bool})
     n = length(dv)
@@ -40,22 +27,13 @@ function Base.find(dv::AbstractDataVector{Bool})
     return res[1:bound]
 end
 
-##############################################################################
-##
-## String representations and printing
-##
-## TODO: Inherit these from AbstractArray after implementing DataArray
-##
-##############################################################################
+# String representations and printing
+# TODO: Inherit these from AbstractArray after implementing DataArray
 
 head(dv::AbstractDataVector) = dv[1:min(6, length(dv))]
 tail(dv::AbstractDataVector) = dv[max(length(dv) - 6, 1):length(dv)]
 
-##############################################################################
-##
-## Container operations
-##
-##############################################################################
+# Container operations
 
 # TODO: Macroize these definitions
 
@@ -101,7 +79,8 @@ function Base.shift!{T}(dv::DataVector{T})
     end
 end
 
-function Base.map(f::Function, dv::DataVector)   # should this be an AbstractDataVector, so it works with PDV's?
+# TODO: should this be an AbstractDataVector, so it works with PDV's?
+function Base.map(f::Function, dv::DataVector)
     n = length(dv)
     res = DataArray(Any, n)
     for i in 1:n
@@ -137,3 +116,17 @@ end
 Base.shift!(pdv::PooledDataVector) = pdv.pool[shift!(pdv.refs)]
 
 Base.reverse(x::AbstractDataVector) = x[end:-1:1]
+
+# Pad a vector with NA's
+# TODO: Move this into DataVector.jl
+
+function padNA(dv::AbstractDataVector,
+               front::Integer,
+               back::Integer)
+    n = length(dv)
+    res = similar(dv, front + n + back)
+    for i in 1:n
+        res[i + front] = dv[i]
+    end
+    return res
+end
