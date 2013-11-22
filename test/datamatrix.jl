@@ -29,7 +29,7 @@ module TestDataMatrix
 	#
 
 	@assert all(b * a .== m_b * v_a)
-	@assert all(vector(b * a) .== m_b * v_a)
+	@assert all(array(b * a) .== m_b * v_a)
 
 	#
 	# DataMatrix * DataMatrix

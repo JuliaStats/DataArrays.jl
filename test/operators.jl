@@ -297,9 +297,9 @@ module TestOperators
     @assert isna(NA == NA)
     @assert isna(NA != NA)
 
-    function test_da_eq(v1, v2, out)
-        for a in (v1, DataArray(v1), PooledDataArray(v1))
-            for b in (v2, DataArray(v2), PooledDataArray(v2))
+    function test_da_eq(v1::AbstractArray, v2::AbstractArray, out)
+        for a in (v1, convert(DataArray, v1), convert(PooledDataArray, v1))
+            for b in (v2, convert(DataArray, v2), convert(PooledDataArray, v2))
                 try
                     @assert isequal(a == b, out)
                     @assert isequal(b == a, out)

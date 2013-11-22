@@ -26,7 +26,6 @@ module TestConstructors
 
 	dv = DataArray([1, 2, 3], falses(3))
 	@assert isequal(dv, DataArray(1:3))
-	@assert isequal(dv, DataArray(DataArray([1, 2, 3])))
 
 	dv = DataArray(Int, 3)
 	@assert isequal(eltype(dv), Int)
@@ -98,8 +97,6 @@ module TestConstructors
 	@assert isequal(dm.na, falses(2, 2))
 
 	@assert isequal(dm, DataArray(trues(2, 2)))
-
-	@assert isequal(DataArray([1 2; 3 4]), DataArray(DataArray([1 2; 3 4])))
 
 	dm = DataArray(Int, 2, 2)
 	@assert isequal(eltype(dm), Int)
