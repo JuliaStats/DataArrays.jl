@@ -124,9 +124,7 @@ function padNA(dv::AbstractDataVector,
                front::Integer,
                back::Integer)
     n = length(dv)
-    res = similar(dv, front + n + back)
-    for i in 1:n
-        res[i + front] = dv[i]
-    end
-    return res
+    [unshift!(dv, NA) for i = 1:front]
+    [push!(dv, NA) for i = 1:back]
+    return dv
 end
