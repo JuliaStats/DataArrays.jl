@@ -123,7 +123,6 @@ Base.reverse(x::AbstractDataVector) = x[end:-1:1]
 function padNA(dv::AbstractDataVector,
                front::Integer,
                back::Integer)
-    n = length(dv)
     [unshift!(dv, NA) for i = 1:front]
     [push!(dv, NA) for i = 1:back]
     return dv
