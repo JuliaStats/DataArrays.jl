@@ -56,7 +56,7 @@ end
 
 # Similar array allocation
 function Base.similar(d::DataArray, T::Type, dims::Dims)
-    DataArray(Array(T, dims), BitArray(dims))
+    DataArray(Array(T, dims), trues(dims))
 end
 
 # Size information
