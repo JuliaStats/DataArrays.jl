@@ -12,6 +12,7 @@ module DataArrays
            AbstractDataVector,
            allna,
            anyna,
+           array,
            autocor,
            compact,
            cut,
@@ -37,7 +38,6 @@ module DataArrays
            isna,
            level_to_index,
            levels,
-           matrix,
            NA,
            NAException,
            NAtype,
@@ -60,7 +60,6 @@ module DataArrays
            set_levels!,
            set_levels,
            tail,
-           vector,
            xtab,
            xtabs
 

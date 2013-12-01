@@ -46,10 +46,8 @@ DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims...),
 Base.copy(d::DataArray) = DataArray(copy(d.data), copy(d.na))
 Base.deepcopy(d::DataArray) = DataArray(deepcopy(d.data), deepcopy(d.na))
 function Base.copy!(dest::DataArray, src::Any)
-    i = 1
-    for x in src
-        dest[i] = x
-        i += 1
+    for i in 1:length(src)
+        dest[i] = src[i]
     end
     return dest
 end
@@ -66,43 +64,36 @@ Base.length(d::DataArray) = length(d.data)
 Base.endof(d::DataArray) = endof(d.data)
 Base.eltype{T, N}(d::DataArray{T, N}) = T
 
-# Dealing with NA's
-function failNA(da::DataArray)
-    if anyna(da)
-        throw(NAException())
-    else
-        return copy(da.data)
-    end
-end
-
-# NB: Can do strange things on DataArray of rank > 1
-function removeNA(da::DataArray)
-    return copy(da.data[!da.na])
-end
-
-function replaceNA(da::DataArray, replacement_val::Any)
-    res = copy(da.data)
-    for i in 1:length(da)
+# Turn a DataArray into an Array. Fail on NA
+function array{T}(da::DataArray{T})
+    n = length(da)
+    res = Array(T, size(da))
+    for i in 1:n
         if da.na[i]
-            res[i] = replacement_val
+            error(NAException())
+        else
+            res[i] = da.data[i]
         end
     end
     return res
 end
 
-replaceNA(replacement_val::Any) = x -> replaceNA(x, replacement_val)
-
-# TODO: Re-implement these methods for PooledDataArray's
-function failNA{T}(da::AbstractDataArray{T})
-    if anyna(da)
-        throw(NAException())
-    else
-        res = Array(T, size(da))
-        for i in 1:length(da)
-            res[i] = da[i]
+function array{T}(da::DataArray{T}, replacement::T)
+    n = length(da)
+    res = Array(T, size(da))
+    for i in 1:n
+        if da.na[i]
+            res[i] = replacement
+        else
+            res[i] = da.data[i]
         end
-        return res
     end
+    return res
+end
+
+# NB: Can do strange things on DataArray of rank > 1
+function removeNA(da::DataArray)
+    return copy(da.data[!da.na])
 end
 
 # TODO: Figure out how to make this work for Array's
@@ -121,20 +112,7 @@ end
 
 removeNA(a::AbstractArray) = a
 
-function replaceNA{S, T}(da::AbstractDataArray{S}, replacement_val::T)
-    res = Array(S, size(da))
-    for i in 1:length(da)
-        if isna(da[i])
-            res[i] = replacement_val
-        else
-            res[i] = da[i]
-        end
-    end
-    return res
-end
-
 # Iterators
-
 type EachFailNA{T}
     da::AbstractDataArray{T}
 end
@@ -199,19 +177,19 @@ typealias BooleanIndex Union(BitVector, Vector{Bool})
 # v[dv]
 function Base.getindex(x::Vector,
                        inds::AbstractDataVector{Bool})
-    return x[find(replaceNA(inds, false))]
+    return x[find(array(inds, replace = false))]
 end
 function Base.getindex(x::Vector,
                        inds::AbstractDataArray{Bool})
-    return x[find(replaceNA(inds, false))]
+    return x[find(array(inds, replace = false))]
 end
 function Base.getindex(x::Array,
                        inds::AbstractDataVector{Bool})
-    return x[find(replaceNA(inds, false))]
+    return x[find(array(inds, replace = false))]
 end
 function Base.getindex(x::Array,
                        inds::AbstractDataArray{Bool})
-    return x[find(replaceNA(inds, false))]
+    return x[find(array(inds, replace = false))]
 end
 function Base.getindex{S, T}(x::Vector{S},
                              inds::AbstractDataArray{T})
@@ -235,7 +213,7 @@ end
 # TODO: Return SubDataArray
 function Base.getindex(d::DataArray,
                        inds::AbstractDataVector{Bool})
-    inds = find(replaceNA(inds, false))
+    inds = find(array(inds, replace = false))
     return d[inds]
 end
 function Base.getindex(d::DataArray,
@@ -446,8 +424,20 @@ function Base.convert{S, T, N}(::Type{Array{S, N}}, x::DataArray{T, N})
     end
 end
 
+function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::Array{T, N})
+    return DataArray(convert(Array{S}, x), falses(size(x)))
+end
+
+function Base.convert{T, N}(::Type{DataArray}, x::Array{T, N})
+    return DataArray(x, falses(size(x)))
+end
+
 function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N})
     return DataArray(convert(Array{S}, x.data), x.na)
+end
+
+function Base.convert{T, N}(::Type{DataArray}, x::DataArray{T, N})
+    return DataArray(x.data, x.na)
 end
 
 # Conversion convenience functions
@@ -481,63 +471,6 @@ for (f, basef) in ((:dataint, :int),
         end
     end
 end
-
-# Conversion to Array
-
-# TODO: Review these
-function vector(adv::AbstractDataVector, t::Type, replacement_val::Any)
-    n = length(adv)
-    res = Array(t, n)
-    for i in 1:n
-        if isna(adv[i])
-            res[i] = replacement_val
-        else
-            res[i] = adv[i]
-        end
-    end
-    return res
-end
-
-function vector(adv::AbstractDataVector, t::Type)
-    n = length(adv)
-    res = Array(t, n)
-    for i in 1:n
-        res[i] = adv[i]
-    end
-    return res
-end
-
-vector{T}(adv::AbstractDataVector{T}) = vector(adv, T)
-
-vector{T}(v::Vector{T}) = v
-
-function matrix(adm::AbstractDataMatrix, t::Type, replacement_val::Any)
-    n, p = size(adm)
-    res = Array(t, n, p)
-    for i in 1:n
-        for j in 1:p
-            if isna(adm[i, j])
-                res[i, j] = replacement_val
-            else
-                res[i, j] = adm[i, j]
-            end
-        end
-    end
-    return res
-end
-
-function matrix(adm::AbstractDataMatrix, t::Type)
-    n, p = size(adm)
-    res = Array(t, n, p)
-    for i in 1:n
-        for j in 1:p
-            res[i, j] = adm[i, j]
-        end
-    end
-    return res
-end
-
-matrix{T}(adm::AbstractDataMatrix{T}) = matrix(adm, T)
 
 # Hashing
 # TODO: Make sure this agrees with is_equals()

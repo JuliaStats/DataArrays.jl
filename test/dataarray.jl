@@ -15,10 +15,6 @@ module TestDataArray
 	dv = DataArray(v)
 	dv = DataArray(v, [false, false, false, false])
 
-	dv = DataArray(dv)
-	dm = DataArray(dm)
-	dt = DataArray(dt)
-
 	dv = DataArray(Int, 2)
 	dm = DataArray(Int, 2, 2)
 	dt = DataArray(Int, 2, 2, 2)
