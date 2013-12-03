@@ -13,7 +13,7 @@ end
 function Base.getindex(x::DataMatrix,
                        i::SingleIndex,
                        col_inds::AbstractDataVector{Bool})
-    getindex(x, i, find(replaceNA(col_inds, false)))
+    getindex(x, i, find(col_inds))
 end
 function Base.getindex(x::DataMatrix,
                        i::SingleIndex,
@@ -31,7 +31,7 @@ end
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector{Bool},
                        j::SingleIndex)
-    getindex(x, find(replaceNA(row_inds, false)), j)
+    getindex(x, find(row_inds), j)
 end
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractVector,
@@ -50,14 +50,14 @@ function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector{Bool},
                        col_inds::AbstractDataVector{Bool})
     return getindex(x,
-                    find(replaceNA(row_inds, false)),
-                    find(replaceNA(col_inds, false)))
+                    find(row_inds),
+                    find(col_inds))
 end
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector{Bool},
                        col_inds::AbstractDataVector)
     return getindex(x,
-                    find(replaceNA(row_inds, false)),
+                    find(row_inds),
                     removeNA(col_inds))
 end
 # TODO: Make inds::AbstractVector
@@ -65,7 +65,7 @@ function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector{Bool},
                        col_inds::MultiIndex)
     return getindex(x,
-                    find(replaceNA(row_inds, false)),
+                    find(row_inds),
                     col_inds)
 end
 function Base.getindex(x::DataMatrix,
@@ -73,7 +73,7 @@ function Base.getindex(x::DataMatrix,
                        col_inds::AbstractDataVector{Bool})
     return getindex(x,
                     removeNA(row_inds),
-                    find(replaceNA(col_inds, false)))
+                    find(col_inds))
 end
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector,
@@ -96,7 +96,7 @@ function Base.getindex(x::DataMatrix,
                        col_inds::AbstractDataVector{Bool})
     return getindex(x,
                     row_inds,
-                    find(replaceNA(col_inds, false)))
+                    find(col_inds))
 end
 
 # TODO: Make inds::AbstractVector

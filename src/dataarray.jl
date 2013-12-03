@@ -64,6 +64,9 @@ Base.length(d::DataArray) = length(d.data)
 Base.endof(d::DataArray) = endof(d.data)
 Base.eltype{T, N}(d::DataArray{T, N}) = T
 
+# Find
+Base.find(da::AbstractDataArray{Bool}) = find(array(da, false))
+
 # Turn a DataArray into an Array. Fail on NA
 function array{T}(da::DataArray{T})
     n = length(da)
@@ -177,19 +180,19 @@ typealias BooleanIndex Union(BitVector, Vector{Bool})
 # v[dv]
 function Base.getindex(x::Vector,
                        inds::AbstractDataVector{Bool})
-    return x[find(array(inds, replace = false))]
+    return x[find(inds)]
 end
 function Base.getindex(x::Vector,
                        inds::AbstractDataArray{Bool})
-    return x[find(array(inds, replace = false))]
+    return x[find(inds)]
 end
 function Base.getindex(x::Array,
                        inds::AbstractDataVector{Bool})
-    return x[find(array(inds, replace = false))]
+    return x[find(inds)]
 end
 function Base.getindex(x::Array,
                        inds::AbstractDataArray{Bool})
-    return x[find(array(inds, replace = false))]
+    return x[find(inds)]
 end
 function Base.getindex{S, T}(x::Vector{S},
                              inds::AbstractDataArray{T})
@@ -213,7 +216,7 @@ end
 # TODO: Return SubDataArray
 function Base.getindex(d::DataArray,
                        inds::AbstractDataVector{Bool})
-    inds = find(array(inds, replace = false))
+    inds = find(inds)
     return d[inds]
 end
 function Base.getindex(d::DataArray,
