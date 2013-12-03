@@ -818,19 +818,19 @@ function Base.convert{T, N}(::Type{PooledDataArray}, x::DataArray{T, N})
 end
 
 function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}}, x::PooledDataArray{T, N})
-    return PooledDataArray(convert(Array{S}, x.data), x.na)
+    return PooledDataArray(convert(Array{S}, x), find(x.refs .== 0))
 end
 
 function Base.convert{T, N}(::Type{PooledDataArray}, x::PooledDataArray{T, N})
-    return PooledDataArray(x.data, x.na)
+    return PooledDataArray(values(x), find(x.refs .== 0))
 end
 
 function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::PooledDataArray{T, N})
-    return PooledDataArray(convert(Array{S}, x.data), x.na)
+    return convert(DataArray{S, N}, values(x))
 end
 
 function Base.convert{T, N}(::Type{DataArray}, x::PooledDataArray{T, N})
-    return PooledDataArray(x.data, x.na)
+    return values(x)
 end
 
 # Turn a PooledDataArray into an Array. Fail on NA
