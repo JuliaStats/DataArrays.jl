@@ -12,21 +12,6 @@ function Base.getindex(d::DataVector,
     end
 end
 
-# find()
-
-function Base.find(dv::AbstractDataVector{Bool})
-    n = length(dv)
-    res = Array(Int, n)
-    bound = 0
-    for i in 1:length(dv)
-        if !isna(dv[i]) && dv[i]
-            bound += 1
-            res[bound] = i
-        end
-    end
-    return res[1:bound]
-end
-
 # String representations and printing
 # TODO: Inherit these from AbstractArray after implementing DataArray
 

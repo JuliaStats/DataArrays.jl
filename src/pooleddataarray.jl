@@ -373,7 +373,7 @@ end
 ##
 ##############################################################################
 
-Base.find(pdv::PooledDataVector{Bool}) = find(values(pdv))
+Base.find(pdv::PooledDataVector{Bool}) = find(array(pdv, false))
 
 ##############################################################################
 ##
@@ -392,7 +392,7 @@ end
 
 # pda[MultiItemIndex]
 function Base.getindex(pda::PooledDataArray, inds::AbstractDataVector{Bool})
-    inds = find(replaceNA(inds, false))
+    inds = find(inds)
     return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
 end
 function Base.getindex(pda::PooledDataArray, inds::AbstractDataVector)
@@ -414,7 +414,7 @@ end
 
 # pda[SingleItemIndex, MultiItemIndex]
 function Base.getindex(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector{Bool})
-    getindex(pda, i, find(replaceNA(col_inds, false)))
+    getindex(pda, i, find(col_inds))
 end
 function Base.getindex(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector)
     getindex(pda, i, removeNA(col_inds))
@@ -429,7 +429,7 @@ end
 
 # pda[MultiItemIndex, SingleItemIndex]
 function Base.getindex(pda::PooledDataArray, row_inds::AbstractDataVector{Bool}, j::Real)
-    getindex(pda, find(replaceNA(row_inds, false)), j)
+    getindex(pda, find(row_inds), j)
 end
 function Base.getindex(pda::PooledDataArray, row_inds::AbstractVector, j::Real)
     getindex(pda, removeNA(row_inds), j)
@@ -446,23 +446,23 @@ end
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector{Bool},
              col_inds::AbstractDataVector{Bool})
-    getindex(pda, find(replaceNA(row_inds, false)), find(replaceNA(col_inds, false)))
+    getindex(pda, find(row_inds), find(col_inds))
 end
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector{Bool},
              col_inds::AbstractDataVector)
-    getindex(pda, find(replaceNA(row_inds, false)), removeNA(col_inds))
+    getindex(pda, find(row_inds), removeNA(col_inds))
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector{Bool},
              col_inds::Union(Vector, BitVector, Ranges))
-    getindex(pda, find(replaceNA(row_inds, false)), col_inds)
+    getindex(pda, find(row_inds), col_inds)
 end
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector,
              col_inds::AbstractDataVector{Bool})
-    getindex(pda, removeNA(row_inds), find(replaceNA(col_inds, false)))
+    getindex(pda, removeNA(row_inds), find(col_inds))
 end
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector,
@@ -479,7 +479,7 @@ end
 function Base.getindex(pda::PooledDataArray,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector{Bool})
-    getindex(pda, row_inds, find(replaceNA(col_inds, false)))
+    getindex(pda, row_inds, find(col_inds))
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
