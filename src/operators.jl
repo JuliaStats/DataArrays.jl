@@ -499,7 +499,7 @@ for f in (:(Base.(:&)), :(Base.(:|)), :(Base.(:$)))
     @eval begin
         # Scalar with NA
         ($f)(::NAtype, ::NAtype) = NA
-        @swappable ($f)(::NAtype, b) = NA
+        @swappable ($f)(::NAtype, b::Integer) = NA
     end
 end
 
@@ -517,7 +517,7 @@ for t in (:(BitArray), :(Union(AbstractArray{Bool}, Bool)))
     @eval begin
         @swappable Base.(:&)(a::DataArray{Bool}, b::$t) = DataArray(a.data & b, a.na & b)
         @swappable Base.(:|)(a::DataArray{Bool}, b::$t) = DataArray(a.data | b, a.na & !b)
-        @swappable Base.(:$)(a::DataArray{Bool}, b::$t) = DataArray(a.data $ b, a.na)
+        @swappable Base.(:$)(a::DataArray{Bool}, b::$t) = DataArray(a.data $ b, copy(a.na))
     end
 end
 
