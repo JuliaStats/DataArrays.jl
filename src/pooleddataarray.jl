@@ -352,8 +352,9 @@ reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sor
 
 reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
-reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
-    reorder(fun, x, DataFrame({y...}))
+### FIXME: this can't work because we don't know about DataFrames
+# reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
+#     reorder(fun, x, DataFrame({y...}))
 
 Base.reverse(x::PooledDataArray) = PooledDataArray(RefArray(reverse(x.refs)), x.pool)
 
