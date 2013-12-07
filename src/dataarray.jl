@@ -465,21 +465,6 @@ for f in (:(Base.int), :(Base.float), :(Base.bool))
     end
 end
 
-# Not Data -> Data
-# Data{T} -> Data{S}
-for (f, basef) in ((:dataint, :int),
-                   (:datafloat, :float64),
-                   (:databool, :bool))
-    @eval begin
-        function ($f)(a::Array)
-            DataArray(($basef)(a))
-        end
-        function ($f)(da::DataArray)
-            DataArray(($basef)(da.data), copy(da.na))
-        end
-    end
-end
-
 # Hashing
 # TODO: Make sure this agrees with is_equals()
 

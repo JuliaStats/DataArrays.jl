@@ -140,7 +140,7 @@ module TestOperators
         @assert isna((dv./dv)[i]) && isna(dv[i]) ||
                 isequal((dv./dv)[i], (dv[i]./dv[i]))
     end
-    dv = dataint(dv)
+    dv = convert(DataVector{Int}, dv)
     for i in 1:length(dv)
         @assert isna((dv./dv)[i]) && isna(dv[i]) ||
                 isequal((dv./dv)[i], (dv[i]./dv[i]))
