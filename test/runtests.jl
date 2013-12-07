@@ -20,7 +20,8 @@ my_tests = ["abstractarray.jl",
             "pooleddataarray.jl",
             "extras.jl",
             "statistics.jl",
-            "literals.jl"]
+            "literals.jl",
+            "newtests/dataarray.jl"]
 
 println("Running tests:")
 

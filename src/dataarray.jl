@@ -121,7 +121,8 @@ removeNA(a::AbstractArray) = a
 
 # Iterators
 # TODO: Use values()
-#       Use DataValueIterator
+#       Use DataValueIterator type?
+
 type EachFailNA{T}
     da::AbstractDataArray{T}
 end
@@ -370,8 +371,8 @@ end
 
 # Predicates
 
-isna(da::DataArray) = copy(da.na)
 isna(a::AbstractArray) = falses(size(a))
+isna(da::DataArray) = copy(da.na)
 
 Base.isnan(da::DataArray) = DataArray(isnan(da.data), copy(da.na))
 
@@ -381,7 +382,7 @@ anyna(a::AbstractArray) = false
 anyna(d::AbstractDataArray) = any(isna, d)
 
 allna(a::AbstractArray) = false
-allna(d::AbstractDataArray) = allp(isna, d)
+allna(d::AbstractDataArray) = all(isna, d)
 
 # Generic iteration over AbstractDataArray's
 
@@ -405,22 +406,12 @@ end
 
 # Conversion rules
 
-# TODO: Remove this
 function Base.convert{N}(::Type{BitArray{N}}, d::DataArray{BitArray{N}, N})
     throw(ArgumentError("Can't convert to BitArray"))
 end
 
-function Base.convert{T, N}(::Type{BitArray{N}}, d::DataArray{T, N})
+function Base.convert{T, N}(::Type{BitArray}, d::DataArray{T, N})
     throw(ArgumentError("Can't convert to BitArray"))
-end
-
-function Base.convert{T, N}(::Type{Array{T, N}}, x::DataArray{T, N})
-    if anyna(x)
-        err = "Cannot convert DataArray with NA's to base type"
-        throw(NAException(err))
-    else
-        return x.data
-    end
 end
 
 function Base.convert{S, T, N}(::Type{Array{S, N}}, x::DataArray{T, N})
@@ -428,7 +419,16 @@ function Base.convert{S, T, N}(::Type{Array{S, N}}, x::DataArray{T, N})
         err = "Cannot convert DataArray with NA's to desired type"
         throw(NAException(err))
     else
-        return convert(S, x.data)
+        return convert(Array{S, N}, x.data)
+    end
+end
+
+function Base.convert{T, N}(::Type{Array}, x::DataArray{T, N})
+    if anyna(x)
+        err = "Cannot convert DataArray with NA's to base type"
+        throw(NAException(err))
+    else
+        return x.data
     end
 end
 
