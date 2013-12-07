@@ -30,17 +30,21 @@ DataArray(d::Array, m::Array{Bool}) = DataArray(d, bitpack(m))
 
 # Convert a BitArray into a DataArray
 function DataArray(d::BitArray, m::BitArray = falses(size(d)))
-    return DataArray(convert(Array{Bool}, d), m)
+    return DataArray(bitunpack(d), m)
 end
 
 # Convert a Ranges object into a DataVector
-DataArray(r::Ranges) = DataArray([r], falses(length(r)))
+function DataArray(d::Ranges, m::BitArray = falses(length(d)))
+    DataArray(convert(Vector, d), )
+end
 
 # Construct an all-NA DataArray of a specific type
-DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
-                                                 trues(dims...))
-DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims...), 
-                                                 trues(dims...))
+function DataArray(t::Type, dims::Integer...)
+    return DataArray(Array(t, dims...), trues(dims...))
+end
+function DataArray{N}(t::Type, dims::NTuple{N,Int})
+    return DataArray(Array(t, dims...), trues(dims...))
+end
 
 # Copying
 Base.copy(d::DataArray) = DataArray(copy(d.data), copy(d.na))
@@ -116,6 +120,8 @@ end
 removeNA(a::AbstractArray) = a
 
 # Iterators
+# TODO: Use values()
+#       Use DataValueIterator
 type EachFailNA{T}
     da::AbstractDataArray{T}
 end
@@ -365,12 +371,11 @@ end
 # Predicates
 
 isna(da::DataArray) = copy(da.na)
+isna(a::AbstractArray) = falses(size(a))
 
 Base.isnan(da::DataArray) = DataArray(isnan(da.data), copy(da.na))
 
 Base.isfinite(da::DataArray) = DataArray(isfinite(da.data), copy(da.na))
-
-isna(a::AbstractArray) = falses(size(a))
 
 anyna(a::AbstractArray) = false
 anyna(d::AbstractDataArray) = any(isna, d)
