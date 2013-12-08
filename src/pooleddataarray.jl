@@ -221,7 +221,7 @@ Base.values(da::DataArray) = copy(da)
 Base.values(a::Array) = copy(a)
 
 function Base.unique{T}(x::PooledDataArray{T})
-    if any(x.refs .== 0)
+    if anyna(x)
         n = length(x.pool)
         d = Array(T, n + 1)
         for i in 1:n
@@ -234,21 +234,8 @@ function Base.unique{T}(x::PooledDataArray{T})
         return DataArray(copy(x.pool), falses(length(x.pool)))
     end
 end
-levels{T}(pda::PooledDataArray{T}) = pda.pool
 
-function Base.unique{T}(adv::AbstractDataVector{T})
-  values = Dict{Union(T, NAtype), Bool}()
-  for i in 1:length(adv)
-    values[adv[i]] = true
-  end
-  unique_values = collect(keys(values))
-  res = DataArray(T, length(unique_values))
-  for i in 1:length(unique_values)
-    res[i] = unique_values[i]
-  end
-  return res
-end
-levels{T}(adv::AbstractDataVector{T}) = unique(adv)
+levels{T}(pda::PooledDataArray{T}) = copy(pda.pool)
 
 get_indices{T,R}(x::PooledDataArray{T,R}) = x.refs
 

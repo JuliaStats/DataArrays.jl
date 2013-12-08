@@ -475,3 +475,39 @@ function Base.hash(a::AbstractDataArray)
     end
     return uint(h)
 end
+
+function finduniques{T}(da::DataArray{T})
+    unique_values = Dict{T, Bool}()
+    n = length(da)
+    hasna = false
+    for i in 1:n
+        if da.na[i]
+            hasna = true
+        else
+            unique_values[da.data[i]] = true
+        end
+    end
+    return unique_values, hasna
+end
+
+function Base.unique{T}(da::DataArray{T})
+    unique_values, hasna = finduniques(da)
+    n = length(unique_values)
+    if hasna
+        res = DataArray(Array(T, n + 1))
+        i = 0
+        for val in keys(unique_values)
+            i += 1
+            res.data[i] = val
+        end
+        res.na[n + 1] = true
+        return res
+    else
+        return DataArray(collect(keys(unique_values)))
+    end
+end
+
+function levels(da::DataArray)
+    unique_values, hasna = finduniques(da)
+    return DataArray(collect(keys(unique_values)))
+end
