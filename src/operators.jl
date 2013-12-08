@@ -145,18 +145,8 @@ const bit_operators = [:(Base.(:&)),
                        :(Base.(:|)),
                        :(Base.(:$))]
 
-const unary_vector_operators = [:(Base.minimum),
-                                :(Base.maximum),
-                                :(Base.prod),
-                                :(Base.sum),
-                                :(Base.mean),
-                                :(Base.median),
-                                :(Base.std),
-                                :(Base.var),
-                                :(Stats.mad),
-                                :(Base.norm),
-                                :(Stats.skewness),
-                                :(Stats.kurtosis)]
+const unary_vector_operators = [:(Stats.mad),
+                                :(Base.norm)]
 
 # TODO: dist, iqr
 
