@@ -638,7 +638,9 @@ end
 Base.(:.^)(::MathConst{:e}, B::DataArray) = exp(B)
 Base.(:.^)(::MathConst{:e}, B::AbstractDataArray) = exp(B)
 
-for f in arithmetic_operators
+for f in (:(Base.(:+)), :(Base.(:.+)), :(Base.(:-)), :(Base.(:.-)),
+          :(Base.(:*)), :(Base.(:.*)), :(Base.(:.^)), :(Base.div),
+          :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
         # Array with NA
         @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
@@ -676,6 +678,17 @@ end
 @swappable Base.(:./)(A::BitArray, B::AbstractDataArray) = ./(bitunpack(A), B)
 @swappable Base.(:./)(A::BitArray, B::DataArray) = ./(bitunpack(A), B)
 
+# / and ./ are defined separately since they promote to floating point
+for f in ((:(Base.(:/)), :(Base.(:./))))
+    @eval begin
+        @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
+            DataArray(Array(T, size(b)), trues(size(b)))
+        ($f)(::NAtype, ::NAtype) = NA
+        @swappable ($f)(d::NAtype, x::Number) = NA
+        @dataarray_binary_scalar $f Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?
+                                              promote_type(eltype(a), typeof(b)) : Float64
+    end
+end
 @dataarray_binary_array Base.(:./) Base.(:/) eltype(a) <: FloatingPoint || eltype(b) <: FloatingPoint ?
                                              promote_type(eltype(a), eltype(b)) : Float64
 

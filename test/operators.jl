@@ -136,21 +136,17 @@ module TestOperators
     end
 
     # Division (special case since return type for Int is a Float64)
-    for i in 1:length(dv)
-        @assert isna((dv./dv)[i]) && isna(dv[i]) ||
-                isequal((dv./dv)[i], (dv[i]./dv[i]))
+    for curdv in (dv, convert(DataVector{Int}, dv), convert(DataVector{Float32}, dv))
+        for i in 1:length(curdv)
+            @assert isna((curdv./curdv)[i]) && isna(curdv[i]) ||
+                    isequal((curdv./curdv)[i], (curdv[i]./curdv[i]))
+            @assert isna((curdv./2)[i]) && isna(curdv[i]) ||
+                    isequal((curdv./2)[i], (curdv[i]./2))
+            @assert isna((curdv/2)[i]) && isna(curdv[i]) ||
+                    isequal((curdv/2)[i], (curdv[i]/2))
+        end
     end
-    dv = convert(DataVector{Int}, dv)
-    for i in 1:length(dv)
-        @assert isna((dv./dv)[i]) && isna(dv[i]) ||
-                isequal((dv./dv)[i], (dv[i]./dv[i]))
-    end
-    dv = convert(DataVector{Float32}, dv)
-    for i in 1:length(dv)
-        @assert isna((dv./dv)[i]) && isna(dv[i]) ||
-                isequal((dv./dv)[i], (dv[i]./dv[i]))
-    end
-
+    
     # Unary vector operators on DataVector's
     dv = @data ones(5)
     for f in map(eval, DataArrays.unary_vector_operators)
