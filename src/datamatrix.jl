@@ -34,7 +34,7 @@ function Base.getindex(x::DataMatrix,
     getindex(x, find(row_inds), j)
 end
 function Base.getindex(x::DataMatrix,
-                       row_inds::AbstractVector,
+                       row_inds::AbstractDataVector,
                        j::SingleIndex)
     getindex(x, removeNA(row_inds), j)
 end
