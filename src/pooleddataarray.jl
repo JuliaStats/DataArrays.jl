@@ -203,23 +203,6 @@ function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
     PooledDataArray(RefArray(newrefs), d.pool)
 end
 
-# Convert a PooledDataVector{T} to a DataVector{T}
-function Base.values{T}(pda::PooledDataArray{T})
-    res = DataArray(T, size(pda)...)
-    for i in 1:length(pda)
-        r = pda.refs[i]
-        if r == 0
-            res[i] = NA
-        else
-            res[i] = pda.pool[r]
-        end
-    end
-    return res
-end
-DataArray(pda::PooledDataArray) = values(pda)
-Base.values(da::DataArray) = copy(da)
-Base.values(a::Array) = copy(a)
-
 function Base.unique{T}(x::PooledDataArray{T})
     if anyna(x)
         n = length(x.pool)
@@ -806,19 +789,39 @@ function Base.convert{T, N}(::Type{PooledDataArray}, x::DataArray{T, N})
 end
 
 function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}}, x::PooledDataArray{T, N})
-    return PooledDataArray(convert(Array{S}, x), find(x.refs .== 0))
+    return PooledDataArray(RefArray(copy(x.refs)), convert(Array{S}, x.pool))
 end
 
 function Base.convert{T, N}(::Type{PooledDataArray}, x::PooledDataArray{T, N})
-    return PooledDataArray(values(x), find(x.refs .== 0))
+    return PooledDataArray(RefArray(copy(x.refs)), copy(x.pool))
 end
 
-function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::PooledDataArray{T, N})
-    return convert(DataArray{S, N}, values(x))
+function Base.convert{S, T, N}(::Type{DataArray{S, N}}, pda::PooledDataArray{T, N})
+    res = DataArray(Array(S, size(pda)), BitArray(size(pda)))
+    for i in 1:length(pda)
+        r = pda.refs[i]
+        if r == 0
+            res.na[i] = true
+        else
+            res.na[i] = false
+            res.data[i] = pda.pool[r]
+        end
+    end
+    return res
 end
 
-function Base.convert{T, N}(::Type{DataArray}, x::PooledDataArray{T, N})
-    return values(x)
+function Base.convert{T, N}(::Type{DataArray}, pda::PooledDataArray{T, N})
+    res = DataArray(Array(T, size(pda)), BitArray(size(pda)))
+    for i in 1:length(pda)
+        r = pda.refs[i]
+        if r == 0
+            res.na[i] = true
+        else
+            res.na[i] = false
+            res.data[i] = pda.pool[r]
+        end
+    end
+    return res
 end
 
 # Turn a PooledDataArray into an Array. Fail on NA
