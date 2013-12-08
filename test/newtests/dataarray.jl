@@ -132,47 +132,131 @@ module TestDataArrays
 
 	# GetIndex
 	# Base.getindex(x::Vector, inds::AbstractDataVector{Bool})
-	[1, 2, 3][DataArray([true, false, false], [false, true, false])]
+	dinds = @data([true, false, false])
+	[1, 2, 3][dinds]
 
 	# Base.getindex(x::Vector, inds::AbstractDataArray{Bool})
-	[1, 2, 3][DataArray([true, false, false], [false, true, false])]
+	dinds = @data([true, false, false])
+	[1, 2, 3][dinds]
 
 	# Base.getindex(x::Array, inds::AbstractDataVector{Bool})
-	[1 2; 3 4][DataArray([true, false, false, true], [false, true, false, true])]
+	dinds = @data([true, false, false])
+	[1 2; 3 4][dinds]
 
 	# Base.getindex(x::Array, inds::AbstractDataArray{Bool})
-	[1 2; 3 4][DataArray([true, false, false, true], [false, true, false, true])]
+	dinds = @data([true, false, false])
+	[1 2; 3 4][dinds]
 
 	# Base.getindex{S, T}(x::Vector{S}, inds::AbstractDataArray{T})
-	# Base.getindex(x::Array, inds::AbstractDataVector{Bool})
-	[1, 2, 3, 4][DataArray([1, 2, 3, 4], [false, true, false, true])]
-
-	# Base.getindex(x::Array, inds::AbstractDataArray{Bool})
-	[1 2; 3 4][DataArray([1, 2, 3, 4], [false, true, false, true])]
+	dinds = @data([1, 2, NA]) 
+	[1.0, 2.0, 3.0, 4.0][dinds]
 
 	# Base.getindex{S, T}(x::Array{S}, inds::AbstractDataArray{T})
+	dinds = @data([1, 2, NA]) 
+	[1.0 2.0; 3.0 4.0][dinds]
+
+	# Base.getindex(x::Array, inds::AbstractDataVector{Bool})
+	dinds = @data([true, false, false])
+	[1 2; 3 4][dinds]
+
+	# Base.getindex(x::Array, inds::AbstractDataArray{Bool})
+	dinds = @data([true, false, false])
+	[1 2; 3 4][dinds]
+
 	# Base.getindex(d::DataArray, i::SingleIndex)
+	da = @data([1, 2, NA, 4])
+	da[1]
+	da[3]
+	da[1.0]
+	da[3.0]
+
 	# Base.getindex(d::DataArray, inds::AbstractDataVector{Bool})
+	da = @data([1, 2, NA, 4])
+	dinds = @data([true, false, false, NA])
+	da[dinds]
+
 	# Base.getindex(d::DataArray, inds::AbstractDataVector)
+	da = @data([1, 2, NA, 4])
+	dinds = @data([1, 2, NA, 2])
+	da[dinds]
+
 	# Base.getindex{T <: Number, N}(d::DataArray{T,N}, inds::BooleanIndex)
+	# da = @data([1, 2, NA, 4])
+	# inds = [1, 2, NA, 2]
+	# da[inds]
+
 	# Base.getindex(d::DataArray, inds::BooleanIndex)
+	# da = @data([1.0, 2.0, NA, 4.0])
+	# inds = [1, 2, NA, 2]
+	# da[inds]
+
 	# Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::MultiIndex)
+	da = @data([1.0, 2.0, NA, 4.0])
+	inds = [1, 2, 2]
+	da[inds]
+
 	# Base.getindex(d::DataArray, inds::MultiIndex)
+	da = @data([1.0, 2.0, NA, 4.0])
+	inds = [1, 2, 2]
+	da[inds]
+
 	# Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::BooleanIndex)
+	da = @data([1.0, 2.0, NA, 4.0])
+	inds = [true, true, false, false]
+	da[inds]
+
 	# Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::MultiIndex)
+	da = @data([1.0, 2.0, NA, 4.0])
+	inds = [1, 2, 2]
+	da[inds]
 
 	# Base.setindex!(da::DataArray, val::NAtype, i::SingleIndex)
+	da = @data([1.0, 2.0, NA, 4.0])
+	da[1] = NA
+
 	# Base.setindex!(da::DataArray, val::Any, i::SingleIndex)
+	da = @data([1.0, 2.0, NA, 4.0])
+	da[1] = 3.0
+
 	# Base.setindex!(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector{Bool})
+	# da = DataArray([NA, NA], falses(2))
+	# da[[true, false]] = NA
+
 	# Base.setindex!(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector)
+	# da = DataArray([NA, NA], falses(2))
+	# da[[1, 2]] = NA
+
 	# Base.setindex!(da::DataArray, val::NAtype, inds::AbstractVector{Bool})
+	da = @data([1, 2])
+	da[[true, false]] = NA
+
 	# Base.setindex!(da::DataArray, val::NAtype, inds::AbstractVector)
+	da = @data([1, 2])
+	da[[1, 2]] = NA
+
 	# Base.setindex!(da::AbstractDataArray, vals::AbstractVector, inds::AbstractVector{Bool})
+	da = @data([1, 2])
+	da[[true, false]] = [3, 4]
+
 	# Base.setindex!(da::AbstractDataArray, vals::AbstractVector, inds::AbstractVector)
+	da = @data([1, 2])
+	da[[1, 2]] = [3, 4]
+
 	# Base.setindex!{T}(da::AbstractDataArray{T}, val::Union(Number, String, T), inds::AbstractVector{Bool})
+	da = @data([1, 2])
+	da[[true, false]] = 5
+
 	# Base.setindex!{T}(da::AbstractDataArray{T}, val::Union(Number, String, T), inds::AbstractVector)
+	da = @data([1, 2])
+	da[[1, 2]] = 5
+
 	# Base.setindex!(da::AbstractDataArray, val::Any, inds::AbstractVector{Bool})
+	da = @data([1, 2])
+	da[[true, false]] = 5.0
+
 	# Base.setindex!{T}(da::AbstractDataArray{T}, val::Any, inds::AbstractVector)
+	da = @data([1, 2])
+	da[[1, 2]] = 5
 
 	# isna(a::AbstractArray)
 	isna([1, 2])

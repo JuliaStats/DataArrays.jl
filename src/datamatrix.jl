@@ -149,7 +149,7 @@ function Base.setindex!{S, T}(dm::DataMatrix{S},
                               j::SingleIndex)
     dm.data[row_inds, j] = vals
     dm.na[row_inds, j] = false
-    return val
+    return vals
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = Single Item
@@ -178,7 +178,7 @@ function Base.setindex!{S, T}(dm::DataMatrix{S},
                               col_inds::MultiIndex)
     dm.data[i, col_inds] = vals
     dm.na[i, col_inds] = false
-    return val
+    return vals
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = Single Item
@@ -207,7 +207,7 @@ function Base.setindex!{S, T}(dm::DataMatrix{S},
                               col_inds::MultiIndex)
     dm.data[row_inds, col_inds] = vals
     dm.na[row_inds, col_inds] = false
-    return val
+    return vals
 end
 
 # dm[MultiItemIndex, MultiItemIndex] = Single Item
