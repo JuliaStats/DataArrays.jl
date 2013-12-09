@@ -249,17 +249,6 @@ macro swappable(func, syms...)
     esc(Expr(:block, func, func2))
 end
 
-# Enumerate a BitArray. This is faster than using enumerate()
-macro bitenumerate(ba, i, x, code)
-    esc(quote
-        $i = 1
-        for $x in $ba
-            $code
-            $i += 1
-        end
-    end)
-end
-
 #
 # Unary operator macros for DataArrays
 #
