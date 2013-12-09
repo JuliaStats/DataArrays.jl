@@ -3,7 +3,7 @@ function Base.getindex(d::DataVector,
                        i::SingleIndex,
                        j::SingleIndex)
     if j != 1
-        throw(ArgumentError())
+        throw(ArgumentError("Second index must be 1"))
     end
     if d.na[i]
         return NA
@@ -11,9 +11,6 @@ function Base.getindex(d::DataVector,
         return d.data[i]
     end
 end
-
-# String representations and printing
-# TODO: Inherit these from AbstractArray after implementing DataArray
 
 head(dv::AbstractDataVector) = dv[1:min(6, length(dv))]
 tail(dv::AbstractDataVector) = dv[max(length(dv) - 6, 1):length(dv)]
@@ -103,7 +100,6 @@ Base.shift!(pdv::PooledDataVector) = pdv.pool[shift!(pdv.refs)]
 Base.reverse(x::AbstractDataVector) = x[end:-1:1]
 
 # Pad a vector with NA's
-# TODO: Move this into DataVector.jl
 
 function padNA(dv::AbstractDataVector,
                front::Integer,

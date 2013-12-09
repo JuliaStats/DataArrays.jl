@@ -22,7 +22,8 @@ my_tests = ["abstractarray.jl",
             "statistics.jl",
             "literals.jl",
             "newtests/dataarray.jl",
-            "newtests/datamatrix.jl"]
+            "newtests/datamatrix.jl",
+            "newtests/datavector.jl"]
 
 println("Running tests:")
 
