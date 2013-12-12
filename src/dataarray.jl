@@ -69,7 +69,22 @@ Base.endof(d::DataArray) = endof(d.data)
 Base.eltype{T, N}(d::DataArray{T, N}) = T
 
 # Find
-Base.find(da::AbstractDataArray{Bool}) = find(array(da, false))
+function Base.find(da::AbstractDataArray{Bool})
+    data = da.data
+    ntrue = 0
+    @inbounds @bitenumerate da.na i na begin
+        ntrue += !na && data[i]
+    end
+    res = Array(Int, ntrue)
+    count = 1
+    @inbounds @bitenumerate da.na i na begin
+        if !na && data[i]
+            res[count] = i
+            count += 1
+        end
+    end
+    return res
+end
 
 # Turn a DataArray into an Array. Fail on NA
 function array{T}(da::DataArray{T})
