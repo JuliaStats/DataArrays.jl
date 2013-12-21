@@ -113,6 +113,20 @@ function array{T}(da::DataArray{T}, replacement::T)
     return res
 end
 
+function array{T}(da::DataArray{T}, replacement)
+    replacement = convert(T, replacement)
+    n = length(da)
+    res = Array(T, size(da))
+    for i in 1:n
+        if da.na[i]
+            res[i] = replacement
+        else
+            res[i] = da.data[i]
+        end
+    end
+    return res
+end
+
 # NB: Can do strange things on DataArray of rank > 1
 function removeNA(da::DataArray)
     return copy(da.data[!da.na])
