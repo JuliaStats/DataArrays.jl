@@ -35,7 +35,7 @@ end
 
 # Convert a Ranges object into a DataVector
 function DataArray(d::Ranges, m::BitArray = falses(length(d)))
-    DataArray(convert(Vector, d), )
+    DataArray(convert(Vector, d), m)
 end
 
 # Construct an all-NA DataArray of a specific type
