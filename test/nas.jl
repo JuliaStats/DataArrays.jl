@@ -7,12 +7,12 @@ module TestNAs
 	dv = DataArray([1, 2, 3], [false, false, false])
 
 	failNA(dv)
-	removeNA(dv)
+	dropna(dv)
 	replaceNA(dv, 3)
 	for v in each_failNA(dv)
 		println(v)
 	end
-	for v in each_removeNA(dv)
+	for v in each_dropna(dv)
 		println(v)
 	end
 	for v in each_replaceNA(dv, 3)
@@ -22,12 +22,12 @@ module TestNAs
 	dv[1] = NA
 
 	failNA(dv)
-	removeNA(dv)
+	dropna(dv)
 	replaceNA(dv, 3)
 	for v in each_failNA(dv)
 		println(v)
 	end
-	for v in each_removeNA(dv)
+	for v in each_dropna(dv)
 		println(v)
 	end
 	for v in each_replaceNA(dv, 3)

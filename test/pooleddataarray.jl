@@ -2,30 +2,30 @@ module TestPDA
 	using Base.Test
 	using DataArrays
 
-	p = PooledDataArray((@data [9, 9, 8, NA, 1, 1]))
+	p = @pdata [9, 9, 8, NA, 1, 1]
 	pcopy = copy(p)
-	@assert levels(p) == [1,8,9]
-	@assert levels(set_levels(p, ["a", "b", "c"])) == ["a", "b", "c"]
-	@assert removeNA(set_levels(p, (@data ["a", "b", NA]))) == ["b", "a", "a"]
-	@assert removeNA(set_levels(p, (@data ["a", "b", "a"]))) == ["a", "a", "b", "a", "a"]
-	@assert levels(set_levels(p, (@data ["a", "b", "a"]))) == ["a", "b"]
-	@assert levels(set_levels(p, [1 => 111])) == [111, 8, 9]
-	@assert levels(set_levels(p, [1 => 111, 8 => NA])) == [111, 9]
-	@assert levels(PooledDataArray(p, [9,8,1])) == [9,8,1]
-	@assert levels(PooledDataArray(p, [9,8])) == [9,8]
-	@assert removeNA(PooledDataArray(p, [9,8])) == [9,9,8]
+	@assert levels(p) == [1, 8, 9]
+	@assert levels(setlevels(p, ["a", "b", "c"])) == ["a", "b", "c"]
+	@assert dropna(setlevels(p, (@data ["a", "b", NA]))) == ["b", "a", "a"]
+	@assert dropna(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "a", "b", "a", "a"]
+	@assert levels(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "b"]
+	@assert levels(setlevels(p, [1 => 111])) == [111, 8, 9]
+	@assert levels(setlevels(p, [1 => 111, 8 => NA])) == [111, 9]
+	@assert levels(PooledDataArray(p, [9, 8, 1])) == [9, 8, 1]
+	@assert levels(PooledDataArray(p, [9, 8])) == [9, 8]
+	@assert dropna(PooledDataArray(p, [9, 8])) == [9, 9, 8]
 	@assert levels(PooledDataArray(p, levels(p)[[3,2,1]])) == [9,8,1]
 	v = [1:6]
-	#@assert isequal(p, reorder(p))
-	#@assert levels(reorder(p, v)) == [9,8,1]
+	@assert isequal(p, reorder(p))
+	# @assert levels(reorder(p, v)) == [9,8,1]
 	@assert isequal(p, pcopy)
 
-	@assert levels(set_levels!(copy(p), [10,80,90])) == [10, 80, 90]
-	@assert levels(set_levels!(copy(p), [1,8,1])) == [1, 8]
-	@assert levels(set_levels!(copy(p), (@data [1, 8, NA]))) == [1, 8]
-	@assert levels(set_levels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
-	@assert levels(set_levels!(copy(p), [1 => 111])) == [111, 8, 9]
-	@assert levels(set_levels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
+	@assert levels(setlevels!(copy(p), [10,80,90])) == [10, 80, 90]
+	@assert levels(setlevels!(copy(p), [1,8,1])) == [1, 8]
+	@assert levels(setlevels!(copy(p), (@data [1, 8, NA]))) == [1, 8]
+	@assert levels(setlevels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
+	@assert levels(setlevels!(copy(p), [1 => 111])) == [111, 8, 9]
+	@assert levels(setlevels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
 
 	pp = PooledDataArray(Any[])
 	@assert length(pp) == 0

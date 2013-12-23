@@ -252,9 +252,9 @@ function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
 end
 
 myunique(x::AbstractVector) = x[sort(unique(findat(x, x)))]  # gets the ordering right
-myunique(x::AbstractDataVector) = myunique(removeNA(x))   # gets the ordering right; removes NAs
+myunique(x::AbstractDataVector) = myunique(dropna(x))   # gets the ordering right; removes NAs
 
-function set_levels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
+function setlevels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     pool = myunique(newpool)
     refs = zeros(R, length(x))
     tidx::Array{R} = findat(pool, newpool)
@@ -267,7 +267,7 @@ function set_levels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     return PooledDataArray(RefArray(refs), pool)
 end
 
-function set_levels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
+function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
     if newpool == myunique(newpool) # no NAs or duplicates
         x.pool = newpool
         return x
@@ -284,7 +284,7 @@ function set_levels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
     end
 end
 
-function set_levels(x::PooledDataArray, d::Dict)
+function setlevels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
     for (k,v) in d
@@ -293,10 +293,10 @@ function set_levels(x::PooledDataArray, d::Dict)
             newpool[idx[1]] = v
         end
     end
-    set_levels(x, newpool)
+    setlevels(x, newpool)
 end
 
-function set_levels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,T})
+function setlevels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,T})
     for (k,v) in d
         idx = findin(x.pool, [k])
         if length(idx) == 1
@@ -306,7 +306,7 @@ function set_levels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,T})
     x
 end
 
-function set_levels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this version handles NAs in d's values
+function setlevels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this version handles NAs in d's values
     newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
     for (k,v) in d
@@ -315,7 +315,7 @@ function set_levels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this versio
             newpool[idx[1]] = v
         end
     end
-    set_levels!(x, newpool)
+    setlevels!(x, newpool)
 end
 
 reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
@@ -367,7 +367,7 @@ function Base.getindex(pda::PooledDataArray, inds::AbstractDataVector{Bool})
     return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
 end
 function Base.getindex(pda::PooledDataArray, inds::AbstractDataVector)
-    inds = removeNA(inds)
+    inds = dropna(inds)
     return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
 end
 function Base.getindex(pda::PooledDataArray, inds::Union(Vector, BitVector, Ranges))
@@ -388,7 +388,7 @@ function Base.getindex(pda::PooledDataArray, i::Real, col_inds::AbstractDataVect
     getindex(pda, i, find(col_inds))
 end
 function Base.getindex(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector)
-    getindex(pda, i, removeNA(col_inds))
+    getindex(pda, i, dropna(col_inds))
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
@@ -403,7 +403,7 @@ function Base.getindex(pda::PooledDataArray, row_inds::AbstractDataVector{Bool},
     getindex(pda, find(row_inds), j)
 end
 function Base.getindex(pda::PooledDataArray, row_inds::AbstractVector, j::Real)
-    getindex(pda, removeNA(row_inds), j)
+    getindex(pda, dropna(row_inds), j)
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
@@ -422,7 +422,7 @@ end
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector{Bool},
              col_inds::AbstractDataVector)
-    getindex(pda, find(row_inds), removeNA(col_inds))
+    getindex(pda, find(row_inds), dropna(col_inds))
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
@@ -433,18 +433,18 @@ end
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector,
              col_inds::AbstractDataVector{Bool})
-    getindex(pda, removeNA(row_inds), find(col_inds))
+    getindex(pda, dropna(row_inds), find(col_inds))
 end
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector,
              col_inds::AbstractDataVector)
-    getindex(pda, removeNA(row_inds), removeNA(col_inds))
+    getindex(pda, dropna(row_inds), dropna(col_inds))
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector,
              col_inds::Union(Vector, BitVector, Ranges))
-    getindex(pda, removeNA(row_inds), col_inds)
+    getindex(pda, dropna(row_inds), col_inds)
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
@@ -456,7 +456,7 @@ end
 function Base.getindex(pda::PooledDataArray,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector)
-    getindex(pda, row_inds, removeNA(col_inds))
+    getindex(pda, row_inds, dropna(col_inds))
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
@@ -849,4 +849,17 @@ function array{T, R}(da::PooledDataArray{T, R}, replacement::T)
         end
     end
     return res
+end
+
+function dropna{T}(pdv::PooledDataVector{T})
+    n = length(pdv)
+    res = Array(T, n)
+    total = 0
+    for i in 1:n
+        if pdv.refs[i] > 0
+            total += 1
+            res[total] = pdv.pool[pdv.refs[i]]
+        end
+    end
+    return res[1:total]
 end

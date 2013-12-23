@@ -175,7 +175,7 @@ const ffts = [:(Base.fft)]
 const binary_vector_operators = [:(Base.dot),
                                  :(Base.cor),
                                  :(Base.cov),
-                                 :(Stats.cor_spearman)]
+                                 :(Stats.corspearman)]
 
 const rowwise_operators = [:rowminimums,
                            :rowmaxs,
