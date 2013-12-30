@@ -1,4 +1,4 @@
-function Stats.table{T}(d::AbstractDataArray{T})
+function Stats.countmap{T}(d::AbstractDataArray{T})
     counts = Dict{Union(T, NAtype), Int}()
     for i = 1:length(d)
         if haskey(counts, d[i])
