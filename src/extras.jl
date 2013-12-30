@@ -1,13 +1,30 @@
-function Stats.table{T}(d::AbstractDataArray{T})
-    counts = Dict{Union(T, NAtype), Int}()
-    for i = 1:length(d)
-        if haskey(counts, d[i])
-            counts[d[i]] += 1
-        else
-            counts[d[i]] = 1
-        end
+function Stats.addcounts!{T,U}(cm::Dict{U,Int}, x::AbstractDataArray{T})
+    for v in x
+        cm[v] = get(cm, v, 0) + 1
     end
-    return counts
+    return cm
+end
+
+function Stats.addcounts!{T,U,W}(cm::Dict{U,W}, x::AbstractDataArray{T}, wv::WeightVec{W})
+    n = length(x)
+    length(wv) == n || raise_dimerror()
+    w = values(wv)
+    z = zero(W)
+
+    @inbounds for i in 1:n
+        xi = x[i]
+        wi = w[i]
+        cm[xi] = get(cm, xi, z) + wi
+    end
+    return cm
+end
+
+function Stats.countmap{T}(x::AbstractDataArray{T})
+    addcounts!(Dict{Union(T, NAtype), Int}(), x)
+end
+
+function Stats.countmap{T,W}(x::AbstractDataArray{T}, wv::WeightVec{W})
+    addcounts!(Dict{Union(T, NAtype), W}(), x, wv)
 end
 
 function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})

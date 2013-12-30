@@ -241,7 +241,7 @@ end
 function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
                                 newpool::Vector{S})
     # QUESTION: should we have a ! version of this? If so, needs renaming?
-    tidx::Array{R} = findat(x.pool, newpool)
+    tidx::Array{R} = findat(newpool, x.pool)
     refs = zeros(R, length(x))
     for i in 1:length(refs)
         if x.refs[i] != 0 
@@ -257,7 +257,7 @@ myunique(x::AbstractDataVector) = myunique(removeNA(x))   # gets the ordering ri
 function set_levels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     pool = myunique(newpool)
     refs = zeros(R, length(x))
-    tidx::Array{R} = findat(newpool, pool)
+    tidx::Array{R} = findat(pool, newpool)
     tidx[isna(newpool)] = 0
     for i in 1:length(refs)
         if x.refs[i] != 0
@@ -273,7 +273,7 @@ function set_levels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
         return x
     else
         x.pool = myunique(newpool)
-        tidx::Array{R} = findat(newpool, x.pool)
+        tidx::Array{R} = findat(x.pool, newpool)
         tidx[isna(newpool)] = 0
         for i in 1:length(x.refs)
             if x.refs[i] != 0
@@ -684,8 +684,8 @@ function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
               sz <= typemax(Uint32) ? Uint32 :
                                       Uint64
 
-    tidx1 = convert(Vector{REFTYPE}, findat(v1.pool, pool))
-    tidx2 = convert(Vector{REFTYPE}, findat(v2.pool, pool))
+    tidx1 = convert(Vector{REFTYPE}, findat(pool, v1.pool))
+    tidx2 = convert(Vector{REFTYPE}, findat(pool, v2.pool))
     refs1 = zeros(REFTYPE, length(v1))
     refs2 = zeros(REFTYPE, length(v2))
     for i in 1:length(refs1)
