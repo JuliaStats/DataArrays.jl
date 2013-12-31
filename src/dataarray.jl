@@ -113,6 +113,11 @@ function array{T}(da::DataArray{T}, replacement::T)
     return res
 end
 
+function array{T}(da::DataArray{T}, replacement)
+    replacement = convert(T, replacement)
+    array(da, replacement)
+end
+
 # NB: Can do strange things on DataArray of rank > 1
 function removeNA(da::DataArray)
     return copy(da.data[!da.na])
