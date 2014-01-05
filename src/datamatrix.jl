@@ -18,7 +18,7 @@ end
 function Base.getindex(x::DataMatrix,
                        i::SingleIndex,
                        col_inds::AbstractDataVector)
-    getindex(x, i, removeNA(col_inds))
+    getindex(x, i, dropna(col_inds))
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(x::DataMatrix,
@@ -36,7 +36,7 @@ end
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector,
                        j::SingleIndex)
-    getindex(x, removeNA(row_inds), j)
+    getindex(x, dropna(row_inds), j)
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(x::DataMatrix,
@@ -58,7 +58,7 @@ function Base.getindex(x::DataMatrix,
                        col_inds::AbstractDataVector)
     return getindex(x,
                     find(row_inds),
-                    removeNA(col_inds))
+                    dropna(col_inds))
 end
 # TODO: Make inds::AbstractVector
 function Base.getindex(x::DataMatrix,
@@ -72,22 +72,22 @@ function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector,
                        col_inds::AbstractDataVector{Bool})
     return getindex(x,
-                    removeNA(row_inds),
+                    dropna(row_inds),
                     find(col_inds))
 end
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector,
                        col_inds::AbstractDataVector)
     return getindex(x,
-                    removeNA(row_inds),
-                    removeNA(col_inds))
+                    dropna(row_inds),
+                    dropna(col_inds))
 end
 
 # TODO: Make inds::AbstractVector
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector,
                        col_inds::MultiIndex)
-    return getindex(x, removeNA(row_inds), col_inds)
+    return getindex(x, dropna(row_inds), col_inds)
 end
 
 # TODO: Make inds::AbstractVector
@@ -103,7 +103,7 @@ end
 function Base.getindex(x::DataMatrix,
                        row_inds::MultiIndex,
                        col_inds::AbstractDataVector)
-    return getindex(x, row_inds, removeNA(col_inds))
+    return getindex(x, row_inds, dropna(col_inds))
 end
 
 # TODO: Make inds::AbstractVector

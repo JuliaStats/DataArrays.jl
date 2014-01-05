@@ -122,11 +122,11 @@ module TestDataArrays
 	array(DataArray([1, 0, 3], [false, true, false]), -1)
 	array(DataArray([1, 2, 3], [false, false, false]), -1)
 
-	# removeNA(da::DataArray)
-	removeNA(DataArray([1, 0, 3], [false, true, false]))
-	removeNA(DataArray([1, 2, 3], [false, false, false]))
-	# removeNA{T}(da::AbstractDataVector{T})
-	# removeNA(@data([1, NA, 3]))
+	# dropna(da::DataArray)
+	dropna(DataArray([1, 0, 3], [false, true, false]))
+	dropna(DataArray([1, 2, 3], [false, false, false]))
+	# dropna{T}(da::AbstractDataVector{T})
+	# dropna(@data([1, NA, 3]))
 
 	# Iterators
 

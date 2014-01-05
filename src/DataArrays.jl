@@ -23,10 +23,10 @@ module DataArrays
            DataMatrix,
            DataVector,
            each_failNA,
-           each_removeNA,
+           each_dropna,
            each_replaceNA,
            EachFailNA,
-           EachRemoveNA,
+           EachDropNA,
            EachReplaceNA,
            failNA,
            FastPerm,
@@ -52,13 +52,13 @@ module DataArrays
            PooledDataVecs,
            PooledDataVector,
            reldiff,
-           removeNA,
+           dropna,
            reorder,
            rep,
            replace!,
            replaceNA,
-           set_levels!,
-           set_levels,
+           setlevels!,
+           setlevels,
            tail,
            xtab,
            xtabs
@@ -76,4 +76,8 @@ module DataArrays
     include("statistics.jl")
     include("predicates.jl")
     include("literals.jl")
+
+    Base.@deprecate removeNA dropna
+    Base.@deprecate set_levels setlevels
+    Base.@deprecate set_levels! setlevels!
 end

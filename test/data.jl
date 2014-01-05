@@ -91,7 +91,7 @@ module TestData
     # @assert isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, NA, false, false])
 
     #test_group("DataVector to something else")
-    @assert all(removeNA(dvint) .== [1, 2, 4])
+    @assert all(dropna(dvint) .== [1, 2, 4])
     @assert all(array(dvint, 0) .== [1, 2, 0, 4])
     utf8three = convert(UTF8String, "three")
     asciithree = convert(ASCIIString, "three")
@@ -103,19 +103,19 @@ module TestData
     @assert repr(dvint) == "[1,2,NA,4]"
 
     #test_group("PooledDataVector to something else")
-    @assert all(removeNA(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
+    @assert all(dropna(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
     @assert all(array(pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
     @assert all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
     @assert string(pdvstr[1:3]) == "[one, one, two]"
 
     #test_group("DataVector Filter and Replace")
-    @assert isequal(removeNA(dvint), [1, 2, 4])
+    @assert isequal(dropna(dvint), [1, 2, 4])
     @assert isequal(array(dvint, 7), [1, 2, 7, 4])
-    @assert sum(removeNA(dvint)) == 7
+    @assert sum(dropna(dvint)) == 7
     @assert sum(array(dvint, 7)) == 14
 
     #test_group("PooledDataVector Filter and Replace")
-    @assert reduce(string, "", removeNA(pdvstr)) == "oneonetwotwooneone"
+    @assert reduce(string, "", dropna(pdvstr)) == "oneonetwotwooneone"
     @assert reduce(string, "", array(pdvstr, "!")) == "oneonetwotwo!oneone"
 
     #test_group("DataVector assignment")
