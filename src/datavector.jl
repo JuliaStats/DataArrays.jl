@@ -101,7 +101,7 @@ Base.reverse(x::AbstractDataVector) = x[end:-1:1]
 
 # Pad a vector with NA's
 
-function padNA(dv::AbstractDataVector,
+function padna(dv::AbstractDataVector,
                front::Integer,
                back::Integer)
     n = length(dv)

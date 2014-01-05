@@ -58,7 +58,7 @@ module TestDataVectors
     reverse(da)
     reverse(pda)
 
-    # padNA(dv::AbstractDataVector, front::Integer, back::Integer)
-    padNA(da, 5, 5)
-    padNA(pda, 5, 5)
+    # padna(dv::AbstractDataVector, front::Integer, back::Integer)
+    padna(da, 5, 5)
+    padna(pda, 5, 5)
 end

@@ -1,4 +1,3 @@
-# dm[SingleItemIndex, SingleItemIndex)
 function Base.getindex(d::DataMatrix,
                        i::SingleIndex,
                        j::SingleIndex)
@@ -9,17 +8,12 @@ function Base.getindex(d::DataMatrix,
     end
 end
 
-# dm[SingleItemIndex, MultiItemIndex]
-function Base.getindex(x::DataMatrix,
-                       i::SingleIndex,
-                       col_inds::AbstractDataVector{Bool})
-    getindex(x, i, find(col_inds))
-end
 function Base.getindex(x::DataMatrix,
                        i::SingleIndex,
                        col_inds::AbstractDataVector)
-    getindex(x, i, dropna(col_inds))
+    getindex(x, i, array(col_inds))
 end
+
 # TODO: Make inds::AbstractVector
 function Base.getindex(x::DataMatrix,
                        i::SingleIndex,
@@ -27,17 +21,12 @@ function Base.getindex(x::DataMatrix,
     DataArray(x.data[i, col_inds], x.na[i, col_inds])
 end
 
-# dm[MultiItemIndex, SingleItemIndex]
-function Base.getindex(x::DataMatrix,
-                       row_inds::AbstractDataVector{Bool},
-                       j::SingleIndex)
-    getindex(x, find(row_inds), j)
-end
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector,
                        j::SingleIndex)
-    getindex(x, dropna(row_inds), j)
+    getindex(x, array(row_inds), j)
 end
+
 # TODO: Make inds::AbstractVector
 function Base.getindex(x::DataMatrix,
                        row_inds::MultiIndex,
@@ -45,65 +34,26 @@ function Base.getindex(x::DataMatrix,
     DataArray(x.data[row_inds, j], x.na[row_inds, j])
 end
 
-# dm[MultiItemIndex, MultiItemIndex]
-function Base.getindex(x::DataMatrix,
-                       row_inds::AbstractDataVector{Bool},
-                       col_inds::AbstractDataVector{Bool})
-    return getindex(x,
-                    find(row_inds),
-                    find(col_inds))
-end
-function Base.getindex(x::DataMatrix,
-                       row_inds::AbstractDataVector{Bool},
-                       col_inds::AbstractDataVector)
-    return getindex(x,
-                    find(row_inds),
-                    dropna(col_inds))
-end
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-                       row_inds::AbstractDataVector{Bool},
-                       col_inds::MultiIndex)
-    return getindex(x,
-                    find(row_inds),
-                    col_inds)
-end
-function Base.getindex(x::DataMatrix,
-                       row_inds::AbstractDataVector,
-                       col_inds::AbstractDataVector{Bool})
-    return getindex(x,
-                    dropna(row_inds),
-                    find(col_inds))
-end
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector,
                        col_inds::AbstractDataVector)
     return getindex(x,
-                    dropna(row_inds),
-                    dropna(col_inds))
+                    array(row_inds),
+                    array(col_inds))
 end
 
 # TODO: Make inds::AbstractVector
 function Base.getindex(x::DataMatrix,
                        row_inds::AbstractDataVector,
                        col_inds::MultiIndex)
-    return getindex(x, dropna(row_inds), col_inds)
-end
-
-# TODO: Make inds::AbstractVector
-function Base.getindex(x::DataMatrix,
-                       row_inds::MultiIndex,
-                       col_inds::AbstractDataVector{Bool})
-    return getindex(x,
-                    row_inds,
-                    find(col_inds))
+    return getindex(x, array(row_inds), col_inds)
 end
 
 # TODO: Make inds::AbstractVector
 function Base.getindex(x::DataMatrix,
                        row_inds::MultiIndex,
                        col_inds::AbstractDataVector)
-    return getindex(x, row_inds, dropna(col_inds))
+    return getindex(x, row_inds, array(col_inds))
 end
 
 # TODO: Make inds::AbstractVector
