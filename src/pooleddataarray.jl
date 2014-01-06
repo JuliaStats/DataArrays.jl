@@ -220,24 +220,6 @@ end
 
 levels{T}(pda::PooledDataArray{T}) = copy(pda.pool)
 
-get_indices{T,R}(x::PooledDataArray{T,R}) = x.refs
-
-function index_to_level{T,R}(x::PooledDataArray{T,R})
-    d = Dict{R, T}()
-    for i in one(R):convert(R, length(x.pool))
-        d[i] = x.pool[i]
-    end
-    return d
-end
-
-function level_to_index{T,R}(x::PooledDataArray{T,R})
-    d = Dict{T, R}()
-    for i in one(R):convert(R, length(x.pool))
-        d[x.pool[i]] = i
-    end
-    d
-end
-
 function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
                                 newpool::Vector{S})
     # QUESTION: should we have a ! version of this? If so, needs renaming?
