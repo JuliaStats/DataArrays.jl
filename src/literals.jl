@@ -1,67 +1,107 @@
 # NB: Can't easily make arrays of Expr or arrays of symbols that
 # look like NA.
 
-function parsedata(ex::Expr)
-	n = length(ex.args)
-	if ex.head == :vcat
-		if typeof(ex.args[1]) != Expr
-			restype = typeloop(ex.args)
-			data = Array(restype, n)
-			na = BitArray(n)
-			for i in 1:n
-				if ex.args[i] == :NA
-					data[i] = baseval(restype)
-					na[i] = true
-				else
-					data[i] = ex.args[i]
-					na[i] = false
-				end
-			end
+#
+# Go through data and assume existence of at least one non-NA value
+# Make that stub
+# @data [1, 2, NA, x] => :(DataArray([1, 2, STUB, x], [false, false, true, false]))
+
+# head is always :vcat
+# Two cases
+# (1) Args are series of "values" for entries of vector
+# (2) Args are series of Exprs for rows of matrix
+
+# Split up raw vcat args into two sets of args
+# data args: Insert stub value into data where NA occurred
+# na args: Note where NA occurred
+function fixargs(args::Vector{Any}, stub::Any)
+	n = length(args)
+	data = Array(Any, n)
+	na = Array(Any, n)
+	for i in 1:n
+		if args[i] == :NA
+			data[i] = stub
+			na[i] = true
 		else
-			p = length(ex.args[1].args)
-			restype = typeloop(ex.args[1].args)
-			data = Array(restype, n, p)
-			na = BitArray(n, p)
-			for i in 1:n
-				for j in 1:n
-					if ex.args[i].args[j] == :NA
-						data[i, j] = baseval(restype)
-						na[i, j] = true
-					else
-						data[i, j] = ex.args[i].args[j]
-						na[i, j] = false
-					end
-				end
+			data[i] = args[i]
+			na[i] = false
+		end
+	end
+	return data, na
+end
+
+# We assume that data has at least one "value" that isn't NA
+function findstub_vector(ex::Expr)
+	if ex.args[1] != :NA
+		return ex.args[1]
+	end
+	for i in 2:length(ex.args)
+		if ex.args[i] != :NA
+			return ex.args[i]
+		end
+	end
+	error("Type of literal data cannot be inferred")
+end
+
+# We assume that data has at least one "value" that isn't NA
+function findstub_matrix(ex::Expr)
+	if ex.args[1].args[1] != :NA
+		return ex.args[1].args[1]
+	end
+	nrows = length(ex.args)
+	for row in 1:nrows
+		subex = ex.args[row]
+		for i in 1:length(subex.args)
+			if subex.args[i] != :NA
+				return subex.args[i]
 			end
 		end
-		return data, na
-	else
-		return nothing, nothing
 	end
+	error("Type of literal data cannot be inferred")
 end
 
-function literaldata(ex::Expr)
-	d, n = parsedata(ex)
-	if n == nothing
-		return DataArray(eval(ex))
-	else
-		return DataArray(d, n)
-	end
+function parsevector(ex::Expr)
+	stub = findstub_vector(ex)
+	data, na = fixargs(ex.args, stub)
+	return Expr(:vcat, data...), Expr(:vcat, na...)
 end
 
-function literalpdata(ex::Expr)
-	d, n = parsedata(ex)
-	if n == nothing
-		return PooledDataArray(eval(ex))
+function parsematrix(ex::Expr)
+	stub = findstub_matrix(ex)
+	nrows = length(ex.args)
+	datarows = Array(Expr, nrows)
+	narows = Array(Expr, nrows)
+	for row in 1:nrows
+		data, na = fixargs(ex.args[row].args, stub)
+		datarows[row] = Expr(:row, data...)
+		narows[row] = Expr(:row, na...)
+	end
+	return Expr(:vcat, datarows...), Expr(:vcat, narows...)
+end
+
+function parsedata(ex::Expr)
+	if length(ex.args) == 0
+		return :([]), Expr(:call, :Array, :Bool, 0)
+	end
+	if isa(ex.args[1], Expr)
+		return parsematrix(ex)
 	else
-		return PooledDataArray(d, n)
+		return parsevector(ex)
 	end
 end
 
 macro data(ex)
-	return Expr(:call, :literaldata, Expr(:quote, ex))
+	if ex.head != :vcat
+		return Expr(:call, :DataArray, esc(ex))
+	end
+	dataexpr, naexpr = parsedata(ex)
+	return Expr(:call, :DataArray, esc(dataexpr), esc(naexpr))
 end
 
 macro pdata(ex)
-	return Expr(:call, :literalpdata, Expr(:quote, ex))
+	if ex.head != :vcat
+		return Expr(:call, :PooledDataArray, esc(ex))
+	end
+	dataexpr, naexpr = parsedata(ex)
+	return Expr(:call, :PooledDataArray, esc(dataexpr), esc(naexpr))
 end
