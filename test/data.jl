@@ -41,7 +41,6 @@ module TestData
     @assert string(pdvpp) == "[1, 2, 2, 3, 2, 1]"
     pdvpp = PooledDataArray(["one", "two", "two"], ["one", "two", "three"])
     @assert isequal(convert(DataArray, pdvpp), (@data ["one", "two", "two"]))
-    @assert all(get_indices(pdvpp) .== uint16([1, 2, 2]))
     @assert isequal(levels(pdvpp), (@data ["one", "two", "three"]))
     @assert isequal(pdvpp.pool, ["one", "two", "three"])
     @assert string(pdvpp) == "[one, two, two]"
