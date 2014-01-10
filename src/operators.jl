@@ -649,10 +649,6 @@ Base.(:^)(a, ::NAtype) = NA
 Base.(:^)(::NAtype, ::Integer) = NA
 Base.(:^)(::NAtype, ::Number) = NA
 
-# ambiguity...
-@swappable Base.(:-)(A::Diagonal, B::DataMatrix) = full(A) - B
-@swappable Base.(:-)(A::Diagonal, B::AbstractDataMatrix) = full(A) - B
-
 for (vf, sf) in ((:(Base.(:+)), :(Base.(:+))),
                  (:(Base.(:.+)), :(Base.(:+))),
                  (:(Base.(:-)), :(Base.(:-))),
