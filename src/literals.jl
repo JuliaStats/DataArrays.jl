@@ -14,6 +14,9 @@
 # Split up raw vcat args into two sets of args
 # data args: Insert stub value into data where NA occurred
 # na args: Note where NA occurred
+
+# Input must be a pure function because we may call it more times than you
+# exp
 function fixargs(args::Vector{Any}, stub::Any)
 	n = length(args)
 	data = Array(Any, n)
@@ -83,7 +86,7 @@ function parsedata(ex::Expr)
 	if length(ex.args) == 0
 		return :([]), Expr(:call, :Array, :Bool, 0)
 	end
-	if isa(ex.args[1], Expr)
+	if isa(ex.args[1], Expr) && ex.args[1].head == :row
 		return parsematrix(ex)
 	else
 		return parsevector(ex)

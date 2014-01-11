@@ -57,4 +57,109 @@ module TestLiterals
                                     [false, false, false, true]))
     @test isequal(mixed2, DataArray({NA, "x", 1, 1.23, 0},
                                     [true, false, false, false, true]))
+
+    x = 5.1
+    ex = :([1, 2, 3])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1, 2, 3]),
+                  DataArray([1, 2, 3], [false, false, false]))
+
+    ex = :([1, 2, 3.0])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1, 2, 3.0]),
+                  DataArray([1, 2, 3.0], [false, false, false]))
+
+    ex = :([1, 2, x])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1, 2, x]),
+                  DataArray([1, 2, x], [false, false, false]))
+
+    ex = :([1, 2, NA])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1, 2, NA]),
+                  DataArray([1, 2, 1], [false, false, true]))
+
+    ex = :([1, 2, x, NA])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1, 2, x, NA]),
+                  DataArray([1, 2, x, 1], [false, false, false, true]))
+
+    # Matrices
+    ex = :([1 2; 3 4])
+    DataArrays.parsedata(ex)
+    @data([1 2; 3 4])
+    @test isequal(@data([1 2; 3 4]),
+                  DataArray([1 2; 3 4], [false false; false false]))
+
+    ex = :([1 2; 3.0 4])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1 2; 3.0 4]),
+                  DataArray([1 2; 3.0 4], [false false; false false]))
+
+    ex = :([1 2; x x])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1 2; x x]),
+                  DataArray([1 2; x x], [false false; false false]))
+
+    ex = :([1 2; NA NA])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1 2; NA NA]),
+                  DataArray([1 2; 1 1], [false false; true true]))
+
+    ex = :([1 2; x NA])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1 2; x NA]),
+                  DataArray([1 2; x 1], [false false; false true]))
+
+    # Complex vector expressions
+    ex = :([1 + 1, 2 + 2, x * x, NA])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1 + 1, 2 + 2, x * x, NA]),
+                  DataArray([1 + 1, 2 + 2, x * x, 1],
+                            [false, false, false, true]))
+
+    ex = :([sin(1), cos(2) + cos(2), exp(x * x), sum([1, 1, 1])])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([sin(1),
+                         cos(2) + cos(2),
+                         exp(x * x),
+                         sum([1, 1, 1])]),
+                  DataArray([sin(1),
+                             cos(2) + cos(2),
+                             exp(x * x),
+                             sum([1, 1, 1])],
+                            [false, false, false, false]))
+
+    ex = :([1 + 1im, 2 + 2im])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1 + 1im, 2 + 2im]),
+                  DataArray([1 + 1im, 2 + 2im],
+                            [false, false]))
+
+    # Complex matrix expressions
+    ex = :([1 + 1 2 + 2; x * x NA])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([1 + 1 2 + 2; x * x NA]),
+                  DataArray([1 + 1 2 + 2; x * x 1],
+                            [false false; false true]))
+
+    ex = :([sin(1) cos(2) + cos(2);
+            exp(x * x) sum([1, 1, 1])])
+    DataArrays.parsedata(ex)
+    @test isequal(@data([sin(1) cos(2) + cos(2);
+                        exp(x * x) sum([1, 1, 1])]),
+                  DataArray([sin(1) cos(2) + cos(2);
+                             exp(x * x) sum([1, 1, 1])],
+                            [false false;
+                             false false]))
+
+    @test isequal(DataArrays.fixargs(:([1, 2, NA, x]).args, -1),
+                  ({1, 2, -1, :x}, {false, false, true, false}))
+
+    @test isequal(DataArrays.findstub_vector(:([1, 2, NA, x])), 1)
+    @test isequal(DataArrays.findstub_vector(:([NA, NA, NA, x])), :x)
+
+    # Lots of variables
+    a, b, c, d = 1, 2, 3, 4
+    @data [a, b, c, d]
 end
