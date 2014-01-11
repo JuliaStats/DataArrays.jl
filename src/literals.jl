@@ -1,22 +1,3 @@
-# NB: Can't easily make arrays of Expr or arrays of symbols that
-# look like NA.
-
-#
-# Go through data and assume existence of at least one non-NA value
-# Make that stub
-# @data [1, 2, NA, x] => :(DataArray([1, 2, STUB, x], [false, false, true, false]))
-
-# head is always :vcat
-# Two cases
-# (1) Args are series of "values" for entries of vector
-# (2) Args are series of Exprs for rows of matrix
-
-# Split up raw vcat args into two sets of args
-# data args: Insert stub value into data where NA occurred
-# na args: Note where NA occurred
-
-# Input must be a pure function because we may call it more times than you
-# exp
 function fixargs(args::Vector{Any}, stub::Any)
 	n = length(args)
 	data = Array(Any, n)
