@@ -62,6 +62,7 @@ module DataArrays
 
     include("utils.jl")
     include("natype.jl")
+    include("abstractdataarray.jl")
     include("dataarray.jl")
     include("pooleddataarray.jl")
     include("datavector.jl")
