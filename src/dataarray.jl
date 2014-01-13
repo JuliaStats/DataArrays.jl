@@ -86,13 +86,25 @@ function Base.find(da::AbstractDataArray{Bool})
     return res
 end
 
-# Turn a DataArray into an Array. Fail on NA
+#' @description
+#' Turn a DataArray into an Array. Raises an error if NA's are encountered.
+#' 
+#' @param da::DataArray{T} DataArray that will be converted to an Array.
+#'
+#' @returns a::Array{T} Array containing values of `da`.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, 3, 4]
+#' v = array(dv)
+#'
+#' dm = @data [1 2; 3 4]
+#' m = array(dm)
 function array{T}(da::DataArray{T})
-    n = length(da)
     res = Array(T, size(da))
-    for i in 1:n
+    for i in 1:length(da)
         if da.na[i]
-            error(NAException())
+            throw(NAException())
         else
             res[i] = da.data[i]
         end
@@ -100,10 +112,25 @@ function array{T}(da::DataArray{T})
     return res
 end
 
+#' @description
+#' Turn a DataArray into an Array. Replace any NA's with the value
+#' of second argument, `replacement`.
+#' 
+#' @param da::DataArray{T} DataArray that will be converted to an Array.
+#' @param replacement::T Value that will replace NA's in `da`.
+#'
+#' @returns a::Array{T} Array containing values of `da` plus replacements.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' v = array(dv, 3)
+#'
+#' dm = @data [1 2; NA 4]
+#' m = array(dm, 3)
 function array{T}(da::DataArray{T}, replacement::T)
-    n = length(da)
     res = Array(T, size(da))
-    for i in 1:n
+    for i in 1:length(da)
         if da.na[i]
             res[i] = replacement
         else
@@ -113,13 +140,56 @@ function array{T}(da::DataArray{T}, replacement::T)
     return res
 end
 
-function array{T}(da::DataArray{T}, replacement)
-    replacement = convert(T, replacement)
-    array(da, replacement)
+#' @description
+#' Turn a DataArray into an Array. Replace any NA's with the value
+#' of second argument, `replacement`.
+#' 
+#' @param da::DataArray{T} DataArray that will be converted to an Array.
+#' @param replacement::Any Value that will replace NA's in `da`.
+#'        Converted to the `eltype`, `T`, of `da`.
+#'
+#' @returns a::Array{T} Array containing values of `da` plus replacements.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' v = array(dv, 3)
+#'
+#' dm = @data [1 2; NA 4]
+#' m = array(dm, 3)
+function array{T}(da::DataArray{T}, replacement::Any)
+    return array(da, convert(T, replacement))
 end
 
-dropna(a::AbstractVector) = copy(a)
+#' @description
+#' NO-OP: Turn a Vector into a Vector. See dropna(dv::DataVector) for
+#'        rationale.
+#'
+#' @param v::Vector{T} Vector that will be converted to a Vector.
+#'
+#' @returns v::Vector{T} Vector containing all of the values of `v`.
+#'
+#' @examples
+#'
+#' v = [1, 2, 3, 4]
+#' v = dropna(v)
+dropna(v::AbstractVector) = copy(v)
 
+#' @description
+#' Turn a DataVector into a Vector. Drop any NA's.
+#'
+#' NB: Because NA's are dropped instead of replaced, this function only
+#'     works on DataVector's and will not work on DataArray's of higher
+#'     order.
+#' 
+#' @param dv::DataVector{T} DataArray that will be converted to an Array.
+#'
+#' @returns v::Array{T} Array containing only the non-NA values of `dv`.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' v = dropna(dv)
 dropna(dv::DataVector) = copy(dv.data[!dv.na])
 
 # Iterators
@@ -401,16 +471,23 @@ Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 #                    ::Type{T}) = promote_rule(S, T)
 # promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
 
-# Conversion rules
-
-function Base.convert{N}(::Type{BitArray{N}}, d::DataArray{BitArray{N}, N})
-    throw(ArgumentError("Can't convert to BitArray"))
-end
-
-function Base.convert{T, N}(::Type{BitArray}, d::DataArray{T, N})
-    throw(ArgumentError("Can't convert to BitArray"))
-end
-
+#' @description
+#'
+#' Convert a DataArray{T} to an Array{S}. Throws an `NAException`
+#' if the input contains `NA` values that prohibit conversion.
+#'
+#' @param da::DataArray{T} The DataArray that will be converted.
+#'
+#' @returns a::Array{S} The (possibly type-converted) elements of 
+#'         `da` if none were `NA`.
+#'
+#' @examples
+#'
+#' da = @data [1 2; 3 NA]
+#' a = convert(Array{Float64}, da)
+#'
+#' da = @data [1 2; 3 4]
+#' a = convert(Array{Float64}, da)
 function Base.convert{S, T, N}(::Type{Array{S, N}}, x::DataArray{T, N})
     if anyna(x)
         err = "Cannot convert DataArray with NA's to desired type"
@@ -420,6 +497,22 @@ function Base.convert{S, T, N}(::Type{Array{S, N}}, x::DataArray{T, N})
     end
 end
 
+#' @description
+#'
+#' Convert a DataArray{T} to an Array{T}. Throws an `NAException`
+#' if the input contains `NA` values that prohibit conversion.
+#'
+#' @param da::DataArray{T} The DataArray that will be converted.
+#'
+#' @returns a::Array{T} The elements of `da` if none were `NA`.
+#'
+#' @examples
+#'
+#' da = @data [1 2; 3 NA]
+#' a = convert(Array, da)
+#'
+#' da = @data [1 2; 3 4]
+#' a = convert(Array, da)
 function Base.convert{T, N}(::Type{Array}, x::DataArray{T, N})
     if anyna(x)
         err = "Cannot convert DataArray with NA's to base type"
@@ -429,26 +522,89 @@ function Base.convert{T, N}(::Type{Array}, x::DataArray{T, N})
     end
 end
 
+#' @description
+#'
+#' Convert an Array{T} to a DataArray{S}.
+#'
+#' @param a::Array{T} The Array that will be converted.
+#'
+#' @returns da::DataArray{S} The converted DataArray with potential
+#'          type-conversion of the elements of `a`.
+#'
+#' @examples
+#'
+#' a = [1 2; 3 4]
+#' da = convert(DataArray{Float64}, a)
 function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::Array{T, N})
     return DataArray(convert(Array{S}, x), falses(size(x)))
 end
 
-function Base.convert{T, N}(::Type{DataArray}, x::Array{T, N})
-    return DataArray(x, falses(size(x)))
+#' @description
+#'
+#' Convert an Array{T} to a DataArray{T}.
+#'
+#' @param a::Array{T} The Array that will be converted.
+#'
+#' @returns da::DataArray{T} The converted DataArray.
+#'
+#' @examples
+#'
+#' a = [1 2; 3 4]
+#' da = convert(DataArray, a)
+function Base.convert{T, N}(::Type{DataArray}, a::Array{T, N})
+    return DataArray(a, falses(size(a)))
 end
 
+#' @description
+#'
+#' Convert a DataArray{T} to a DataArray{S}.
+#'
+#' @param da::DataArray{T} The DataArray that will be converted.
+#'
+#' @returns out::DataArray{S} The converted DataArray.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' dv_alt = convert(DataVector{Float64}, dv)
 function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N})
     return DataArray(convert(Array{S}, x.data), x.na)
 end
 
+#' @description
+#'
+#' NO-OP: See convert(DataArray{S}, DataArray{T}) for rationale.
+#'
+#' @param da::DataArray{T} The DataArray that will be converted.
+#'
+#' @returns out::DataArray{T} The converted DataArray.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' dv_alt = convert(DataVector, dv)
 function Base.convert{T, N}(::Type{DataArray}, x::DataArray{T, N})
     return DataArray(x.data, x.na)
 end
 
-# Conversion convenience functions
-
+#' @description
+#'
+#' Convert a DataArray to an Array of int, float or bool type.
+#'
+#' @param da::DataArray{T} The DataArray that will be converted.
+#'
+#' @returns a::Array{Union(Int, Float64, Bool)} An Array containing the
+#'          type-converted values of `da`.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' v = int(dv)
+#' v = float(dv)
+#' v = bool(dv)
+#
 # TODO: Make sure these handle copying correctly
-# Data -> Not Data
+# TODO: Rethink multi-item documentation approach
 for f in (:(Base.int), :(Base.float), :(Base.bool))
     @eval begin
         function ($f)(da::DataArray)
@@ -462,9 +618,20 @@ for f in (:(Base.int), :(Base.float), :(Base.bool))
     end
 end
 
-# Hashing
+#' @description
+#'
+#' Compute the hash of an AbstractDataArray.
+#'
+#' @param da::DataArray{T} DataArray whose hash is desired.
+#'
+#' @returns h::Uint An unsigned integer hash value for `da`.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' k = hash(dv)
+#
 # TODO: Make sure this agrees with is_equals()
-
 function Base.hash(a::AbstractDataArray)
     h = hash(size(a)) + 1
     for i in 1:length(a)
@@ -473,7 +640,22 @@ function Base.hash(a::AbstractDataArray)
     return uint(h)
 end
 
-function finduniques{T}(da::DataArray{T})
+#' @internal
+#' @description
+#'
+#' Find the unique values in a DataArray, noting if `NA` occurs in the
+#' DataArray.
+#'
+#' @param da::DataArray{T} DataArray whose unique values are desired.
+#'
+#' @returns v::Vector{T} Vector containing the unique values from `da`.
+#' @returns hasna::Bool Did `da` contain any `NA` entries?
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' distinct_values, hasna = finduniques(dv)
+function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Bool
     unique_values = Dict{T, Bool}()
     n = length(da)
     hasna = false
@@ -487,7 +669,22 @@ function finduniques{T}(da::DataArray{T})
     return unique_values, hasna
 end
 
-function Base.unique{T}(da::DataArray{T})
+#' @description
+#'
+#' Return a DataVector containing the unique values of a DataArray,
+#' including NA if it is encountered.
+#'
+#' @param da::DataArray{T} DataArray whose unique values are desired.
+#'
+#' @returns dv::DataVector{T} DataVector containing the unique values
+#'          from `da`, including NA if there are any missing entries
+#'          in `da`.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' distinct_values = unique(dv)
+function Base.unique{T}(da::DataArray{T}) # -> DataVector{T}
     unique_values, hasna = finduniques(da)
     n = length(unique_values)
     if hasna
@@ -504,7 +701,21 @@ function Base.unique{T}(da::DataArray{T})
     end
 end
 
-function levels(da::DataArray)
+#' @description
+#'
+#' Return a DataVector containing the unique values of a DataArray,
+#' excluding any NA's.
+#'
+#' @param da::DataArray{T} DataArray whose unique values are desired.
+#'
+#' @returns dv::DataVector{T} DataVector containing the unique values
+#'          from `da`, excluding any NA's.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' distinct_values = levels(dv)
+function levels(da::DataArray) # -> DataVector{T}
     unique_values, hasna = finduniques(da)
     return DataArray(collect(keys(unique_values)))
 end
