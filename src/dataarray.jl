@@ -1,3 +1,5 @@
+# TODO: Remove some T's from output type signatures
+
 #' @description
 #'
 #' A type that extends the normal Julia Array{T} type by allowing
@@ -45,7 +47,7 @@ typealias DataMatrix{T} DataArray{T, 2}
 #' Create a DataArray from a set of data values and missingness
 #' mask as an `Array{Bool}`.
 #'
-#' NB: This definitione exist because Julia requires that we redefine
+#' NB: This definition exists because Julia requires that we redefine
 #' inner DataArray constructor as an outer constuctor.
 #' 
 #' @param d::Array The non-NA values of the DataArray being constructed.
@@ -59,7 +61,7 @@ typealias DataMatrix{T} DataArray{T, 2}
 #'
 #' da = DataArray([1, 2, 3], falses(3))
 function DataArray{T, N}(d::Array{T, N},
-                         m::BitArray{N} = falses(size(d)))
+                         m::BitArray{N} = falses(size(d))) # -> DataArray{T}
     return DataArray{T, N}(d, m)
 end
 
@@ -78,18 +80,8 @@ end
 #' @examples
 #'
 #' da = DataArray([1, 2, 3], [false, false, true])
-DataArray(d::Array, m::Array{Bool}) = DataArray(d, bitpack(m))
-
-# TODO: REMOVE
-# Convert a BitArray into a DataArray
-function DataArray(d::BitArray, m::BitArray = falses(size(d)))
-    return DataArray(bitunpack(d), m)
-end
-
-# TODO: REMOVE
-# Convert a Ranges object into a DataVector
-function DataArray(d::Ranges, m::BitArray = falses(length(d)))
-    DataArray(convert(Vector, d), m)
+function DataArray(d::Array, m::Array{Bool}) # -> DataArray{T}
+    return DataArray(d, bitpack(m))
 end
 
 #' @description
@@ -97,7 +89,7 @@ end
 #' Create a DataArray of a given type and dimensionality. All
 #' entries will be set to `NA` by default.
 #' 
-#' @param T::DataType The type of the output DataArray.
+#' @param T::Type The type of the output DataArray.
 #' @param dims::Integer... The size of the output DataArray.
 #'
 #' @returns out::DataArray A DataArray of the desired type and size.
@@ -105,8 +97,8 @@ end
 #' @examples
 #'
 #' da = DataArray(Int, 2, 2)
-function DataArray(t::Type, dims::Integer...)
-    return DataArray(Array(t, dims...), trues(dims...))
+function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
+    return DataArray(Array(T, dims...), trues(dims...))
 end
 
 #' @description
@@ -114,7 +106,7 @@ end
 #' Create a DataArray of a given type and dimensionality. All
 #' entries will be set to `NA` by default.
 #' 
-#' @param T::DataType The type of the output DataArray.
+#' @param T::Type The type of the output DataArray.
 #' @param dims::NTuple{N, Int} The size of the output DataArray.
 #'
 #' @returns out::DataArray A DataArray of the desired type and size.
@@ -122,7 +114,7 @@ end
 #' @examples
 #'
 #' da = DataArray(Int, (2, 2))
-function DataArray{N}(T::DataType, dims::NTuple{N, Int})
+function DataArray{N}(T::Type, dims::NTuple{N, Int}) # -> DataArray{T}
     return DataArray(Array(T, dims...), trues(dims...))
 end
 
@@ -138,7 +130,9 @@ end
 #'
 #' dv = @data [false, false, true, false]
 #' dv_new = copy(dv)
-Base.copy(d::DataArray) = DataArray(copy(d.data), copy(d.na))
+function Base.copy(d::DataArray) # -> DataArray{T}
+    return DataArray(copy(d.data), copy(d.na))
+end
 
 #' @description
 #'
@@ -152,7 +146,9 @@ Base.copy(d::DataArray) = DataArray(copy(d.data), copy(d.na))
 #'
 #' dv = @data [false, false, true, false]
 #' dv_new = deepcopy(dv)
-Base.deepcopy(d::DataArray) = DataArray(deepcopy(d.data), deepcopy(d.na))
+function Base.deepcopy(d::DataArray) # -> DataArray{T}
+    return DataArray(deepcopy(d.data), deepcopy(d.na))
+end
 
 #' @description
 #'
@@ -160,7 +156,7 @@ Base.deepcopy(d::DataArray) = DataArray(deepcopy(d.data), deepcopy(d.na))
 #' 
 #' @param da::DataArray DataArray based on which a new DataArray
 #'        will be created.
-#' @param T::DataType The element type of the output DataArray.
+#' @param T::Type The element type of the output DataArray.
 #' @param dims::Dims The dimensionality of the output DataArray.
 #'
 #' @returns out::DataArray{T} A new DataArray with the desired type and
@@ -201,7 +197,7 @@ Base.size(d::DataArray) = size(d.data) # -> (Int...)
 #'
 #' dm = @data [false false; true false]
 #' inds = ndims(dm)
-Base.ndims(da::DataArray) = ndims(da.data)
+Base.ndims(da::DataArray) = ndims(da.data) # -> Int
 
 #' @description
 #'
@@ -276,7 +272,7 @@ end
 #'
 #' dm = @data [1 2; 3 4]
 #' m = array(dm)
-function array{T}(da::DataArray{T})
+function array{T}(da::DataArray{T}) # -> Array{T}
     res = Array(T, size(da))
     for i in 1:length(da)
         if da.na[i]
@@ -305,7 +301,7 @@ end
 #'
 #' dm = @data [1 2; NA 4]
 #' m = array(dm, 3)
-function array{T}(da::DataArray{T}, replacement::T)
+function array{T}(da::DataArray{T}, replacement::T) # -> Array{T}
     res = Array(T, size(da))
     for i in 1:length(da)
         if da.na[i]
@@ -335,7 +331,7 @@ end
 #'
 #' dm = @data [1 2; NA 4]
 #' m = array(dm, 3)
-function array{T}(da::DataArray{T}, replacement::Any)
+function array{T}(da::DataArray{T}, replacement::Any) # -> Array{T}
     return array(da, convert(T, replacement))
 end
 
@@ -352,7 +348,7 @@ end
 #'
 #' v = [1, 2, 3, 4]
 #' v = dropna(v)
-dropna(v::AbstractVector) = copy(v)
+dropna(v::AbstractVector) = copy(v) # -> AbstractVector
 
 #' @description
 #'
@@ -370,7 +366,7 @@ dropna(v::AbstractVector) = copy(v)
 #'
 #' dv = @data [1, 2, NA, 4]
 #' v = dropna(dv)
-dropna(dv::DataVector) = copy(dv.data[!dv.na])
+dropna(dv::DataVector) = copy(dv.data[!dv.na]) # -> Vector
 
 # Iterators
 # TODO: Use values()
@@ -432,53 +428,190 @@ end
 # Indexing
 
 typealias SingleIndex Real
+# TODO: Remove BitVector here
 typealias MultiIndex Union(Vector, BitVector, Ranges, Range1)
 typealias BooleanIndex Union(BitVector, Vector{Bool})
 
 # TODO: Solve ambiguity warnings here without
 #       ridiculous accumulation of methods
-# v[dv]
-function Base.getindex(x::Vector,
+
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param v::Vector A Vector whose elements will be retrieved.
+#' @param inds::AbstractDataVector{Bool} An AbstractDataVector
+#'        containing a Boolean mask specifying, for each element,
+#'        whether that element should be retrieved or not. `NA`
+#'        values in the mask are treated as `false`.
+#'
+#' @returns out::Vector The values of `v` at the requested indices.
+#'
+#' @examples
+#'
+#' v = [1, 2, 3]
+#' inds = @data([false, true])
+#' v[inds]
+function Base.getindex(v::Vector,
                        inds::AbstractDataVector{Bool})
-    return x[find(inds)]
-end
-function Base.getindex(x::Vector,
-                       inds::AbstractDataArray{Bool})
-    return x[find(inds)]
-end
-function Base.getindex(x::Array,
-                       inds::AbstractDataVector{Bool})
-    return x[find(inds)]
-end
-function Base.getindex(x::Array,
-                       inds::AbstractDataArray{Bool})
-    return x[find(inds)]
-end
-function Base.getindex{S, T}(x::Vector{S},
-                             inds::AbstractDataArray{T})
-    return x[dropna(inds)]
-end
-function Base.getindex{S, T}(x::Array{S},
-                             inds::AbstractDataArray{T})
-    return x[dropna(inds)]
+    return v[find(inds)]
 end
 
-# d[SingleItemIndex]
-function Base.getindex(d::DataArray, i::SingleIndex)
-	if d.na[i]
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param v::Vector A Vector whose elements will be retrieved.
+#' @param inds::AbstractDataArray{Bool} A DataArray containing
+#'        a Boolean mask specifying, for each element, whether
+#'        that element should be retrieved or not. `NA` values
+#'        in the mask are treated as `false`.
+#'
+#' @returns out::Vector The values of `v` at the requested indices.
+#'
+#' @examples
+#'
+#' v = [1, 2, 3]
+#' inds = @data([false, true])
+#' v[inds]
+function Base.getindex(v::Vector,
+                       inds::AbstractDataArray{Bool})
+    return v[find(inds)]
+end
+
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param a::Array An Array whose elements will be retrieved.
+#' @param inds::AbstractDataArray{Bool} A DataArray containing
+#'        a Boolean mask specifying, for each element, whether
+#'        that element should be retrieved or not. `NA` values
+#'        in the mask are treated as `false`.
+#'
+#' @returns out::Vector{S} The values of `a` at the requested indices.
+#'
+#' @examples
+#'
+#' a = [1, 2, 3]
+#' inds = @data([false, true])
+#' a[inds]
+function Base.getindex(a::Array,
+                       inds::AbstractDataArray{Bool})
+    return a[find(inds)]
+end
+
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param a::Vector{S} A Vector whose elements will be retrieved.
+#' @param inds::AbstractDataArray{T} A DataArray containing the indices
+#'        of the requested elements.
+#'
+#' @returns out::Vector{S} The values of `a` at the requested indices.
+#'
+#' @examples
+#'
+#' a = [1, 2, 3]
+#' inds = @data([1, 2])
+#' da[1]
+#'
+#' da = @data([NA, 2, 3])
+#' da[1]
+function Base.getindex{S, T}(a::Vector{S},
+                             inds::AbstractDataArray{T})
+    return a[dropna(inds)]
+end
+
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param a::Array{T, N} An Array whose elements will be retrieved.
+#' @param inds::AbstractDataArray{T} A DataArray containing the indices
+#'        of the requested elements.
+#'
+#' @returns out::Array{T} The values of `a` at the requested indices.
+#'
+#' @examples
+#'
+#' a = [1, 2, 3]
+#' inds = @data([1, 2])
+#' da[1]
+#'
+#' da = @data([NA, 2, 3])
+#' da[1]
+function Base.getindex{S, T}(a::Array{S},
+                             inds::AbstractDataArray{T})
+    return a[dropna(inds)]
+end
+
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param ind::Real The index of the element to be retrieved.
+#'
+#' @returns out::Union(T, NAtype) The value of `da` at the requested
+#'          index.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[1]
+#'
+#' da = @data([NA, 2, 3])
+#' da[1]
+function Base.getindex(da::DataArray, ind::SingleIndex)
+	if da.na[ind]
 		return NA
 	else
-		return d.data[i]
+		return da.data[ind]
 	end
 end
 
 # d[MultiItemIndex]
 # TODO: Return SubDataArray
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param inds::AbstractDataVector{Bool} A Boolean mask specifying for
+#'        each element whether that element will be retrieved or not.
+#'
+#' @returns out::DataArray{T} A DataArray containing the elements of
+#'          `da` indexed.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' inds = @data([true, false])
+#' da[inds]
 function Base.getindex(d::DataArray,
                        inds::AbstractDataVector{Bool})
     inds = find(inds)
     return d[inds]
 end
+
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param inds::AbstractDataVector The indices of the elements that
+#'        will be retrieved.
+#'
+#' @returns out::DataArray{T} A DataArray containing the elements of
+#'          `da` indexed.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' inds = @data([1, 2])
+#' da[inds]
 function Base.getindex(d::DataArray,
                        inds::AbstractDataVector)
     inds = dropna(inds)
@@ -488,11 +621,41 @@ end
 # There are two definitions in order to remove ambiguity warnings
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param inds::BooleanIndex A Boolean mask specifying whether each
+#'        element of `da` should be retrieved.
+#'
+#' @returns out::DataArray{T} A DataArray containing the elements of
+#'          `da` indexed.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[[true, false]]
 function Base.getindex{T <: Number, N}(d::DataArray{T,N},
                                        inds::BooleanIndex)
     DataArray(d.data[inds], d.na[inds])
 end
 
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param inds::BooleanIndex A Boolean mask specifying whether each
+#'        element of `da` should be retrieved.
+#'
+#' @returns out::DataArray{T} A DataArray containing the elements of
+#'          `da` indexed.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[[true, false]]
 function Base.getindex(d::DataArray, inds::BooleanIndex)
     res = similar(d, sum(inds))
     j = 1
@@ -507,11 +670,41 @@ function Base.getindex(d::DataArray, inds::BooleanIndex)
     return res
 end
 
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param inds::MultiIndex The indices of the elements of `da` to be
+#'        retrieved.
+#'
+#' @returns out::DataArray{T} A DataArray containing the elements of
+#'          `da` indexed.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[[1, 2]]
 function Base.getindex{T <: Number, N}(d::DataArray{T, N},
                                        inds::MultiIndex)
     return DataArray(d.data[inds], d.na[inds])
 end
 
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param inds::MultiIndex The indices of the elements of `da` to be
+#'        retrieved.
+#'
+#' @returns out::DataArray{T} A DataArray containing the elements of
+#'          `da` indexed.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[[1, 2]]
 function Base.getindex(d::DataArray, inds::MultiIndex)
     res = similar(d, length(inds))
     for i in 1:length(inds)
@@ -529,119 +722,194 @@ end
 # TODO: Make inds::AbstractVector
 ## # The following assumes that T<:Number won't have #undefs
 ## # There are two definitions in order to remove ambiguity warnings
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param inds::BooleanIndex A Boolean mask specifying whether each
+#'        element of `da` should be retrieved.
+#'
+#' @returns out::DataArray{T} A DataArray containing the elements of
+#'          `da` indexed.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[[true, false]]
 function Base.getindex{T <: Number, N}(d::DataArray{T, N},
                                        inds::BooleanIndex)
     DataArray(d.data[inds], d.na[inds])
 end
+
+#' @description
+#'
+#' Get a set of elements of a DataArray.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
+#' @param inds::MultiIndex The indices of the elements of `da` to be
+#'        retrieved.
+#'
+#' @returns out::DataArray{T} A DataArray containing the elements of
+#'          `da` indexed.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[[1, 2]]
 function Base.getindex{T <: Number, N}(d::DataArray{T, N},
                                        inds::MultiIndex)
     DataArray(d.data[inds], d.na[inds])
 end
 
-# setindex!()
-
-# d[SingleItemIndex] = NA
-function Base.setindex!(da::DataArray, val::NAtype, i::SingleIndex)
+#' @description
+#'
+#' Set one element of a DataArray to `NA`.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be modified.
+#' @param val::NAtype The `NA` value being assigned to an element of `da`.
+#' @param ind::Real A real value specifying the index of the element
+#'        of `da` being modified.
+#'
+#' @returns val::NAtype The `NA` value that was assigned to an element
+#'          of `da`.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[1] = NA
+function Base.setindex!(da::DataArray,
+                        val::NAtype,
+                        i::SingleIndex) # -> NAtype
 	da.na[i] = true
     return NA
 end
 
-# d[SingleItemIndex] = Single Item
-function Base.setindex!(da::DataArray, val::Any, i::SingleIndex)
-	da.data[i] = val
-	da.na[i] = false
+#' @description
+#'
+#' Set one element of a DataArray to a new value, `val`.
+#'
+#' @param da::DataArray{T, N} A DataArray whose element will be modified.
+#' @param val::Any The value being assigned to an element of `da`.
+#' @param ind::Real A real value specifying the index of the element
+#'        of `da` being modified.
+#'
+#' @returns val::Any The value that was assigned to an element of `da`.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[1] = 4
+function Base.setindex!(da::DataArray,
+                        val::Any,
+                        ind::SingleIndex) # -> Any
+	da.data[ind] = val
+	da.na[ind] = false
     return val
 end
 
-# d[MultiIndex] = NA
-function Base.setindex!(da::DataArray{NAtype},
-                        val::NAtype,
-                        inds::AbstractVector{Bool})
-    throw(ArgumentError("DataArray{NAtype} is incoherent"))
-end
-function Base.setindex!(da::DataArray{NAtype},
-                        val::NAtype,
-                        inds::AbstractVector)
-    throw(ArgumentError("DataArray{NAtype} is incoherent"))
-end
+#' @description
+#'
+#' Set a specified set of elements of a DataArray to `NA`.
+#'
+#' NB: The indices in `inds` must be exhaustive.
+#'
+#' @param da::DataArray{T, N} A DataArray whose entries will be modified.
+#' @param val::NAtype The NA value being assigned to elements of `da`.
+#' @param inds::AbstractVector{Bool} A Boolean vector specifying for every
+#'        element of `da` whether it will be modified.
+#'
+#' @returns val::NAtype The NA value that was assigned to elements of `da`.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[[true, false, true]] = NA
 function Base.setindex!(da::DataArray,
                         val::NAtype,
-                        inds::AbstractVector{Bool})
+                        inds::AbstractVector{Bool}) # -> NAtype
     da.na[find(inds)] = true
     return NA
 end
+
+#' @description
+#'
+#' Set a specified set of elements of a DataArray to `NA`.
+#'
+#' @param da::DataArray{T, N} A DataArray whose entries will be modified.
+#' @param val::NAtype The NA value being assigned to elements of `da`.
+#' @param inds::AbstractVector A vector of indices of `da` to
+#'        be modified.
+#'
+#' @returns val::NAtype The NA value that was assigned to elements of `da`.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[1:3] = NA
 function Base.setindex!(da::DataArray,
                         val::NAtype,
-                        inds::AbstractVector)
+                        inds::AbstractVector) # -> NAtype
     da.na[inds] = true
     return NA
 end
 
-# d[MultiIndex] = Multiple Values
-function Base.setindex!(da::AbstractDataArray,
-                        vals::AbstractVector,
-                        inds::AbstractVector{Bool})
-    setindex!(da, vals, find(inds))
+#' @description
+#'
+#' Determine if the entries of an DataArray are `NA`.
+#'
+#' @param a::DataArray{T, N} The DataArray whose missingness will
+#'        be assessed.
+#'
+#' @returns na::BitArray{N} Elementwise Boolean whether entry is missing.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' isna(da)
+isna(da::DataArray) = copy(da.na) # -> BitArray
+
+#' @description
+#'
+#' Determine if the entries of an DataArray are `NaN`.
+#'
+#' @param a::DataArray{T, N} The DataArray whose elements will
+#'        be assessed.
+#'
+#' @returns na::DataArray{Bool} Elementwise Boolean whether entry is `NaN`.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' isnan(da)
+function Base.isnan(da::DataArray) # -> DataArray{Bool}
+    return DataArray(isnan(da.data), copy(da.na))
 end
-function Base.setindex!(da::AbstractDataArray,
-                        vals::AbstractVector,
-                        inds::AbstractVector)
-    for (val, ind) in zip(vals, inds)
-        da[ind] = val
+
+#' @description
+#'
+#' Determine if the entries of an DataArray are finite, which means
+#' neither `+/-NaN` nor `+/-Inf`.
+#'
+#' @param a::DataArray{T, N} The DataArray whose elements will
+#'        be assessed.
+#'
+#' @returns na::DataArray{Bool} Elementwise Boolean whether entry is finite.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' isfinite(da)
+function Base.isfinite(da::DataArray) # -> DataArray{Bool}
+    n = length(da)
+    res = Array(Bool, size(da))
+    for i in 1:n
+        if !da.na[i]
+            res[i] = isfinite(da.data[i])
+        end
     end
-    return vals
+    return DataArray(res, copy(da.na))
 end
-
-# x[MultiIndex] = Single Item
-function Base.setindex!{T}(da::AbstractDataArray{T},
-                           val::Union(Number, String, T),
-                           inds::AbstractVector{Bool})
-    setindex!(da, val, find(inds))
-end
-function Base.setindex!{T}(da::AbstractDataArray{T},
-                           val::Union(Number, String, T),
-                           inds::AbstractVector)
-    val = convert(T, val)
-    for ind in inds
-        da[ind] = val
-    end
-    return val
-end
-function Base.setindex!(da::AbstractDataArray,
-                        val::Any,
-                        inds::AbstractVector{Bool})
-    setindex!(da, val, find(inds))
-end
-function Base.setindex!{T}(da::AbstractDataArray{T},
-                           val::Any,
-                           inds::AbstractVector)
-    val = convert(T, val)
-    for ind in inds
-        da[ind] = val
-    end
-    return val
-end
-
-# Predicates
-
-isna(a::AbstractArray) = falses(size(a))
-isna(da::DataArray) = copy(da.na)
-
-Base.isnan(da::DataArray) = DataArray(isnan(da.data), copy(da.na))
-
-Base.isfinite(da::DataArray) = DataArray(isfinite(da.data), copy(da.na))
-
-anyna(a::AbstractArray) = false
-anyna(d::AbstractDataArray) = any(isna, d)
-
-allna(a::AbstractArray) = false
-allna(d::AbstractDataArray) = all(isna, d)
-
-# Generic iteration over AbstractDataArray's
-
-Base.start(x::AbstractDataArray) = 1
-Base.next(x::AbstractDataArray, state::Integer) = (x[state], state + 1)
-Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 
 # Promotion rules
 
@@ -668,7 +936,8 @@ Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 #'
 #' da = @data [1 2; 3 4]
 #' a = convert(Array{Float64}, da)
-function Base.convert{S, T, N}(::Type{Array{S, N}}, x::DataArray{T, N})
+function Base.convert{S, T, N}(::Type{Array{S, N}},
+                               x::DataArray{T, N}) # -> Array{S, N}
     if anyna(x)
         err = "Cannot convert DataArray with NA's to desired type"
         throw(NAException(err))
@@ -693,7 +962,9 @@ end
 #'
 #' da = @data [1 2; 3 4]
 #' a = convert(Array, da)
-function Base.convert{T, N}(::Type{Array}, x::DataArray{T, N})
+# TODO: Consider making a copy here
+function Base.convert{T, N}(::Type{Array},
+                            x::DataArray{T, N}) # -> Array{T}
     if anyna(x)
         err = "Cannot convert DataArray with NA's to base type"
         throw(NAException(err))
@@ -715,8 +986,9 @@ end
 #'
 #' a = [1 2; 3 4]
 #' da = convert(DataArray{Float64}, a)
-function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::Array{T, N})
-    return DataArray(convert(Array{S}, x), falses(size(x)))
+function Base.convert{S, T, N}(::Type{DataArray{S, N}},
+                               a::AbstractArray{T, N}) # -> DataArray{S, N}
+    return DataArray(convert(Array{S, N}, a), falses(size(a)))
 end
 
 #' @description
@@ -731,8 +1003,9 @@ end
 #'
 #' a = [1 2; 3 4]
 #' da = convert(DataArray, a)
-function Base.convert{T, N}(::Type{DataArray}, a::Array{T, N})
-    return DataArray(a, falses(size(a)))
+function Base.convert{T, N}(::Type{DataArray},
+                            a::AbstractArray{T, N}) # -> DataArray{T, N}
+    return DataArray(convert(Array{T, N}, a), falses(size(a)))
 end
 
 #' @description
@@ -747,13 +1020,15 @@ end
 #'
 #' dv = @data [1, 2, NA, 4]
 #' dv_alt = convert(DataVector{Float64}, dv)
-function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N})
+function Base.convert{S, T, N}(::Type{DataArray{S, N}},
+                               x::DataArray{T, N}) # -> DataArray{S, N}
     return DataArray(convert(Array{S}, x.data), x.na)
 end
 
 #' @description
 #'
 #' NO-OP: See convert(DataArray{S}, DataArray{T}) for rationale.
+#' TODO: Make operative by doing copy?
 #'
 #' @param da::DataArray{T} The DataArray that will be converted.
 #'
@@ -763,7 +1038,8 @@ end
 #'
 #' dv = @data [1, 2, NA, 4]
 #' dv_alt = convert(DataVector, dv)
-function Base.convert{T, N}(::Type{DataArray}, x::DataArray{T, N})
+function Base.convert{T, N}(::Type{DataArray},
+                            x::DataArray{T, N}) # -> DataArray{T, N}
     return DataArray(x.data, x.na)
 end
 
@@ -784,10 +1060,11 @@ end
 #' v = bool(dv)
 #
 # TODO: Make sure these handle copying correctly
+# TODO: Remove these? They have odd behavior, because they convert to Array's.
 # TODO: Rethink multi-item documentation approach
 for f in (:(Base.int), :(Base.float), :(Base.bool))
     @eval begin
-        function ($f)(da::DataArray)
+        function ($f)(da::DataArray) # -> DataArray
             if anyna(da)
                 err = "Cannot convert DataArray with NA's to desired type"
                 throw(NAException(err))
