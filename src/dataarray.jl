@@ -252,38 +252,21 @@ end
 # Indexing
 
 typealias SingleIndex Real
-typealias MultiIndex Union(Vector, BitVector, Ranges, Range1)
+#typealias MultiIndex Union(Vector, BitVector, Ranges, Range1)
+typealias MultiIndex Union(Vector, Ranges, Range1)
 typealias BooleanIndex Union(BitVector, Vector{Bool})
 
 # TODO: Solve ambiguity warnings here without
 #       ridiculous accumulation of methods
-# v[dv]
-function Base.getindex(x::Vector,
-                       inds::AbstractDataVector{Bool})
-    return x[find(inds)]
-end
-function Base.getindex(x::Vector,
-                       inds::AbstractDataArray{Bool})
-    return x[find(inds)]
-end
-function Base.getindex(x::Array,
-                       inds::AbstractDataVector{Bool})
-    return x[find(inds)]
-end
-function Base.getindex(x::Array,
-                       inds::AbstractDataArray{Bool})
-    return x[find(inds)]
-end
-function Base.getindex{S, T}(x::Vector{S},
-                             inds::AbstractDataArray{T})
-    return x[dropna(inds)]
-end
-function Base.getindex{S, T}(x::Array{S},
-                             inds::AbstractDataArray{T})
-    return x[dropna(inds)]
+
+function Base.getindex{S, T}(x::Vector{S}, inds::AbstractDataArray{T})
+    return x[array(inds)]
 end
 
-# d[SingleItemIndex]
+function Base.getindex{S, T}(x::Array{S}, inds::AbstractDataArray{T})
+    return x[array(inds)]
+end
+
 function Base.getindex(d::DataArray, i::SingleIndex)
 	if d.na[i]
 		return NA
@@ -292,25 +275,15 @@ function Base.getindex(d::DataArray, i::SingleIndex)
 	end
 end
 
-# d[MultiItemIndex]
 # TODO: Return SubDataArray
-function Base.getindex(d::DataArray,
-                       inds::AbstractDataVector{Bool})
-    inds = find(inds)
-    return d[inds]
-end
-function Base.getindex(d::DataArray,
-                       inds::AbstractDataVector)
-    inds = dropna(inds)
-    return d[inds]
+function Base.getindex(d::DataArray, inds::AbstractDataVector)
+    return d[array(inds)]
 end
 
 # There are two definitions in order to remove ambiguity warnings
 # TODO: Return SubDataArray
-# TODO: Make inds::AbstractVector
-function Base.getindex{T <: Number, N}(d::DataArray{T,N},
-                                       inds::BooleanIndex)
-    DataArray(d.data[inds], d.na[inds])
+function Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::BooleanIndex)
+    return DataArray(d.data[inds], d.na[inds])
 end
 
 function Base.getindex(d::DataArray, inds::BooleanIndex)
@@ -327,8 +300,7 @@ function Base.getindex(d::DataArray, inds::BooleanIndex)
     return res
 end
 
-function Base.getindex{T <: Number, N}(d::DataArray{T, N},
-                                       inds::MultiIndex)
+function Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::MultiIndex)
     return DataArray(d.data[inds], d.na[inds])
 end
 
@@ -338,8 +310,6 @@ function Base.getindex(d::DataArray, inds::MultiIndex)
         ix = inds[i]
         if !d.na[ix]
             res[i] = d.data[ix]
-        else
-            res[i] = NA # We could also change this in similar
         end
     end
     return res
@@ -349,12 +319,11 @@ end
 # TODO: Make inds::AbstractVector
 ## # The following assumes that T<:Number won't have #undefs
 ## # There are two definitions in order to remove ambiguity warnings
-function Base.getindex{T <: Number, N}(d::DataArray{T, N},
-                                       inds::BooleanIndex)
-    DataArray(d.data[inds], d.na[inds])
+function Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::BooleanIndex)
+    return DataArray(d.data[inds], d.na[inds])
 end
-function Base.getindex{T <: Number, N}(d::DataArray{T, N},
-                                       inds::MultiIndex)
+
+function Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::MultiIndex)
     DataArray(d.data[inds], d.na[inds])
 end
 
@@ -368,28 +337,38 @@ end
 
 # d[SingleItemIndex] = Single Item
 function Base.setindex!(da::DataArray, val::Any, i::SingleIndex)
-	da.data[i] = val
-	da.na[i] = false
+	da.data[i], da.na[i] = val, false
     return val
 end
 
 # d[MultiIndex] = NA
+# TODO: Remove these definitions if ever possible w/o raising warnings
 function Base.setindex!(da::DataArray{NAtype},
                         val::NAtype,
                         inds::AbstractVector{Bool})
     throw(ArgumentError("DataArray{NAtype} is incoherent"))
 end
+
 function Base.setindex!(da::DataArray{NAtype},
                         val::NAtype,
                         inds::AbstractVector)
     throw(ArgumentError("DataArray{NAtype} is incoherent"))
 end
+
+function Base.setindex!(da::DataArray,
+                        val::NAtype,
+                        inds::AbstractDataVector{Bool})
+    da.na[find(array(inds))] = true
+    return NA
+end
+
 function Base.setindex!(da::DataArray,
                         val::NAtype,
                         inds::AbstractVector{Bool})
     da.na[find(inds)] = true
     return NA
 end
+
 function Base.setindex!(da::DataArray,
                         val::NAtype,
                         inds::AbstractVector)
@@ -400,9 +379,16 @@ end
 # d[MultiIndex] = Multiple Values
 function Base.setindex!(da::AbstractDataArray,
                         vals::AbstractVector,
+                        inds::AbstractDataVector{Bool})
+    setindex!(da, vals, find(array(inds)))
+end
+
+function Base.setindex!(da::AbstractDataArray,
+                        vals::AbstractVector,
                         inds::AbstractVector{Bool})
     setindex!(da, vals, find(inds))
 end
+
 function Base.setindex!(da::AbstractDataArray,
                         vals::AbstractVector,
                         inds::AbstractVector)
@@ -415,9 +401,16 @@ end
 # x[MultiIndex] = Single Item
 function Base.setindex!{T}(da::AbstractDataArray{T},
                            val::Union(Number, String, T),
+                           inds::AbstractDataVector{Bool})
+    setindex!(da, val, find(array(inds)))
+end
+
+function Base.setindex!{T}(da::AbstractDataArray{T},
+                           val::Union(Number, String, T),
                            inds::AbstractVector{Bool})
     setindex!(da, val, find(inds))
 end
+
 function Base.setindex!{T}(da::AbstractDataArray{T},
                            val::Union(Number, String, T),
                            inds::AbstractVector)
@@ -427,11 +420,19 @@ function Base.setindex!{T}(da::AbstractDataArray{T},
     end
     return val
 end
+
+function Base.setindex!(da::AbstractDataArray,
+                        val::Any,
+                        inds::AbstractDataVector{Bool})
+    setindex!(da, val, find(array(inds)))
+end
+
 function Base.setindex!(da::AbstractDataArray,
                         val::Any,
                         inds::AbstractVector{Bool})
     setindex!(da, val, find(inds))
 end
+
 function Base.setindex!{T}(da::AbstractDataArray{T},
                            val::Any,
                            inds::AbstractVector)
@@ -445,6 +446,7 @@ end
 # Predicates
 
 isna(a::AbstractArray) = falses(size(a))
+
 isna(da::DataArray) = copy(da.na)
 
 Base.isnan(da::DataArray) = DataArray(isnan(da.data), copy(da.na))
@@ -452,15 +454,19 @@ Base.isnan(da::DataArray) = DataArray(isnan(da.data), copy(da.na))
 Base.isfinite(da::DataArray) = DataArray(isfinite(da.data), copy(da.na))
 
 anyna(a::AbstractArray) = false
+
 anyna(d::AbstractDataArray) = any(isna, d)
 
 allna(a::AbstractArray) = false
+
 allna(d::AbstractDataArray) = all(isna, d)
 
 # Generic iteration over AbstractDataArray's
 
 Base.start(x::AbstractDataArray) = 1
+
 Base.next(x::AbstractDataArray, state::Integer) = (x[state], state + 1)
+
 Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 
 # Promotion rules

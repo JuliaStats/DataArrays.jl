@@ -38,7 +38,7 @@ module DataArrays
            NA,
            NAException,
            NAtype,
-           padNA,
+           padna,
            pdatabool,
            pdatafloat,
            pdataint,
@@ -77,4 +77,5 @@ module DataArrays
     Base.@deprecate removeNA dropna
     Base.@deprecate set_levels setlevels
     Base.@deprecate set_levels! setlevels!
+    Base.@deprecate padNA padna
 end

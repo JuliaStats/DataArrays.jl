@@ -334,7 +334,6 @@ Base.find(pdv::PooledDataVector{Bool}) = find(array(pdv, false))
 ##
 ##############################################################################
 
-# pda[SingleItemIndex]
 function Base.getindex(pda::PooledDataArray, i::Real)
     if pda.refs[i] == 0
         return NA
@@ -343,20 +342,14 @@ function Base.getindex(pda::PooledDataArray, i::Real)
     end
 end
 
-# pda[MultiItemIndex]
-function Base.getindex(pda::PooledDataArray, inds::AbstractDataVector{Bool})
-    inds = find(inds)
-    return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
-end
 function Base.getindex(pda::PooledDataArray, inds::AbstractDataVector)
-    inds = dropna(inds)
-    return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
+    return PooledDataArray(RefArray(pda.refs[array(inds)]), copy(pda.pool))
 end
-function Base.getindex(pda::PooledDataArray, inds::Union(Vector, BitVector, Ranges))
+
+function Base.getindex(pda::PooledDataArray, inds::MultiIndex)
     return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
 end
 
-# pdm[SingleItemIndex, SingleItemIndex)
 function Base.getindex(pda::PooledDataArray, i::Real, j::Real)
     if pda.refs[i, j] == 0
         return NA
@@ -365,87 +358,60 @@ function Base.getindex(pda::PooledDataArray, i::Real, j::Real)
     end
 end
 
-# pda[SingleItemIndex, MultiItemIndex]
-function Base.getindex(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector{Bool})
-    getindex(pda, i, find(col_inds))
-end
-function Base.getindex(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector)
-    getindex(pda, i, dropna(col_inds))
-end
-# TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
-             i::Real,
-             col_inds::Union(Vector, BitVector, Ranges))
-    error("not yet implemented")
-    PooledDataArray(RefArray(pda.refs[i, col_inds]), pda.pool[i, col_inds])
+                       i::Real,
+                       col_inds::AbstractDataVector)
+    return getindex(pda, i, array(col_inds))
 end
 
-# pda[MultiItemIndex, SingleItemIndex]
-function Base.getindex(pda::PooledDataArray, row_inds::AbstractDataVector{Bool}, j::Real)
-    getindex(pda, find(row_inds), j)
-end
-function Base.getindex(pda::PooledDataArray, row_inds::AbstractVector, j::Real)
-    getindex(pda, dropna(row_inds), j)
-end
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
-             row_inds::Union(Vector, BitVector, Ranges),
-             j::Real)
-    error("not yet implemented")
-    PooledDataArray(RefArray(pda.refs[row_inds, j]), pda.pool[row_inds, j])
+                       i::Real,
+                       col_inds::MultiIndex)
+    return PooledDataArray(RefArray(pda.refs[i, col_inds]),
+                           pda.pool[i, col_inds])
 end
 
-# pda[MultiItemIndex, MultiItemIndex]
 function Base.getindex(pda::PooledDataArray,
-             row_inds::AbstractDataVector{Bool},
-             col_inds::AbstractDataVector{Bool})
-    getindex(pda, find(row_inds), find(col_inds))
+                       row_inds::AbstractVector,
+                       j::Real)
+    return getindex(pda, array(row_inds), j)
 end
-function Base.getindex(pda::PooledDataArray,
-             row_inds::AbstractDataVector{Bool},
-             col_inds::AbstractDataVector)
-    getindex(pda, find(row_inds), dropna(col_inds))
-end
+
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
-             row_inds::AbstractDataVector{Bool},
-             col_inds::Union(Vector, BitVector, Ranges))
-    getindex(pda, find(row_inds), col_inds)
+                       row_inds::MultiIndex,
+                       j::Real)
+    return PooledDataArray(RefArray(pda.refs[row_inds, j]),
+                           pda.pool[row_inds, j])
 end
+
 function Base.getindex(pda::PooledDataArray,
-             row_inds::AbstractDataVector,
-             col_inds::AbstractDataVector{Bool})
-    getindex(pda, dropna(row_inds), find(col_inds))
+                       row_inds::AbstractDataVector,
+                       col_inds::AbstractDataVector)
+    return getindex(pda, array(row_inds), array(col_inds))
 end
-function Base.getindex(pda::PooledDataArray,
-             row_inds::AbstractDataVector,
-             col_inds::AbstractDataVector)
-    getindex(pda, dropna(row_inds), dropna(col_inds))
-end
+
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
-             row_inds::AbstractDataVector,
-             col_inds::Union(Vector, BitVector, Ranges))
-    getindex(pda, dropna(row_inds), col_inds)
+                       row_inds::AbstractDataVector,
+                       col_inds::MultiIndex)
+    return getindex(pda, array(row_inds), col_inds)
 end
+
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
-             row_inds::Union(Vector, BitVector, Ranges),
-             col_inds::AbstractDataVector{Bool})
-    getindex(pda, row_inds, find(col_inds))
+                       row_inds::MultiIndex,
+                       col_inds::AbstractDataVector)
+    return getindex(pda, row_inds, array(col_inds))
 end
+
 # TODO: Make inds::AbstractVector
 function Base.getindex(pda::PooledDataArray,
-             row_inds::Union(Vector, BitVector, Ranges),
-             col_inds::AbstractDataVector)
-    getindex(pda, row_inds, dropna(col_inds))
-end
-# TODO: Make inds::AbstractVector
-function Base.getindex(pda::PooledDataArray,
-                  row_inds::Union(Vector, BitVector, Ranges),
-                  col_inds::Union(Vector, BitVector, Ranges))
-    error("not yet implemented")
-    PooledDataArray(RefArray(pda.refs[row_inds, col_inds]), pda.pool[row_inds, col_inds])
+                       row_inds::MultiIndex,
+                       col_inds::MultiIndex)
+    return PooledDataArray(RefArray(pda.refs[row_inds, col_inds]),
+                           pda.pool[row_inds, col_inds])
 end
 
 ##############################################################################
@@ -499,34 +465,41 @@ end
 # x[MultiIndex] = NA
 # TODO: Find a way to delete the next four methods
 function Base.setindex!(x::PooledDataArray{NAtype},
-                val::NAtype,
-                inds::AbstractVector{Bool})
+                        val::NAtype,
+                        inds::AbstractVector{Bool})
     error("Don't use PooledDataVector{NAtype}'s")
 end
+
 function Base.setindex!(x::PooledDataArray{NAtype},
-                val::NAtype,
-                inds::AbstractVector)
+                        val::NAtype,
+                        inds::AbstractVector)
     error("Don't use PooledDataVector{NAtype}'s")
 end
-function Base.setindex!(x::PooledDataArray, val::NAtype, inds::AbstractVector{Bool})
-    inds = find(inds)
-    x.refs[inds] = 0
+
+function Base.setindex!(x::PooledDataArray,
+                        val::NAtype,
+                        inds::AbstractDataVector)
+    x.refs[array(inds)] = 0
     return NA
 end
-function Base.setindex!(x::PooledDataArray, val::NAtype, inds::AbstractVector)
+
+function Base.setindex!(x::PooledDataArray,
+                        val::NAtype,
+                        inds::AbstractVector)
     x.refs[inds] = 0
     return NA
 end
 
 # pda[MultiIndex] = Multiple Values
 function Base.setindex!(pda::PooledDataArray,
-                   vals::AbstractVector,
-                   inds::AbstractVector{Bool})
-    setindex!(pda, vals, find(inds))
+                        vals::AbstractVector,
+                        inds::AbstractDataVector{Bool})
+    setindex!(pda, vals, array(inds))
 end
+
 function Base.setindex!(pda::PooledDataArray,
-                   vals::AbstractVector,
-                   inds::AbstractVector)
+                        vals::AbstractVector,
+                        inds::AbstractVector)
     for (val, ind) in zip(vals, inds)
         pda[ind] = val
     end
@@ -534,12 +507,19 @@ function Base.setindex!(pda::PooledDataArray,
 end
 
 # pda[SingleItemIndex, SingleItemIndex] = NA
-function Base.setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::NAtype, i::Real, j::Real)
+function Base.setindex!{T,R}(pda::PooledDataMatrix{T,R},
+                             val::NAtype,
+                             i::Real,
+                             j::Real)
     pda.refs[i, j] = zero(R)
     return NA
 end
+
 # pda[SingleItemIndex, SingleItemIndex] = Single Item
-function Base.setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::Any, i::Real, j::Real)
+function Base.setindex!{T,R}(pda::PooledDataMatrix{T,R},
+                             val::Any,
+                             i::Real,
+                             j::Real)
     val = convert(T, val)
     pda.refs[i, j] = getpoolidx(pda, val)
     return val
