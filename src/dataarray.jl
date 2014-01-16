@@ -170,7 +170,7 @@ Base.deepcopy(d::DataArray) = DataArray(deepcopy(d.data), deepcopy(d.na))
 #'
 #' dv = @data [false, false, true, false]
 #' dv_new = similar(dv, Float64, 2, 2, 2)
-function Base.similar(da::DataArray, T::DataType, dims::Dims) #-> DataArray{T}
+function Base.similar(da::DataArray, T::Type, dims::Dims) #-> DataArray{T}
     return DataArray(Array(T, dims), trues(dims))
 end
 
