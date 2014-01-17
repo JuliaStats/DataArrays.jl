@@ -14,10 +14,10 @@ module TestData
     #test_group("DataVector creation")
     dvint = @data [1, 2, NA, 4]
     dvint2 = DataArray([5:8])
-    dvint3 = DataArray(5:8)
+    dvint3 = convert(DataArray, 5:8)
     dvflt = @data [1.0, 2, NA, 4]
     dvstr = @data ["one", "two", NA, "four"]
-    dvdict = DataArray(Dict,4)    # for issue #199
+    dvdict = DataArray(Dict, 4) # for issue #199
 
     @assert isa(dvint, DataVector{Int})
     @assert isa(dvint2, DataVector{Int})
@@ -40,11 +40,13 @@ module TestData
     @assert isequal(pdvpp.pool, [1, 2, 3, 4])
     @assert string(pdvpp) == "[1, 2, 2, 3, 2, 1]"
     pdvpp = PooledDataArray(["one", "two", "two"], ["one", "two", "three"])
-    @assert isequal(convert(DataArray, pdvpp), (@data ["one", "two", "two"]))
-    @assert isequal(levels(pdvpp), (@data ["one", "two", "three"]))
+    @assert isequal(convert(DataArray, pdvpp), @data(["one", "two", "two"]))
+    @assert isequal(levels(pdvpp), @data(["one", "two", "three"]))
     @assert isequal(pdvpp.pool, ["one", "two", "three"])
     @assert string(pdvpp) == "[one, two, two]"
-    @assert string(PooledDataArray(["one", "two", "four"], ["one", "two", "three"])) == "[one, two, NA]"
+    @assert string(PooledDataArray(["one", "two", "four"],
+                                   ["one", "two", "three"])) ==
+            "[one, two, NA]"
 
     #test_group("PooledDataVector utf8 support")
     pdvpp = PooledDataArray([utf8("hello")], [false])
@@ -55,18 +57,19 @@ module TestData
     #test_group("DataVector access")
     @assert dvint[1] == 1
     @assert isna(dvint[3])
-    @assert isequal(dvflt[3:4], (@data [NA, 4.0]))
-    @assert isequal(dvint[[true, false, true, false]], (@data [1, NA]))
-    @assert isequal(dvstr[[1, 2, 1, 4]], (@data ["one", "two", "one", "four"]))
+    @assert isequal(dvflt[3:4], @data([NA, 4.0]))
+    @assert isequal(dvint[[true, false, true, false]], @data([1, NA]))
+    @assert isequal(dvstr[[1, 2, 1, 4]], @data(["one", "two", "one", "four"]))
     # Indexing produces #undef?
     # @assert isequal(dvstr[[1, 2, 1, 3]], DataVector["one", "two", "one", NA])
 
     #test_group("PooledDataVector access")
     @assert pdvstr[1] == "one"
     @assert isna(pdvstr[5])
-    @assert isequal(pdvstr[1:3], (@data ["one", "one", "two"]))
-    @assert isequal(pdvstr[[true, false, true, false, true, false, true]], (@pdata ["one", "two", NA, "one"]))
-    @assert isequal(pdvstr[[1, 3, 1, 2]], (@data ["one", "two", "one", "one"]))
+    @assert isequal(pdvstr[1:3], @data(["one", "one", "two"]))
+    @assert isequal(pdvstr[[true, false, true, false, true, false, true]],
+                    @pdata(["one", "two", NA, "one"]))
+    @assert isequal(pdvstr[[1, 3, 1, 2]], @data(["one", "two", "one", "one"]))
 
     #test_group("DataVector methods")
     @assert size(dvint) == (4,)
@@ -82,9 +85,9 @@ module TestData
 
     #test_group("DataVector operations")
     @assert isequal(dvint + 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
-    @assert isequal(dvint .* 2, (@data [2, 4, NA, 8]))
-    @assert isequal(dvint .== 2, (@data [false, true, NA, false]))
-    @assert isequal(dvint .> 1, (@data [false, true, NA, true]))
+    @assert isequal(dvint .* 2, @data([2, 4, NA, 8]))
+    @assert isequal(dvint .== 2, @data([false, true, NA, false]))
+    @assert isequal(dvint .> 1, @data([false, true, NA, true]))
 
     #test_group("PooledDataVector operations")
     # @assert isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, NA, false, false])

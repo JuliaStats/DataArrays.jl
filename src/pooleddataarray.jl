@@ -754,35 +754,41 @@ function PooledDataVecs(v1::AbstractArray,
             PooledDataArray(RefArray(refs2), pool))
 end
 
-function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}}, x::Array{T, N})
-    return PooledDataArray(convert(Array{S}, x), falses(size(x)))
+function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}},
+                               a::AbstractArray{T, N})
+    return PooledDataArray(convert(Array{S, N}, a), falses(size(a)))
 end
 
-function Base.convert{T, N}(::Type{PooledDataArray}, x::Array{T, N})
-    return PooledDataArray(x, falses(size(x)))
+function Base.convert{T, N}(::Type{PooledDataArray}, a::AbstractArray{T, N})
+    return PooledDataArray(convert(Array{T, N}, a), falses(size(a)))
 end
 
-function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}}, x::DataArray{T, N})
-    return PooledDataArray(convert(Array{S}, x.data), x.na)
+function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}},
+                               da::DataArray{T, N})
+    return PooledDataArray(convert(Array{S, N}, da.data), da.na)
 end
 
-function Base.convert{T, N}(::Type{PooledDataArray}, x::DataArray{T, N})
-    return PooledDataArray(x.data, x.na)
+function Base.convert{T, N}(::Type{PooledDataArray}, da::DataArray{T, N})
+    return PooledDataArray(da.data, da.na)
 end
 
-function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}}, x::PooledDataArray{T, N})
-    return PooledDataArray(RefArray(copy(x.refs)), convert(Array{S}, x.pool))
+function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}},
+                               pda::PooledDataArray{T, N})
+    return PooledDataArray(RefArray(copy(pda.refs)),
+                           convert(Array{S, N}, pda.pool))
 end
 
-function Base.convert{T, N}(::Type{PooledDataArray}, x::PooledDataArray{T, N})
-    return PooledDataArray(RefArray(copy(x.refs)), copy(x.pool))
+function Base.convert{T, N}(::Type{PooledDataArray},
+                            pda::PooledDataArray{T, N})
+    return PooledDataArray(RefArray(pda.refs), pda.pool)
 end
 
-function Base.convert{S, T, N}(::Type{DataArray{S, N}}, pda::PooledDataArray{T, N})
+function Base.convert{S, T, N}(::Type{DataArray{S, N}},
+                               pda::PooledDataArray{T, N})
     res = DataArray(Array(S, size(pda)), BitArray(size(pda)))
     for i in 1:length(pda)
         r = pda.refs[i]
-        if r == 0
+        if r == 0 # TODO: Use zero(R)
             res.na[i] = true
         else
             res.na[i] = false

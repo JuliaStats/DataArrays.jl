@@ -38,19 +38,16 @@ module TestDataArrays
 	DataArray(['a', 'b'], [true, true])
 
 	# DataArray(d::BitArray, m::BitArray = falses(size(d)))
-	DataArray(falses(2), falses(2))
-	DataArray(trues(2), falses(2))
-
-	DataArray(falses(2), trues(2))
-	DataArray(trues(2), trues(2))
+	convert(DataArray, falses(2))
+	convert(DataArray, trues(2))
 
 	# DataArray(d::BitArray, m::BitArray = falses(size(d)))
-	DataArray(falses(2))
-	DataArray(trues(2))
+	convert(DataArray, falses(2))
+	convert(DataArray, trues(2))
 
 	# DataArray(d::Ranges, m::BitArray = falses(length(d)))
-	DataArray(1:2, falses(2))
-	DataArray(1:2, trues(2))
+	convert(DataArray, 1:2)
+	convert(DataArray, 1:2)
 
 	# DataArray(t::Type, dims::Integer...)
 	DataArray(Float64, 2)
@@ -236,7 +233,7 @@ module TestDataArrays
 
 	# Base.setindex!(da::AbstractDataArray, vals::AbstractVector, inds::AbstractVector{Bool})
 	da = @data([1, 2])
-	da[[true, false]] = [3, 4]
+	da[[true, false]] = [3]
 
 	# Base.setindex!(da::AbstractDataArray, vals::AbstractVector, inds::AbstractVector)
 	da = @data([1, 2])
