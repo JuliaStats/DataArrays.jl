@@ -1,7 +1,7 @@
-using Stats
+using StatsBase
 
 module DataArrays
-    using Stats
+    using StatsBase
 
     const DEFAULT_POOLED_REF_TYPE = Uint32
 

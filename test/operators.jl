@@ -1,6 +1,6 @@
 module TestOperators
 	using Base.Test
-	using DataArrays, Stats
+	using DataArrays, StatsBase
 
 	macro test_da_pda(da, code)
 	    esc(quote
