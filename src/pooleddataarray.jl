@@ -812,6 +812,8 @@ function Base.convert{T, N}(::Type{DataArray}, pda::PooledDataArray{T, N})
     return res
 end
 
+pdata(a::AbstractArray) = convert(PooledDataArray, a)
+
 # Turn a PooledDataArray into an Array. Fail on NA
 function array{T, R}(da::PooledDataArray{T, R})
     n = length(da)

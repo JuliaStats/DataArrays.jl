@@ -1045,6 +1045,24 @@ end
 
 #' @description
 #'
+#' Convert an AbstractArray to a DataArray.
+#'
+#' @param a::AbstractArray{T} The AbstractArray that will be converted to
+#'        a DataArray.
+#'
+#' @returns da::DataArray{T} `a` after conversion to a DataArray.
+#'
+#' @examples
+#'
+#' dv = data([1, 2, 3, 4])
+#' dm = data([1 2; 3 4])
+#' dv = data(1:10)
+#' dv = data(falses(3))
+
+data(a::AbstractArray) = convert(DataArray, a)
+
+#' @description
+#'
 #' Convert a DataArray to an Array of int, float or bool type.
 #'
 #' @param da::DataArray{T} The DataArray that will be converted.
