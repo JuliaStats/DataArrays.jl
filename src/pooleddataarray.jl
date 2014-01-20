@@ -479,71 +479,145 @@ function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
     return pool_idx
 end
 
-# x[SingleIndex] = NA
 # TODO: Delete values from pool that no longer exist?
 # Not a good idea.  Add another function called drop_unused_levels to do this.
 # R has the convention that if f is a factor then factor(f) drops unused levels
-function Base.setindex!(x::PooledDataArray, val::NAtype, ind::Real)
-    x.refs[ind] = 0
+
+#' @description
+#'
+#' Set one element of a PooledDataArray to `NA`.
+#'
+#' @param pda::PooledDataArray{T, N} A PooledDataArray whose elemen
+#'        will be modified.
+#' @param val::NAtype The `NA` value being assigned to an element of `da`.
+#' @param ind::Real A real value specifying the index of the element
+#'        of `da` being modified.
+#'
+#' @returns val::NAtype The `NA` value that was assigned to an element
+#'          of `da`.
+#'
+#' @examples
+#'
+#' pda = @pdata([1, 2, 3])
+#' pda[1] = NA
+function Base.setindex!{T,R}(pda::PooledDataArray{T,R},
+                             val::NAtype,
+                             ind::SingleIndex) # -> NAtype
+    pda.refs[ind] = 0
     return NA
 end
 
-# x[SingleIndex] = Single Item
-# TODO: Delete values from pool that no longer exist?
-function Base.setindex!{T,R}(x::PooledDataArray{T,R}, val::Any, ind::Real)
+#' @description
+#'
+#' Set one element of a PooledDataArray to a new value, `val`.
+#'
+#' @param pda::PooledDataArray{T, N} A PooledDataArray whose elemen
+#'        will be modified.
+#' @param val::Any The value being assigned to an element of `da`.
+#' @param ind::Real A real value specifying the index of the element
+#'        of `da` being modified.
+#'
+#' @returns val::Any The value that was assigned to an element of `da`.
+#'
+#' @examples
+#'
+#' pda = @pdata([1, 2, 3])
+#' pda[1] = 4
+function Base.setindex!{T,R}(pda::PooledDataArray{T,R},
+                             val::Any,
+                             ind::SingleIndex) # -> Any
     val = convert(T, val)
-    x.refs[ind] = getpoolidx(x, val)
+    pda.refs[ind] = getpoolidx(pda, val)
     return val
 end
 
-# x[MultiIndex] = NA
-# TODO: Find a way to delete the next four methods
-function Base.setindex!(x::PooledDataArray{NAtype},
-                val::NAtype,
-                inds::AbstractVector{Bool})
-    error("Don't use PooledDataVector{NAtype}'s")
+# This is going to throw, but we need it to avoid an ambiguity warning.
+function Base.setindex!{T,R}(pda::PooledDataArray{T,R},
+                             val::AbstractArray,
+                             ind::SingleIndex) # -> Any
+    val = convert(T, val)
+    pda.refs[ind] = getpoolidx(pda, val)
+    return val
 end
-function Base.setindex!(x::PooledDataArray{NAtype},
-                val::NAtype,
-                inds::AbstractVector)
-    error("Don't use PooledDataVector{NAtype}'s")
-end
-function Base.setindex!(x::PooledDataArray, val::NAtype, inds::AbstractVector{Bool})
-    inds = find(inds)
-    x.refs[inds] = 0
-    return NA
-end
-function Base.setindex!(x::PooledDataArray, val::NAtype, inds::AbstractVector)
-    x.refs[inds] = 0
+
+#' @description
+#'
+#' Insert an NA value into the positions described by `inds`. NA is echoed
+#' back as the return value.
+#'
+#' @param pda::PooledDataArray{T, N} A PooledDataArray whose elemen
+#'        will be modified.
+#' @param val::Any A value to be inserted into the specified entries of `da`.
+#' @param inds... Indices to be set, in any format accepted in Base.
+#'
+#' @returns val::T The value inserted into `da`, converted to the element
+#'          type of `da`.
+#'
+#' @examples
+#'
+#' pda = @pdata([1, 2, 3])
+#' pda[[1, 2]] = NA
+function Base.setindex!{T,R}(pda::PooledDataArray{T,R},
+                             val::NAtype,
+                             inds...)
+    pda.refs[Base.to_index(inds)...] = 0
     return NA
 end
 
-# pda[MultiIndex] = Multiple Values
-function Base.setindex!(pda::PooledDataArray,
-                   vals::AbstractVector,
-                   inds::AbstractVector{Bool})
-    setindex!(pda, vals, find(inds))
-end
-function Base.setindex!(pda::PooledDataArray,
-                   vals::AbstractVector,
-                   inds::AbstractVector)
-    for (val, ind) in zip(vals, inds)
-        pda[ind] = val
+#' @description
+#'
+#' Insert entries of AbstractArray `vals` into the positions described by
+#' `inds`. The inserted AbstractArray is echoed back as the return value.
+#'
+#' @param da::DataArray{T, N} A DataArray whose entries will be modified.
+#' @param vals::Any A value to be inserted into the specified entries of `da`.
+#' @param inds... Indices to be set, in any format accepted in Base.
+#'
+#' @returns val::T The value inserted into `da`, converted to the element
+#'          type of `da`.
+#'
+#' @examples
+#'
+#' pda = @pdata([1, 2, 3])
+#' pda[[1, 2]] = [4, 5]
+function Base.setindex!{T,R}(pda::PooledDataArray{T,R},
+                             vals::AbstractArray,
+                             inds...)
+    # TODO avoid allocation
+    refs = similar(vals, R)
+    for i = 1:length(vals)
+        refs[i] = getpoolidx(pda, convert(T, vals[i]))
     end
+    pda.refs[Base.to_index(inds...)] = refs
     return vals
 end
 
-# pda[SingleItemIndex, SingleItemIndex] = NA
-function Base.setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::NAtype, i::Real, j::Real)
-    pda.refs[i, j] = zero(R)
-    return NA
-end
-# pda[SingleItemIndex, SingleItemIndex] = Single Item
-function Base.setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::Any, i::Real, j::Real)
-    val = convert(T, val)
-    pda.refs[i, j] = getpoolidx(pda, val)
+#' @description
+#'
+#' Insert a value, `val`, of type `Any` into the positions described
+#' by `inds`. The inserted value, `val`, is echoed back as the return
+#' value.
+#'
+#' @param pda::DataArray{T, N} A DataArray whose entries will be modified.
+#' @param val::Any A value to be inserted into the specified entries of `da`.
+#' @param inds... Indices to be set, in any format accepted in Base.
+#'
+#' @returns val::T The value inserted into `da`, converted to the element
+#'          type of `da`.
+#'
+#' @examples
+#'
+#' pda = @pdata([1, 2, 3])
+#' pda[[1, 2]] = 5.0
+function Base.setindex!{T,R}(pda::PooledDataArray{T,R},
+                             val::Any,
+                             inds...)
+    ref = getpoolidx(pda, convert(T, val))
+    pda.refs[Base.to_index(inds)...] = ref
     return val
 end
+
+# TODO setindex! for AbstractDataArray
 
 ##############################################################################
 ##
