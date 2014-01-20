@@ -780,8 +780,8 @@ end
 #' da[1] = NA
 function Base.setindex!(da::DataArray,
                         val::NAtype,
-                        i::SingleIndex) # -> NAtype
-	da.na[i] = true
+                        ind::SingleIndex) # -> NAtype
+	da.na[ind] = true
     return NA
 end
 
@@ -808,50 +808,89 @@ function Base.setindex!(da::DataArray,
     return val
 end
 
+# This is going to throw, but we need it to avoid an ambiguity warning.
+function Base.setindex!(da::DataArray,
+                        val::DataArray,
+                        ind::SingleIndex) # -> Any
+    da.data[ind] = val
+    da.na[ind] = false
+    return val
+end
+
 #' @description
 #'
-#' Set a specified set of elements of a DataArray to `NA`.
-#'
-#' NB: The indices in `inds` must be exhaustive.
+#' Insert an NA value into the positions described by `inds`. NA is echoed
+#' back as the return value.
 #'
 #' @param da::DataArray{T, N} A DataArray whose entries will be modified.
-#' @param val::NAtype The NA value being assigned to elements of `da`.
-#' @param inds::AbstractVector{Bool} A Boolean vector specifying for every
-#'        element of `da` whether it will be modified.
+#' @param val::Any A value to be inserted into the specified entries of `da`.
+#' @param inds... Indices to be set, in any format accepted in Base.
 #'
-#' @returns val::NAtype The NA value that was assigned to elements of `da`.
+#' @returns val::T The value inserted into `da`, converted to the element
+#'          type of `da`.
 #'
 #' @examples
 #'
 #' da = @data([1, 2, 3])
-#' da[[true, false, true]] = NA
+#' da[[1, 2]] = NA
 function Base.setindex!(da::DataArray,
                         val::NAtype,
-                        inds::AbstractVector{Bool}) # -> NAtype
-    da.na[find(inds)] = true
+                        inds...)
+    da.na[Base.to_index(inds)...] = true
     return NA
 end
 
 #' @description
 #'
-#' Set a specified set of elements of a DataArray to `NA`.
+#' Insert entries of DataArray `val` into the positions described by
+#' `inds`. The inserted DataArray is echoed back as the return value.
 #'
 #' @param da::DataArray{T, N} A DataArray whose entries will be modified.
-#' @param val::NAtype The NA value being assigned to elements of `da`.
-#' @param inds::AbstractVector A vector of indices of `da` to
-#'        be modified.
+#' @param val::Any A value to be inserted into the specified entries of `da`.
+#' @param inds... Indices to be set, in any format accepted in Base.
 #'
-#' @returns val::NAtype The NA value that was assigned to elements of `da`.
+#' @returns val::T The value inserted into `da`, converted to the element
+#'          type of `da`.
 #'
 #' @examples
 #'
 #' da = @data([1, 2, 3])
-#' da[1:3] = NA
+#' da[[1, 2]] = @data([4, 5])
 function Base.setindex!(da::DataArray,
-                        val::NAtype,
-                        inds::AbstractVector) # -> NAtype
-    da.na[inds] = true
+                        val::DataArray,
+                        inds...)
+    inds = Base.to_index(inds)
+    da.data[inds...] = val.data
+    da.na[inds...] = val.na
     return NA
+end
+
+# TODO setindex! for AbstractDataArray
+
+#' @description
+#'
+#' Insert a value, `val`, of type `Any` into the positions described
+#' by `inds`. The inserted value, `val`, is echoed back as the return
+#' value.
+#'
+#' @param da::DataArray{T, N} A DataArray whose entries will be modified.
+#' @param val::Any A value to be inserted into the specified entries of `da`.
+#' @param inds... Indices to be set, in any format accepted in Base.
+#'
+#' @returns val::T The value inserted into `da`, converted to the element
+#'          type of `da`.
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' da[[1, 2]] = 5.0
+function Base.setindex!(da::DataArray,
+                        val::Any,
+                        inds...)
+    inds = Base.to_index(inds)
+    da.data[inds...] = val
+    da.na[inds...] = false
+    return val
 end
 
 #' @description
@@ -1194,3 +1233,18 @@ function levels(da::DataArray) # -> DataVector{T}
     unique_values, hasna = finduniques(da)
     return DataArray(collect(keys(unique_values)))
 end
+
+#' @description
+#'
+#' Concatenate a 
+#' excluding any NA's.
+#'
+#' @param da::DataArray{T} DataArray whose unique values are desired.
+#'
+#' @returns dv::DataVector{T} DataVector containing the unique values
+#'          from `da`, excluding any NA's.
+#'
+#' @examples
+#'
+#' dv = @data [1, 2, NA, 4]
+#' distinct_values = levels(dv)
