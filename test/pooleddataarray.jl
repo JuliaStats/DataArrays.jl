@@ -41,4 +41,15 @@ module TestPDA
 	        @assert eltype(PooledDataArray(t, [1,2,3], t .== 0, R).refs) == R
 	    end
 	end
+
+    pcopy = copy(p)
+    @assert levels(append!(pcopy, @pdata [4, NA, 6, 5])) == [1, 8, 9, 4, 5, 6]
+
+    x = PooledDataArray([9, 9, 8])
+    y = PooledDataArray([1, 9, 3, 2, 2])
+    @assert append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
+
+    x = PooledDataArray([9, 9, 8])
+    y = [1, 9, 3, 2, 2]
+    @assert append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
 end
