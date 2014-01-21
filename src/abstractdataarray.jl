@@ -137,6 +137,23 @@ allna(d::AbstractDataArray) = all(isna, d) # -> Bool
 #' isna(a)
 isna(a::AbstractArray) = falses(size(a)) # -> BitArray
 
+#' @description
+#'
+#' Safe and type-stable way to determine if element `i` of an
+#' AbstractArray is `NA`.
+#'
+#' @param a::AbstractArray The AbstractArray whose missingness will
+#'        be assessed.
+#' @param i::Integer The index of the element to be checked for `NA`.
+#'
+#' @returns na::Bool Is the element `NA` or not?
+#'
+#' @examples
+#'
+#' a = [1, 2, 3]
+#' isna(a, 1)
+isna(a::AbstractArray, i::Real) = false # -> Bool
+
 # TODO: Remove this method? It seems like a trap to me.
 #' @description
 #'

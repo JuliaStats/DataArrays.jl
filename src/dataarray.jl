@@ -871,6 +871,23 @@ isna(da::DataArray) = copy(da.na) # -> BitArray
 
 #' @description
 #'
+#' Safe and type-stable way to determine if element `i` of an
+#' DataArray is `NA`.
+#'
+#' @param a::DataArray The DataArray whose missingness will
+#'        be assessed.
+#' @param i::Integer The index of the element to be checked for `NA`.
+#'
+#' @returns na::Bool Is the element `NA` or not?
+#'
+#' @examples
+#'
+#' a = @data([1, 2, 3])
+#' isna(a, 1)
+isna(da::DataArray, i::Real) = da.na[i] # -> Bool
+
+#' @description
+#'
 #' Determine if the entries of an DataArray are `NaN`.
 #'
 #' @param a::DataArray{T, N} The DataArray whose elements will

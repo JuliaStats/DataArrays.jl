@@ -174,6 +174,23 @@ end
 
 isna(pda::PooledDataArray) = pda.refs .== 0
 
+#' @description
+#'
+#' Safe and type-stable way to determine if element `i` of an
+#' PooledDataArray is `NA`.
+#'
+#' @param a::PooledDataArray The PooledDataArray whose missingness will
+#'        be assessed.
+#' @param i::Integer The index of the element to be checked for `NA`.
+#'
+#' @returns na::Bool Is the element `NA` or not?
+#'
+#' @examples
+#'
+#' a = @pdata([1, 2, 3])
+#' isna(a, 1)
+isna(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
+
 ##############################################################################
 ##
 ## PooledDataArray utilities
