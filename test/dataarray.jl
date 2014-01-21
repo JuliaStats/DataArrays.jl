@@ -27,6 +27,16 @@ module TestDataArray
 	similar(dm, 2, 2)
 	similar(dt, 2, 2, 2)
 
+
+    x = DataArray([9, 9, 8])
+    y = DataArray([1, 9, 3, 2, 2])
+    @assert append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
+
+    x = DataArray([9, 9, 8])
+    y = [1, 9, 3, 2, 2]
+    @assert append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
+
+
 	# Test vecbind
 	# a = [1:4]
 	# d = DataArray(a)

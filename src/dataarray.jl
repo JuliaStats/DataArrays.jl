@@ -152,6 +152,48 @@ end
 
 #' @description
 #'
+#' Append the elements of items to the end of d.
+#'
+#' @param da::DataArray{T,1} The DataArray to append elements to.
+#' @param items::DataArray{T,1} Elements to append to da.
+#'
+#' @returns: out::DataArray{T,1} The modified data array.
+#'
+#' @examples
+#'
+#' x = @data [1, 2, 3]
+#' y = @data [4, 5, 6]
+#' append!(x, y)
+function Base.append!{T}(da::DataArray{T,1}, items::DataArray{T,1})
+    append!(da.data, items.data)
+    append!(da.na, items.na)
+    da
+end
+
+#' @description
+#'
+#' Append the elements of items to the end of d.
+#'
+#' @param da::DataArray{T,1} The DataArray to append elements to.
+#' @param items::AbstractArray{T,1} Elements to append to da.
+#'
+#' @returns: out::DataArray{T,1} The modified data array.
+#'
+#' @examples
+#'
+#' x = @data [1, 2, 3]
+#' y = [4, 5, 6]
+#' append!(x, y)
+function Base.append!{T}(da::DataArray{T,1}, items::AbstractArray{T,1})
+    append!(da.data, items)
+    oldn = length(da.na)
+    resize!(da.na, oldn + length(items))
+    da.na[oldn+1:end] = false
+    da
+end
+
+#' @description
+#'
 #' Create a new DataArray{T} that is similar to an existing DataArray.
 #' 
 #' @param da::DataArray DataArray based on which a new DataArray
