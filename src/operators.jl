@@ -18,6 +18,7 @@ const elementary_functions = [:(Base.abs),
                               :(Base.atanh),
                               :(Base.sin),
                               :(Base.sinh),
+                              :(Base.conj),
                               :(Base.cos),
                               :(Base.cosh),
                               :(Base.tan),
@@ -368,9 +369,31 @@ end
 Base.(:!)(d::DataArray{Bool}) = DataArray(!d.data, copy(d.na))
 Base.(:-)(d::DataArray) = DataArray(-d.data, copy(d.na))
 
-# Treat ctranspose and * in a special way for now
-for f in (:(Base.ctranspose), :(Base.transpose))
-    @eval $(f)(d::DataArray) = DataArray($(f)(d.data), d.na')
+# Treat ctranspose and * in a special way
+for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
+    @eval begin
+        function $(f){T}(d::Union(DataVector{T}, DataMatrix{T}))
+            # (c)transpose in Base uses a cache-friendly algorithm for
+            # numeric arrays, which is faster than our naive algorithm,
+            # but chokes on undefined values in the data array.
+            # Fortunately, undefined values can only be present in
+            # arrays of non-bits types.
+            if isbits(T)
+                DataArray($(f)(d.data), d.na.')
+            else
+                data = d.data
+                sz = (size(data, 1), size(data, 2))
+                res = similar(data, size(data, 2), size(data, 1))
+                @bitenumerate d.na i na begin
+                    if !na
+                        jnew, inew = ind2sub(sz, i)
+                        @inbounds res[inew, jnew] = $(elf)(data[i])
+                    end
+                end
+                DataArray(res, d.na.')
+            end
+        end
+    end
 end
 
 # Propagates NA's
@@ -424,7 +447,7 @@ end
 
 # One-argument elementary functions that return the same type as their
 # inputs
-for f in (:(Base.abs), :(Base.sign))
+for f in (:(Base.abs), :(Base.conj), :(Base.sign))
     @eval begin
         $(f)(::NAtype) = NA
         @dataarray_unary $(f) Number T
