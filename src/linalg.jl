@@ -114,7 +114,7 @@ function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
 
         # Impute missing entries using current SVD
         previous_dm = copy(current_dm)
-        U, D, V = svd(current_dm, true)
+        U, D, V = svd(current_dm)
         impute!(current_dm, missing_entries, U, D, V', k)
 
         # Compute the change in the matrix across iterations
@@ -130,7 +130,7 @@ function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
     end
 
     # Return the rank-k SVD entries
-    U, D, V = svd(current_dm, true)
+    U, D, V = svd(current_dm)
 
     # Only return the SVD entries, not the imputation
     return (U[:, 1:k], D[1:k], V[:, 1:k])
