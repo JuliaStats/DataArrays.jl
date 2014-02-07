@@ -527,9 +527,9 @@ Base.(:$)(a::DataArray{Bool}, b::DataArray{Bool}) =
 # Need explicit definition for BitArray to avoid ambiguity
 for t in (:(BitArray), :(Union(AbstractArray{Bool}, Bool)))
     @eval begin
-        @swappable Base.(:&)(a::DataArray{Bool}, b::$t) = DataArray(a.data & b, a.na & b)
-        @swappable Base.(:|)(a::DataArray{Bool}, b::$t) = DataArray(a.data | b, a.na & !b)
-        @swappable Base.(:$)(a::DataArray{Bool}, b::$t) = DataArray(a.data $ b, copy(a.na))
+        @swappable Base.(:&)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data & b), a.na & b)
+        @swappable Base.(:|)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data | b), a.na & !b)
+        @swappable Base.(:$)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data $ b), copy(a.na))
     end
 end
 

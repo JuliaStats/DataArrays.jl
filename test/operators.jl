@@ -137,6 +137,9 @@ module TestOperators
     v = ones(5)
     dv = convert(DataArray, ones(5))
     dv[1] = NA
+    bv = [true, false, false, true, true]
+    bbv = bitpack([true, false, false, true, true])
+    bdv = @data [false, true, false, false, true]
     @test_da_pda dv begin
         for f in map(eval, DataArrays.array_arithmetic_operators)
             for i in 1:length(dv)
@@ -144,6 +147,14 @@ module TestOperators
                         f(v, dv)[i] == f(v[i], dv[i])
                 @assert isna(f(dv, v)[i]) && isna(dv[i]) ||
                         f(dv, v)[i] == f(dv[i], v[i])
+            end
+        end
+        for f in map(eval, DataArrays.bit_operators)
+            for i in 1:length(bdv)
+                @assert f(bv, bdv)[i] == f(bv[i], bdv[i])
+                @assert f(bdv, bv)[i] == f(bdv[i], bv[i])
+                @assert f(bbv, bdv)[i] == f(bbv[i], bdv[i])
+                @assert f(bdv, bbv)[i] == f(bdv[i], bbv[i])
             end
         end
     end
@@ -156,6 +167,11 @@ module TestOperators
             for i in 1:length(dv)
                 @assert isna(f(dv, dv)[i]) && isna(dv[i]) ||
                         f(dv, dv)[i] == f(dv[i], dv[i])
+            end
+        end
+        for f in map(eval, DataArrays.bit_operators)
+            for i in 1:length(bv)
+                @assert f(bv, bv)[i] == f(bv[i], bv[i])
             end
         end
     end
