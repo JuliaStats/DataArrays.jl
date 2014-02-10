@@ -28,29 +28,6 @@ typealias AbstractDataMatrix{T} AbstractDataArray{T, 2}
 #' T = eltype(dv)
 Base.eltype{T, N}(d::AbstractDataArray{T, N}) = T
 
-#' @description
-#' Copy the elements of `src` into the AbstractDataArray, `dest`.
-#' 
-#' @param dest::AbstractDataArray The AbstractDataArray that will
-#'        be written into.
-#' @param src::Any The iterable object whose contents will be copied
-#'        into `dest`.
-#'
-#' @returns dest::AbstractDataArray The modified version of `dest` is
-#'          returned for convenience.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' v = [true, true, true, false]
-#' copy!(dv, v)
-function Base.copy!(dest::AbstractDataArray, src::Any)
-    for i in 1:length(src)
-        dest[i] = src[i]
-    end
-    return dest
-end
-
 # Generic iteration over AbstractDataArray's
 
 # TODO: Document
