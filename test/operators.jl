@@ -70,27 +70,29 @@ module TestOperators
     end
 
     # transpose and ctranpose on DataVectors and DataMatrices
-    for a in ([1, 2, 3, 4], [1.0+1.0im, 2.0-2.0im, 3.0+3.0im, 4.0-4.0im],
-              [1 2; 3 4], [1.0+1.0im 2.0-2.0im; 3.0+3.0im 4.0-4.0im])
-    end
     for (da, dat) in ((@data([5, 2, 3, 4]), @data([5 2 3 4])),
                       (@data([1.0+1.0im, 5.0, 3.0+3.0im, 4.0-4.0im]), @data([1.0+1.0im 5.0 3.0+3.0im 4.0-4.0im])),
                       (@data([1 2; 5 4]), @data([1 5; 2 4])),
                       (@data([1.0+1.0im 2.0-2.0im; 3.0+3.0im 5.0]), @data([1.0+1.0im 3.0+3.0im; 2.0-2.0im 5.0])))
         # Test for both bits and non-bits types
         for da in (da, convert(DataArray{Number}, da))
-            # No NA
-            @test isequal(da.', dat)
-            @test isequal(da', conj(dat))
+            let da = copy(da), dat = copy(dat)
+                # No NA
+                @test isequal(da.', dat)
+                @test isequal(da', conj(dat))
 
-            # With NA
-            # XXX we should fix indexing so that vec isn't necessary
-            da[vec(da .== 5)] = NA
-            dat[vec(dat .== 5)] = NA
-            # Make sure that NAs are undefined in the non-bits array
-            da = conj(conj(da))
-            @test isequal(da.', dat)
-            @test isequal(da', conj(dat))
+                # With NA
+                # XXX we should fix indexing so that this isn't necessary
+                for i = 1:length(da)
+                    da[i] == 5 && (da[i] = NA)
+                    dat[i] == 5 && (dat[i] = NA)
+                end
+
+                # Make sure that NAs are undefined in the non-bits array
+                da = conj(conj(da))
+                @test isequal(da.', dat)
+                @test isequal(da', conj(dat))
+            end
         end
     end
 

@@ -364,10 +364,9 @@ for f in unary_operators
     @eval $(f)(d::NAtype) = NA
 end
 
-# Unary operators, DataArrays. Definitions in base should be adequate
-# for AbstractDataArrays. These are just optimizations
-Base.(:!)(d::DataArray{Bool}) = DataArray(!d.data, copy(d.na))
-Base.(:-)(d::DataArray) = DataArray(-d.data, copy(d.na))
+# Unary operators, DataArrays.
+@dataarray_unary Base.(:(-)) Any T
+@dataarray_unary Base.(:(!)) Bool T
 
 # Treat ctranspose and * in a special way
 for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
