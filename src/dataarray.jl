@@ -918,15 +918,16 @@ isna(da::DataArray) = copy(da.na) # -> BitArray
 #'
 #' @param a::DataArray The DataArray whose missingness will
 #'        be assessed.
-#' @param i::Integer The index of the element to be checked for `NA`.
+#' @param inds::Any The indices of the elements to be checked for `NA`.
 #'
-#' @returns na::Bool Is the element `NA` or not?
+#' @returns na::Any Are the indexed elements `NA` or not?
 #'
 #' @examples
 #'
 #' a = @data([1, 2, 3])
 #' isna(a, 1)
-isna(da::DataArray, i::Real) = da.na[i] # -> Bool
+#' isna(a, 1:2)
+isna(da::DataArray, inds::Any...) = getindex(da.na, inds...)
 
 #' @description
 #'
