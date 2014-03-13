@@ -68,6 +68,7 @@ module DataArrays
     include("statistics.jl")
     include("predicates.jl")
     include("literals.jl")
+    include("deprecated.jl")
 
     Base.@deprecate removeNA dropna
     Base.@deprecate set_levels setlevels
