@@ -283,31 +283,39 @@ end
 #
 
 # Binary operators with one scalar argument
-macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype)
+macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
     esc(Expr(:block,
         # DataArray and AbstractDataArray with scalar
         # XXX It would be really nice to make this work with arbitrary
         # types, but doing so results in a bunch of method ambiguity
         # warnings
         {
-            quote
-                @swappable function $(vectorfunc)(a::DataArray, b::$t)
-                    data = a.data
-                    res = similar(data, $outtype)
-                    @bitenumerate a.na i na begin
-                        if !na
-                            @inbounds res[i] = $(scalarfunc)(data[i], b)
+            begin
+                fns = {
+                    :(function $(vectorfunc)(a::DataArray, b::$t)
+                        data = a.data
+                        res = similar(data, $outtype)
+                        @bitenumerate a.na i na begin
+                            if !na
+                                @inbounds res[i] = $(scalarfunc)(data[i], b)
+                            end
                         end
-                    end
-                    DataArray(res, copy(a.na))
-                end $scalarfunc
-                @swappable function $(vectorfunc)(a::AbstractDataArray, b::$t)
-                    res = similar(a, $outtype)
-                    for i = 1:length(a)
-                        res[i] = $(scalarfunc)(a[i], b)
-                    end
-                    res
-                end $scalarfunc
+                        DataArray(res, copy(a.na))
+                    end),
+                    :(function $(vectorfunc)(a::AbstractDataArray, b::$t)
+                        res = similar(a, $outtype)
+                        for i = 1:length(a)
+                            res[i] = $(scalarfunc)(a[i], b)
+                        end
+                        res
+                    end)
+                }
+                if swappable
+                    # For /, Array/Number is valid but not Number/Array
+                    # All other operators should be swappable
+                    map!(x->Expr(:macrocall, symbol("@swappable"), x, scalarfunc), fns)
+                end
+                Expr(:block, fns...)
             end
             for t in (:String, :Number)
         }...
@@ -643,7 +651,7 @@ for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
         @swappable ($(vf))(::NAtype, b) = NA
         @swappable ($(sf))(::NAtype, b) = NA
 
-        @dataarray_binary_scalar $(vf) $(sf) Bool
+        @dataarray_binary_scalar $(vf) $(sf) Bool true
         @dataarray_binary_array $(vf) $(sf) Bool
     end
 end
@@ -738,7 +746,7 @@ for f in (:(Base.(:.+)), :(Base.(:.-)), :(Base.(:*)), :(Base.(:.*)),
             DataArray(Array(T, size(b)), trues(size(b)))
 
         # DataArray with scalar
-        @dataarray_binary_scalar $f $f promote_type(eltype(a), eltype(b))
+        @dataarray_binary_scalar $f $f promote_type(eltype(a), eltype(b)) true
     end
 end
 
@@ -768,14 +776,19 @@ end
 # / and ./ are defined separately since they promote to floating point
 for f in ((:(Base.(:/)), :(Base.(:./))))
     @eval begin
-        @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
-            DataArray(Array(T, size(b)), trues(size(b)))
         ($f)(::NAtype, ::NAtype) = NA
         @swappable ($f)(d::NAtype, x::Number) = NA
-        @dataarray_binary_scalar $f Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?
-                                              promote_type(eltype(a), typeof(b)) : Float64
     end
 end
+
+Base.(:/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
+    DataArray(Array(T, size(b)), trues(size(b)))
+@dataarray_binary_scalar Base.(:/) Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?
+                                      promote_type(eltype(a), typeof(b)) : Float64 false                   
+@swappable Base.(:./){T,N}(::NAtype, b::AbstractArray{T,N}) =
+    DataArray(Array(T, size(b)), trues(size(b)))
+@dataarray_binary_scalar Base.(:./) Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?
+                                      promote_type(eltype(a), typeof(b)) : Float64 true
 @dataarray_binary_array Base.(:./) Base.(:/) eltype(a) <: FloatingPoint || eltype(b) <: FloatingPoint ?
                                              promote_type(eltype(a), eltype(b)) : Float64
 
