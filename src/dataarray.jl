@@ -134,6 +134,12 @@ function Base.copy(d::DataArray) # -> DataArray{T}
     return DataArray(copy(d.data), copy(d.na))
 end
 
+function Base.copy!(dest::DataArray, src::DataArray) # -> DataArray{T}
+    copy!(dest.data, src.data)
+    copy!(dest.na, src.na)
+    dest
+end
+
 #' @description
 #'
 #' Create a deep copy of a DataArray.

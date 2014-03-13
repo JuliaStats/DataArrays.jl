@@ -320,10 +320,9 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
         # DataArray with other array
         {
             quote
-                function $(vectorfunc)(a::$(adata ? :DataArray : :AbstractArray),
-                                       b::$(bdata ? :DataArray : :AbstractArray))
-                    data1 = $(adata ? :(a.data) : :a)
-                    data2 = $(bdata ? :(b.data) : :b)
+                function $(vectorfunc)(a::$atype, b::$btype)
+                    data1 = $(atype == :DataArray || atype == :(DataArray{Bool}) ? :(a.data) : :a)
+                    data2 = $(btype == :DataArray || btype == :(DataArray{Bool}) ? :(b.data) : :b)
                     res = Array($outtype, promote_shape(size(a), size(b)))
                     resna = $narule
                     @bitenumerate resna i na begin
@@ -334,9 +333,12 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                     DataArray(res, resna)
                 end
             end
-            for (adata, bdata, narule) in ((true, true, :(a.na | b.na)),
-                                           (true, false, :(copy(a.na))),
-                                           (false, true, :(copy(b.na))))
+            for (atype, btype, narule) in ((:(DataArray{Bool}), :(DataArray{Bool}), :(a.na | b.na)),
+                                           (:(DataArray{Bool}), :(AbstractArray{Bool}), :(copy(a.na))),
+                                           (:(AbstractArray{Bool}), :(DataArray{Bool}), :(copy(b.na))),
+                                           (:DataArray, :DataArray, :(a.na | b.na)),
+                                           (:DataArray, :AbstractArray, :(copy(a.na))),
+                                           (:AbstractArray, :DataArray, :(copy(b.na))))
         }...,
         # AbstractDataArray with other array
         # Definitinons with DataArray necessary to avoid ambiguity
@@ -350,7 +352,12 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                     res
                 end
             end
-            for (asim, atype, btype) in ((true, :DataArray, :AbstractDataArray),
+            for (asim, atype, btype) in ((true, :(DataArray{Bool}), :(AbstractDataArray{Bool})),
+                                         (false, :(AbstractDataArray{Bool}), :(DataArray{Bool})),
+                                         (true, :(AbstractDataArray{Bool}), :(AbstractDataArray{Bool})),
+                                         (true, :(AbstractDataArray{Bool}), :(AbstractArray{Bool})),
+                                         (false, :(AbstractArray{Bool}), :(AbstractDataArray{Bool})),
+                                         (true, :DataArray, :AbstractDataArray),
                                          (false, :AbstractDataArray, :DataArray),
                                          (true, :AbstractDataArray, :AbstractDataArray),
                                          (true, :AbstractDataArray, :AbstractArray),
@@ -653,13 +660,82 @@ for f in (:(Base.(:+)), :(Base.(:.+)), :(Base.(:-)), :(Base.(:.-)),
           :(Base.(:*)), :(Base.(:.*)), :(Base.(:.^)), :(Base.div),
           :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
-        # Array with NA
-        @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
-            DataArray(Array(T, size(b)), trues(size(b)))
-
         # Scalar with NA
         ($f)(::NAtype, ::NAtype) = NA
         @swappable ($f)(d::NAtype, x::Number) = NA
+    end
+end
+
+# Define methods for UniformScaling. Otherwise we get ambiguity
+# warnings...
+function +{TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
+    n = chksquare(A)
+    B = similar(A,promote_type(TA,TJ))
+    copy!(B,A)
+    @inbounds for i = 1:n
+        if !B.na[i,i]
+            B.data[i,i] += J.λ
+        end
+    end
+    B
+end
++{TA}(J::UniformScaling,A::DataArray{TA,2}) = A + J
+
+function -{TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
+    n = chksquare(A)
+    B = similar(A,promote_type(TA,TJ))
+    copy!(B,A)
+    @inbounds for i = 1:n
+        if !B.na[i,i]
+            B.data[i,i] -= J.λ
+        end
+    end
+    B
+end
+function -{TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
+    n = chksquare(A)
+    B = -A
+    @inbounds for i = 1:n
+        if !B.na[i,i]
+            B.data[i,i] += J.λ
+        end
+    end
+    B
+end
+
++(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
+    invoke(+, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
++(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
+    invoke(+, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+-(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
+    invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
+-(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
+    invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+
++{TA,TJ}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
+    invoke(+, (AbstractArray{TA,2}, UniformScaling{TJ}), A, J)
++{TA}(J::UniformScaling,A::AbstractDataArray{TA,2}) =
+    invoke(+, (UniformScaling, AbstractArray{TA,2}), J, A)
+-{TA,TJ<:Number}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
+    invoke(-, (AbstractArray{TA,2}, UniformScaling{TJ}), A, J)
+-{TA,TJ<:Number}(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) =
+    invoke(-, (UniformScaling{TJ}, AbstractArray{TA,2}), J, A)
+
++(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
+    invoke(+, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
++(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
+    invoke(+, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+-(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
+    invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
+-(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
+    invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+
+for f in (:(Base.(:.+)), :(Base.(:.-)), :(Base.(:*)), :(Base.(:.*)),
+          :(Base.(:.^)), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
+    @eval begin
+        # Array with NA
+        @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
+            DataArray(Array(T, size(b)), trues(size(b)))
 
         # DataArray with scalar
         @dataarray_binary_scalar $f $f promote_type(eltype(a), eltype(b))
@@ -679,15 +755,15 @@ for (vf, sf) in ((:(Base.(:+)), :(Base.(:+))),
                  (:(Base.(:.^)), :(Base.(:^))))
     @eval begin
         # Necessary to avoid ambiguity warnings
-        @swappable ($vf)(A::BitArray, B::AbstractDataArray) = ($vf)(bitunpack(A), B)
-        @swappable ($vf)(A::BitArray, B::DataArray) = ($vf)(bitunpack(A), B)
+        @swappable ($vf)(A::BitArray, B::AbstractDataArray{Bool}) = ($vf)(bitunpack(A), B)
+        @swappable ($vf)(A::BitArray, B::DataArray{Bool}) = ($vf)(bitunpack(A), B)
 
         @dataarray_binary_array $vf $sf promote_type(eltype(a), eltype(b))
     end
 end
 
-@swappable Base.(:./)(A::BitArray, B::AbstractDataArray) = ./(bitunpack(A), B)
-@swappable Base.(:./)(A::BitArray, B::DataArray) = ./(bitunpack(A), B)
+@swappable Base.(:./)(A::BitArray, B::AbstractDataArray{Bool}) = ./(bitunpack(A), B)
+@swappable Base.(:./)(A::BitArray, B::DataArray{Bool}) = ./(bitunpack(A), B)
 
 # / and ./ are defined separately since they promote to floating point
 for f in ((:(Base.(:/)), :(Base.(:./))))

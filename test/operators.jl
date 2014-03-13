@@ -109,24 +109,26 @@ module TestOperators
     # Broadcasting operations between NA's and DataVector's
     dv = convert(DataArray, ones(5))
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.arithmetic_operators)
+        for f in map(eval, [:(Base.(:.+)),
+                            :(Base.(:.-)),
+                            :(Base.(:*)),
+                            :(Base.(:.*)),
+                            :(Base.(:/)),
+                            :(Base.(:./)),
+                            :(Base.(:.^)),
+                            :(Base.div),
+                            :(Base.mod),
+                            :(Base.fld),
+                            :(Base.rem)])
             for i in 1:length(dv)
                 @assert isna(f(dv, NA)[i])
                 @assert isna(f(NA, dv)[i])
-            end
-        end
-    end
-
-    # Broadcasting operations between scalars and DataVector's
-    dv = convert(DataArray, ones(5))
-    @test_da_pda dv begin
-        for f in map(eval, DataArrays.arithmetic_operators)
-            for i in 1:length(dv)
                 @assert f(dv, 1)[i] == f(dv[i], 1)
                 @assert f(1, dv)[i] == f(1, dv[i])
             end
         end
     end
+
     dv = @data([false, true, false, true, false])
     for f in map(eval, DataArrays.bit_operators)
         for i in 1:length(dv)
@@ -177,6 +179,18 @@ module TestOperators
             end
         end
     end
+
+    # + and - with UniformScaling
+    # mI = zeros(5, 5) + 5I
+    # for dm in (convert(DataArray, ones(5, 5)), convert(DataArray, trues(5, 5)))
+    #     dm[1] = NA
+    #     @test_da_pda dm begin
+    #         @test dm + 5I == dm + mI
+    #         @test 5I + dm == mI + dm
+    #         @test dm - 5I == dm - mI
+    #         @test 5I - dm == mI - dm
+    #     end
+    # end
 
     # Division (special case since return type for Int is a Float64)
     for curdv in (dv,
