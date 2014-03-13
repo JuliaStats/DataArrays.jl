@@ -113,7 +113,6 @@ module TestOperators
                             :(Base.(:.-)),
                             :(Base.(:*)),
                             :(Base.(:.*)),
-                            :(Base.(:/)),
                             :(Base.(:./)),
                             :(Base.(:.^)),
                             :(Base.div),
@@ -126,6 +125,13 @@ module TestOperators
                 @assert f(dv, 1)[i] == f(dv[i], 1)
                 @assert f(1, dv)[i] == f(1, dv[i])
             end
+        end
+    end
+
+    @test_da_pda dv begin
+        for i in 1:length(dv)
+            @assert isna(/(dv, NA)[i])
+            @assert /(dv, 1)[i] == /(dv[i], 1)
         end
     end
 
