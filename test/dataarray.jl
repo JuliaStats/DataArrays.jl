@@ -36,6 +36,10 @@ module TestDataArray
     y = [1, 9, 3, 2, 2]
     @assert append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
 
+    x = @data [1, 2, NA]
+    y = @data [3, NA, 5]
+    @test isequal(copy(x), x)
+    @test isequal(copy!(y, x), x)
 
 	# Test vecbind
 	# a = [1:4]
