@@ -84,7 +84,7 @@ module TestData
     @assert eltype(pdvstr) == ASCIIString
 
     #test_group("DataVector operations")
-    @assert isequal(dvint + 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
+    @assert isequal(dvint .+ 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
     @assert isequal(dvint .* 2, @data([2, 4, NA, 8]))
     @assert isequal(dvint .== 2, @data([false, true, NA, false]))
     @assert isequal(dvint .> 1, @data([false, true, NA, true]))
