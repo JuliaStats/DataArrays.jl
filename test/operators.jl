@@ -187,16 +187,16 @@ module TestOperators
     end
 
     # + and - with UniformScaling
-    # mI = zeros(5, 5) + 5I
-    # for dm in (convert(DataArray, ones(5, 5)), convert(DataArray, trues(5, 5)))
-    #     dm[1] = NA
-    #     @test_da_pda dm begin
-    #         @test dm + 5I == dm + mI
-    #         @test 5I + dm == mI + dm
-    #         @test dm - 5I == dm - mI
-    #         @test 5I - dm == mI - dm
-    #     end
-    # end
+    mI = zeros(Int, 5, 5) + 5I
+    for dm in (convert(DataArray, ones(5, 5)), convert(DataArray, trues(5, 5)))
+        dm[1] = NA
+        @test_da_pda dm begin
+            @test isequal(dm + 5I, dm + mI)
+            @test isequal(5I + dm, mI + dm)
+            @test isequal(dm - 5I, dm - mI)
+            @test isequal(5I - dm, mI - dm)
+        end
+    end
 
     # Division (special case since return type for Int is a Float64)
     for curdv in (dv,

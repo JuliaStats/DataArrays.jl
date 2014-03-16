@@ -380,6 +380,7 @@ for f in unary_operators
 end
 
 # Unary operators, DataArrays.
+@dataarray_unary Base.(:(-)) Bool Int
 @dataarray_unary Base.(:(-)) Any T
 @dataarray_unary Base.(:(!)) Bool T
 
@@ -677,7 +678,7 @@ end
 # Define methods for UniformScaling. Otherwise we get ambiguity
 # warnings...
 function +{TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
-    n = chksquare(A)
+    n = Base.LinAlg.chksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
     @inbounds for i = 1:n
@@ -690,7 +691,7 @@ end
 +{TA}(J::UniformScaling,A::DataArray{TA,2}) = A + J
 
 function -{TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
-    n = chksquare(A)
+    n = Base.LinAlg.chksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
     @inbounds for i = 1:n
@@ -701,7 +702,7 @@ function -{TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
     B
 end
 function -{TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
-    n = chksquare(A)
+    n = Base.LinAlg.chksquare(A)
     B = -A
     @inbounds for i = 1:n
         if !B.na[i,i]
