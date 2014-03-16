@@ -831,37 +831,39 @@ function PooledDataVecs(v1::AbstractArray,
             PooledDataArray(RefArray(refs2), pool))
 end
 
-function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}},
-                               a::AbstractArray{T, N})
-    return PooledDataArray(convert(Array{S, N}, a), falses(size(a)))
-end
+Base.convert{S,T,R1<:Integer,R2<:Integer,N}(::Type{PooledDataArray{S,R1,N}}, pda::PooledDataArray{T,R2,N}) =
+    PooledDataArray(RefArray(convert(Array{R1,N}, pda.refs)), convert(Vector{S}, pda.pool))
+Base.convert{S,T,R<:Integer,N}(::Type{PooledDataArray{S,R,N}}, pda::PooledDataArray{T,R,N}) =
+    PooledDataArray(RefArray(copy(pda.refs)), convert(Vector{S}, pda.pool))
+Base.convert{T,R<:Integer,N}(::Type{PooledDataArray{T,R,N}}, pda::PooledDataArray{T,R,N}) = pda
+Base.convert{S,T,R1<:Integer,R2<:Integer,N}(::Type{PooledDataArray{S,R1}}, pda::PooledDataArray{T,R2,N}) =
+    convert(PooledDataArray{S,R1,N}, pda)
+Base.convert{S,T,R<:Integer,N}(::Type{PooledDataArray{S}}, pda::PooledDataArray{T,R,N}) =
+    convert(PooledDataArray{S,R,N}, pda)
+Base.convert{T,R<:Integer,N}(::Type{PooledDataArray}, pda::PooledDataArray{T,R,N}) = pda
 
-function Base.convert{T, N}(::Type{PooledDataArray}, a::AbstractArray{T, N})
-    return PooledDataArray(convert(Array{T, N}, a), falses(size(a)))
-end
+Base.convert{T,R<:Integer,N}(::Type{PooledDataArray{T,R,N}}, a::DataArray{T,N}) =
+    PooledDataArray(a.data, a.na, R)
+Base.convert{S,T,R<:Integer,N}(::Type{PooledDataArray{S,R,N}}, a::DataArray{T,N}) =
+    convert(PooledDataArray{S,R,N}, PooledDataArray(a.data, a.na, R))
+Base.convert{S,T,R<:Integer,N}(::Type{PooledDataArray{S,R}}, a::DataArray{T,N}) =
+    convert(PooledDataArray{S,R,N}, PooledDataArray(a.data, a.na, R))
+Base.convert{S,T,N}(::Type{PooledDataArray{S}}, a::DataArray{T,N}) =
+    convert(PooledDataArray{S}, PooledDataArray(a.data, a.na))
+Base.convert(::Type{PooledDataArray}, a::DataArray) =
+    PooledDataArray(a.data, a.na)
 
-function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}},
-                               da::DataArray{T, N})
-    return PooledDataArray(convert(Array{S, N}, da.data), da.na)
-end
+Base.convert{S,T,R<:Integer,N}(::Type{PooledDataArray{S,R,N}}, a::AbstractArray{T,N}) =
+    PooledDataArray(convert(Array{S,N}, a), falses(size(a)), R)
+Base.convert{S,T,R<:Integer,N}(::Type{PooledDataArray{S,R}}, a::AbstractArray{T,N}) =
+    PooledDataArray(convert(Array{S,N}, a), falses(size(a)), R)
+Base.convert{S,T,N}(::Type{PooledDataArray{S}}, a::AbstractArray{T,N}) =
+    PooledDataArray(convert(Array{S,N}, a), falses(size(a)))
+Base.convert(::Type{PooledDataArray}, a::AbstractArray) =
+    PooledDataArray(a, falses(size(a)))
 
-function Base.convert{T, N}(::Type{PooledDataArray}, da::DataArray{T, N})
-    return PooledDataArray(da.data, da.na)
-end
-
-function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}},
-                               pda::PooledDataArray{T, N})
-    return PooledDataArray(RefArray(copy(pda.refs)),
-                           convert(Array{S, N}, pda.pool))
-end
-
-function Base.convert{T, N}(::Type{PooledDataArray},
-                            pda::PooledDataArray{T, N})
-    return PooledDataArray(RefArray(pda.refs), pda.pool)
-end
-
-function Base.convert{S, T, N}(::Type{DataArray{S, N}},
-                               pda::PooledDataArray{T, N})
+function Base.convert{S,T,R<:Integer,N}(::Type{DataArray{S,N}},
+                                        pda::PooledDataArray{T,R,N})
     res = DataArray(Array(S, size(pda)), BitArray(size(pda)))
     for i in 1:length(pda)
         r = pda.refs[i]
@@ -875,19 +877,8 @@ function Base.convert{S, T, N}(::Type{DataArray{S, N}},
     return res
 end
 
-function Base.convert{T, N}(::Type{DataArray}, pda::PooledDataArray{T, N})
-    res = DataArray(Array(T, size(pda)), BitArray(size(pda)))
-    for i in 1:length(pda)
-        r = pda.refs[i]
-        if r == 0
-            res.na[i] = true
-        else
-            res.na[i] = false
-            res.data[i] = pda.pool[r]
-        end
-    end
-    return res
-end
+Base.convert{T,R<:Integer,N}(::Type{DataArray}, pda::PooledDataArray{T,R,N}) =
+    convert(DataArray{T,N}, pda)
 
 pdata(a::AbstractArray) = convert(PooledDataArray, a)
 
