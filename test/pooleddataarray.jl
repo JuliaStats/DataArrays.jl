@@ -72,4 +72,14 @@ module TestPDA
             end
         end
     end
+
+    da = convert(DataArray, @pdata(ones(5, 5)))
+    @assert isequal(da, @data(ones(5, 5)))
+    @assert typeof(da) == DataArray{Float64,2}
+    da = convert(DataArray{Float32}, @pdata(ones(5, 5)))
+    @assert isequal(da, @data(ones(Float32, 5, 5)))
+    @assert typeof(da) == DataArray{Float32,2}
+    da = convert(DataArray{Float32,2}, @pdata(ones(5, 5)))
+    @assert isequal(da, @data(ones(Float32, 5, 5)))
+    @assert typeof(da) == DataArray{Float32,2}
 end
