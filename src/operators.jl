@@ -587,7 +587,7 @@ function Base.(:(==))(a::DataArray, b::DataArray)
     bchunks = b.na.chunks
     has_na = false
     @bitenumerate a.na i na begin
-        if na || Base.getindex_unchecked(bchunks, i)
+        if na || Base.unsafe_bitgetindex(bchunks, i)
             has_na = true
         else
             @inbounds adata[i] == bdata[i] || return false
