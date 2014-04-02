@@ -2,7 +2,7 @@
 #'
 #' An AbstractDataArray is an Array whose entries can take on
 #' values of type `T` or the value `NA`.
-abstract AbstractDataArray{T, N} <: StoredArray{T, N}
+abstract AbstractDataArray{T, N} <: AbstractArray{T, N}
 
 #' @description
 #'
