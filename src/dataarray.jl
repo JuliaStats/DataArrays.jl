@@ -819,8 +819,7 @@ end
 #' @param ind::Real A real value specifying the index of the element
 #'        of `da` being modified.
 #'
-#' @returns val::NAtype The `NA` value that was assigned to an element
-#'          of `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -830,7 +829,7 @@ function Base.setindex!(da::DataArray,
                         val::NAtype,
                         i::SingleIndex) # -> NAtype
 	da.na[i] = true
-    return NA
+    return da
 end
 
 #' @description
@@ -842,7 +841,7 @@ end
 #' @param ind::Real A real value specifying the index of the element
 #'        of `da` being modified.
 #'
-#' @returns val::Any The value that was assigned to an element of `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -853,7 +852,7 @@ function Base.setindex!(da::DataArray,
                         ind::SingleIndex) # -> Any
 	da.data[ind] = val
 	da.na[ind] = false
-    return val
+    return da
 end
 
 #' @description
@@ -867,7 +866,7 @@ end
 #' @param inds::AbstractVector{Bool} A Boolean vector specifying for every
 #'        element of `da` whether it will be modified.
 #'
-#' @returns val::NAtype The NA value that was assigned to elements of `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -877,7 +876,7 @@ function Base.setindex!(da::DataArray,
                         val::NAtype,
                         inds::AbstractVector{Bool}) # -> NAtype
     da.na[find(inds)] = true
-    return NA
+    return da
 end
 
 #' @description
@@ -889,7 +888,7 @@ end
 #' @param inds::AbstractVector A vector of indices of `da` to
 #'        be modified.
 #'
-#' @returns val::NAtype The NA value that was assigned to elements of `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -899,7 +898,7 @@ function Base.setindex!(da::DataArray,
                         val::NAtype,
                         inds::AbstractVector) # -> NAtype
     da.na[inds] = true
-    return NA
+    return da
 end
 
 #' @description
