@@ -120,7 +120,7 @@ function Base.setindex!(dm::DataMatrix,
                         i::SingleIndex,
                         j::SingleIndex)
     dm.na[i, j] = true
-    return NA
+    return dm
 end
 
 # dm[SingleItemIndex, SingleItemIndex] = Single Item
@@ -130,7 +130,7 @@ function Base.setindex!(dm::DataMatrix,
                         j::SingleIndex)
     dm.data[i, j] = val
     dm.na[i, j] = false
-    return val
+    return dm
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = NA
@@ -139,7 +139,7 @@ function Base.setindex!(dm::DataMatrix,
                         row_inds::MultiIndex,
                         j::SingleIndex)
     dm.na[row_inds, j] = true
-    return NA
+    return dm
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = Multiple Items
@@ -149,7 +149,7 @@ function Base.setindex!{S, T}(dm::DataMatrix{S},
                               j::SingleIndex)
     dm.data[row_inds, j] = vals
     dm.na[row_inds, j] = false
-    return vals
+    return dm
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = Single Item
@@ -159,7 +159,7 @@ function Base.setindex!(dm::DataMatrix,
                         j::SingleIndex)
     dm.data[row_inds, j] = val
     dm.na[row_inds, j] = false
-    return val
+    return dm
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = NA
@@ -168,7 +168,7 @@ function Base.setindex!(dm::DataMatrix,
                         i::SingleIndex,
                         col_inds::MultiIndex)
     dm.na[i, col_inds] = true
-    return NA
+    return dm
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = Multiple Items
@@ -178,7 +178,7 @@ function Base.setindex!{S, T}(dm::DataMatrix{S},
                               col_inds::MultiIndex)
     dm.data[i, col_inds] = vals
     dm.na[i, col_inds] = false
-    return vals
+    return dm
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = Single Item
@@ -188,7 +188,7 @@ function Base.setindex!(dm::DataMatrix,
                         col_inds::MultiIndex)
     dm.data[i, col_inds] = val
     dm.na[i, col_inds] = false
-    return val
+    return dm
 end
 
 # dm[MultiItemIndex, MultiItemIndex] = NA
@@ -197,7 +197,7 @@ function Base.setindex!(dm::DataMatrix,
                         row_inds::MultiIndex,
                         col_inds::MultiIndex)
     dm.na[row_inds, col_inds] = true
-    return NA
+    return dm
 end
 
 # dm[MultiIndex, MultiIndex] = Multiple Items
@@ -207,7 +207,7 @@ function Base.setindex!{S, T}(dm::DataMatrix{S},
                               col_inds::MultiIndex)
     dm.data[row_inds, col_inds] = vals
     dm.na[row_inds, col_inds] = false
-    return vals
+    return dm
 end
 
 # dm[MultiItemIndex, MultiItemIndex] = Single Item
@@ -217,7 +217,7 @@ function Base.setindex!(dm::DataMatrix,
                         col_inds::MultiIndex)
     dm.data[row_inds, col_inds] = val
     dm.na[row_inds, col_inds] = false
-    return val
+    return dm
 end
 
 # Extract the matrix diagonal

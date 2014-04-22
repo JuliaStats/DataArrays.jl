@@ -562,7 +562,7 @@ end
 # R has the convention that if f is a factor then factor(f) drops unused levels
 function Base.setindex!(x::PooledDataArray, val::NAtype, ind::Real)
     x.refs[ind] = 0
-    return NA
+    return x
 end
 
 # x[SingleIndex] = Single Item
@@ -570,7 +570,7 @@ end
 function Base.setindex!{T,R}(x::PooledDataArray{T,R}, val::Any, ind::Real)
     val = convert(T, val)
     x.refs[ind] = getpoolidx(x, val)
-    return val
+    return x
 end
 
 # x[MultiIndex] = NA
@@ -588,11 +588,11 @@ end
 function Base.setindex!(x::PooledDataArray, val::NAtype, inds::AbstractVector{Bool})
     inds = find(inds)
     x.refs[inds] = 0
-    return NA
+    return x
 end
 function Base.setindex!(x::PooledDataArray, val::NAtype, inds::AbstractVector)
     x.refs[inds] = 0
-    return NA
+    return x
 end
 
 # pda[MultiIndex] = Multiple Values
@@ -607,19 +607,19 @@ function Base.setindex!(pda::PooledDataArray,
     for (val, ind) in zip(vals, inds)
         pda[ind] = val
     end
-    return vals
+    return pda
 end
 
 # pda[SingleItemIndex, SingleItemIndex] = NA
 function Base.setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::NAtype, i::Real, j::Real)
     pda.refs[i, j] = zero(R)
-    return NA
+    return pda
 end
 # pda[SingleItemIndex, SingleItemIndex] = Single Item
 function Base.setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::Any, i::Real, j::Real)
     val = convert(T, val)
     pda.refs[i, j] = getpoolidx(pda, val)
-    return val
+    return pda
 end
 
 ##############################################################################

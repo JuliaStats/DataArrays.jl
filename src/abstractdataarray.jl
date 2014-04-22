@@ -146,7 +146,7 @@ isna(a::AbstractArray, i::Real) = false # -> Bool
 #' @param inds::AbstractVector A vector of indices of `da` to
 #'        be modified.
 #'
-#' @returns vals::AbstractVector The values inserted into `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -173,7 +173,7 @@ end
 #' @param inds::AbstractVector A vector of indices of `da` to
 #'        be modified.
 #'
-#' @returns vals::AbstractVector The values inserted into `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -188,7 +188,7 @@ function Base.setindex!(da::AbstractDataArray,
     for (val, ind) in zip(vals, inds)
         da[ind] = val
     end
-    return vals
+    return da
 end
 
 #' @description
@@ -204,8 +204,7 @@ end
 #' @param inds::AbstractVector{Bool} A Boolean vector of indices of `da` to
 #'        be modified.
 #'
-#' @returns val::T The value inserted into `da`, converted to the element
-#'          type of `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -229,8 +228,7 @@ end
 #' @param val::Any A value to be inserted into the specified entries of `da`.
 #' @param inds::AbstractVector A vector of indices of `da` to be modified.
 #'
-#' @returns val::T The value inserted into `da`, converted to the element
-#'          type of `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -243,7 +241,7 @@ function Base.setindex!{T}(da::AbstractDataArray{T},
     for ind in inds
         da[ind] = val
     end
-    return val
+    return da
 end
 
 # TODO: Include BitArray indexing here.
@@ -260,8 +258,7 @@ end
 #' @param val::Any A value to be inserted into the specified entries of `da`.
 #' @param inds::AbstractVector A vector of indices of `da` to be modified.
 #'
-#' @returns val::T The value inserted into `da`, converted to the element
-#'          type of `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -287,8 +284,7 @@ end
 #' @param val::Any A value to be inserted into the specified entries of `da`.
 #' @param inds::AbstractVector A vector of indices of `da` to be modified.
 #'
-#' @returns val::T The value inserted into `da`, converted to the element
-#'          type of `da`.
+#' @returns da::DataArray{T, N} The modified DataArray.
 #'
 #' @examples
 #'
@@ -301,5 +297,5 @@ function Base.setindex!{T}(da::AbstractDataArray{T},
     for ind in inds
         da[ind] = val
     end
-    return val
+    return da
 end
