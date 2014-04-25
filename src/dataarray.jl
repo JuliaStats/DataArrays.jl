@@ -716,8 +716,6 @@ function Base.getindex(d::DataArray, inds::MultiIndex)
         ix = inds[i]
         if !d.na[ix]
             res[i] = d.data[ix]
-        else
-            res[i] = NA # We could also change this in similar
         end
     end
     return res
