@@ -666,29 +666,6 @@ function Base.getindex(d::DataArray,
     return d[inds]
 end
 
-# There are two definitions in order to remove ambiguity warnings
-# TODO: Return SubDataArray
-# TODO: Make inds::AbstractVector
-#' @description
-#'
-#' Get a set of elements of a DataArray.
-#'
-#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
-#' @param inds::BooleanIndex A Boolean mask specifying whether each
-#'        element of `da` should be retrieved.
-#'
-#' @returns out::DataArray{T} A DataArray containing the elements of
-#'          `da` indexed.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' da[[true, false]]
-function Base.getindex{T <: Number, N}(d::DataArray{T,N},
-                                       inds::BooleanIndex)
-    DataArray(d.data[inds], d.na[inds])
-end
-
 #' @description
 #'
 #' Get a set of elements of a DataArray.
@@ -733,26 +710,6 @@ end
 #'
 #' da = @data([1, 2, 3])
 #' da[[1, 2]]
-function Base.getindex{T <: Number, N}(d::DataArray{T, N},
-                                       inds::MultiIndex)
-    return DataArray(d.data[inds], d.na[inds])
-end
-
-#' @description
-#'
-#' Get a set of elements of a DataArray.
-#'
-#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
-#' @param inds::MultiIndex The indices of the elements of `da` to be
-#'        retrieved.
-#'
-#' @returns out::DataArray{T} A DataArray containing the elements of
-#'          `da` indexed.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' da[[1, 2]]
 function Base.getindex(d::DataArray, inds::MultiIndex)
     res = similar(d, length(inds))
     for i in 1:length(inds)
@@ -764,50 +721,6 @@ function Base.getindex(d::DataArray, inds::MultiIndex)
         end
     end
     return res
-end
-
-# TODO: Return SubDataArray
-# TODO: Make inds::AbstractVector
-## # The following assumes that T<:Number won't have #undefs
-## # There are two definitions in order to remove ambiguity warnings
-#' @description
-#'
-#' Get a set of elements of a DataArray.
-#'
-#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
-#' @param inds::BooleanIndex A Boolean mask specifying whether each
-#'        element of `da` should be retrieved.
-#'
-#' @returns out::DataArray{T} A DataArray containing the elements of
-#'          `da` indexed.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' da[[true, false]]
-function Base.getindex{T <: Number, N}(d::DataArray{T, N},
-                                       inds::BooleanIndex)
-    DataArray(d.data[inds], d.na[inds])
-end
-
-#' @description
-#'
-#' Get a set of elements of a DataArray.
-#'
-#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
-#' @param inds::MultiIndex The indices of the elements of `da` to be
-#'        retrieved.
-#'
-#' @returns out::DataArray{T} A DataArray containing the elements of
-#'          `da` indexed.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' da[[1, 2]]
-function Base.getindex{T <: Number, N}(d::DataArray{T, N},
-                                       inds::MultiIndex)
-    DataArray(d.data[inds], d.na[inds])
 end
 
 #' @description
