@@ -19,8 +19,8 @@ tail(dv::AbstractDataVector) = dv[max(length(dv) - 6, 1):length(dv)]
 
 # TODO: Macroize these definitions
 
-function Base.push!{T}(dv::DataVector{T}, v::NAtype)
-    push!(dv.data, baseval(T))
+function Base.push!(dv::DataVector, v::NAtype)
+    resize!(dv.data, length(dv.data) + 1)
     push!(dv.na, true)
     return v
 end
@@ -41,7 +41,7 @@ function Base.pop!(dv::DataVector)
 end
 
 function Base.unshift!{T}(dv::DataVector{T}, v::NAtype)
-    unshift!(dv.data, baseval(T))
+    ccall(:jl_array_grow_beg, Void, (Any, Uint), dv.data, 1)
     unshift!(dv.na, true)
     return v
 end
