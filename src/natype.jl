@@ -35,6 +35,3 @@ isna(x::Any) = false
 
 # TODO: Rethink this rule
 Base.promote_rule{T}(::Type{T}, ::Type{NAtype} ) = T
-
-# TODO: Try to remove this line
-baseval(::Type{NAtype}) = NA
