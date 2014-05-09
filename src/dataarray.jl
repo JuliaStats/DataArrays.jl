@@ -1086,7 +1086,7 @@ end
 function Base.hash(a::AbstractDataArray) # -> Uint
     h = hash(size(a)) + 1
     for i in 1:length(a)
-        h = bitmix(h, int(hash(a[i])))
+        h = hash(int(hash(a[i])), h)
     end
     return uint(h)
 end
