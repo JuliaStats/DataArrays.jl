@@ -840,7 +840,12 @@ function Base.convert{T, N}(::Type{PooledDataArray}, a::AbstractArray{T, N})
     return PooledDataArray(convert(Array{T, N}, a), falses(size(a)))
 end
 
-function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}},
+function Base.convert{R<:Integer, T, N}(::Type{PooledDataArray{T, R, N}},
+                               da::DataArray{T, N})
+    return PooledDataArray(convert(Array{T, N}, da.data), da.na)
+end
+
+function Base.convert{R<:Integer, S, T, N}(::Type{PooledDataArray{S, R, N}},
                                da::DataArray{T, N})
     return PooledDataArray(convert(Array{S, N}, da.data), da.na)
 end
@@ -849,8 +854,8 @@ function Base.convert{T, N}(::Type{PooledDataArray}, da::DataArray{T, N})
     return PooledDataArray(da.data, da.na)
 end
 
-function Base.convert{S, T, N}(::Type{PooledDataArray{S, N}},
-                               pda::PooledDataArray{T, N})
+function Base.convert{R<:Integer, S, T, N}(::Type{PooledDataArray{S, R, N}},
+                               pda::PooledDataArray{T, R, N})
     return PooledDataArray(RefArray(copy(pda.refs)),
                            convert(Array{S, N}, pda.pool))
 end

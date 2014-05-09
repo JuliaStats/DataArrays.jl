@@ -317,6 +317,40 @@ end
 # Binary operators with two array arguments
 macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
     esc(Expr(:block,
+        # Avoid ambiguity warnings with BitArray
+        {
+            quote
+                function $(vectorfunc)(a::DataArray{Bool}, b::$bdata)
+                    res = Array($outtype, promote_shape(size(a), size(b)))
+                    resna = copy(a.na)
+                    @bitenumerate resna i na begin
+                        if !na
+                            @inbounds res[i] = $(scalarfunc)(data1[i], data2[i])
+                        end
+                    end
+                    DataArray(res, resna)
+                end
+            end
+            for bdata in (:(DataArray{Bool}),
+                          :(AbstractDataArray{Bool}),
+                          :(AbstractArray{Bool}))
+        }...,
+        {
+            quote
+                function $(vectorfunc)(b::$bdata, a::DataArray{Bool})
+                    res = Array($outtype, promote_shape(size(a), size(b)))
+                    resna = copy(a.na)
+                    @bitenumerate resna i na begin
+                        if !na
+                            @inbounds res[i] = $(scalarfunc)(data1[i], data2[i])
+                        end
+                    end
+                    DataArray(res, resna)
+                end
+            end
+            for bdata in (:(AbstractArray{Bool}),
+                          :(AbstractDataArray{Bool}))
+        }...,
         # DataArray with other array
         {
             quote
@@ -350,7 +384,10 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                     res
                 end
             end
-            for (asim, atype, btype) in ((true, :DataArray, :AbstractDataArray),
+            for (asim, atype, btype) in ((true, :(AbstractDataArray{Bool}), :(AbstractArray{Bool})),
+                                         (true, :(AbstractDataArray{Bool}), :(AbstractDataArray{Bool})),
+                                         (false, :(AbstractArray{Bool}), :(AbstractDataArray{Bool})),
+                                         (true, :DataArray, :AbstractDataArray),
                                          (false, :AbstractDataArray, :DataArray),
                                          (true, :AbstractDataArray, :AbstractDataArray),
                                          (true, :AbstractDataArray, :AbstractArray),
@@ -634,6 +671,7 @@ for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
         # Scalar with NA
         ($(vf))(::NAtype, ::NAtype) = NA
         ($(sf))(::NAtype, ::NAtype) = NA
+        @swappable ($(sf))(::NAtype, b::WeakRef) = NA
         @swappable ($(vf))(::NAtype, b) = NA
         @swappable ($(sf))(::NAtype, b) = NA
 
@@ -682,6 +720,8 @@ for (vf, sf) in ((:(Base.(:+)), :(Base.(:+))),
         # Necessary to avoid ambiguity warnings
         @swappable ($vf)(A::BitArray, B::AbstractDataArray) = ($vf)(bitunpack(A), B)
         @swappable ($vf)(A::BitArray, B::DataArray) = ($vf)(bitunpack(A), B)
+        @swappable ($vf)(A::BitArray, B::AbstractDataArray{Bool}) = ($vf)(bitunpack(A), B)
+        @swappable ($vf)(A::BitArray, B::DataArray{Bool}) = ($vf)(bitunpack(A), B)
 
         @dataarray_binary_array $vf $sf promote_type(eltype(a), eltype(b))
     end
@@ -689,6 +729,8 @@ end
 
 @swappable Base.(:./)(A::BitArray, B::AbstractDataArray) = ./(bitunpack(A), B)
 @swappable Base.(:./)(A::BitArray, B::DataArray) = ./(bitunpack(A), B)
+@swappable Base.(:./)(A::BitArray, B::AbstractDataArray{Bool}) = ./(bitunpack(A), B)
+@swappable Base.(:./)(A::BitArray, B::DataArray{Bool}) = ./(bitunpack(A), B)
 
 # / and ./ are defined separately since they promote to floating point
 for f in ((:(Base.(:/)), :(Base.(:./))))
