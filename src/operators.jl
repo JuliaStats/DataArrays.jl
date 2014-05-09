@@ -643,6 +643,9 @@ end
     has_na ? NA : true
 end
 
+# ambiguity
+@swappable ==(::NAtype, ::WeakRef) = NA
+
 for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
         # Array with NA
