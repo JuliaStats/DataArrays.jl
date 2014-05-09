@@ -1,7 +1,7 @@
 DataArrays.jl
 =============
 
-[![Build Status](https://travis-ci.org/JuliaStats/DataArrays.jl.png)](https://travis-ci.org/JuliaStats/DataArrays.jl)
+[![Build Status](https://travis-ci.org/JuliaStats/DataArrays.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/DataArrays.jl)
 
 The DataArrays package extends Julia by introducing data structures that can contain missing data. In particular, the package introduces three new data types to Julia:
 
