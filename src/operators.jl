@@ -532,9 +532,9 @@ end
 
 # DataArray with DataArray
 Base.(:&)(a::DataArray{Bool}, b::DataArray{Bool}) =
-    DataArray(a.data & b.data, (a.na & b.data) | (b.na & a.data))
+    DataArray(a.data & b.data, (a.na & b.na) | (a.na & b.data) | (b.na & a.data))
 Base.(:|)(a::DataArray{Bool}, b::DataArray{Bool}) =
-    DataArray(a.data | b.data, (a.na & !b.data) | (b.na & !a.data))
+    DataArray(a.data | b.data, (a.na & b.na) | (a.na & !b.data) | (b.na & !a.data))
 Base.(:$)(a::DataArray{Bool}, b::DataArray{Bool}) =
     DataArray(a.data $ b.data, a.na | b.na)
 
