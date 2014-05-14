@@ -414,4 +414,12 @@ module TestOperators
 
     rdv = DataArrays.inverse_rle(v, l)
     @assert isequal(dv, rdv)
+
+    # Issue #90
+    a = @data([false, true, false, true]);
+    b = @data([false, false, true, true]);
+    a[:] = NA;
+    b[:] = NA;
+    @test allna(a & b)
+    @test allna(a | b)
 end
