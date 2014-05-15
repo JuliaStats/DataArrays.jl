@@ -153,10 +153,10 @@ const unary_vector_operators = [:(Base.minimum),
                                 :(Base.median),
                                 :(Base.std),
                                 :(Base.var),
-                                :(Stats.mad),
+                                :(StatsBase.mad),
                                 :(Base.norm),
-                                :(Stats.skewness),
-                                :(Stats.kurtosis)]
+                                :(StatsBase.skewness),
+                                :(StatsBase.kurtosis)]
 
 # TODO: dist, iqr
 
@@ -175,7 +175,7 @@ const ffts = [:(Base.fft)]
 const binary_vector_operators = [:(Base.dot),
                                  :(Base.cor),
                                  :(Base.cov),
-                                 :(Stats.cor_spearman)]
+                                 :(StatsBase.corspearman)]
 
 const rowwise_operators = [:rowminimums,
                            :rowmaxs,
@@ -810,7 +810,7 @@ function Base.any(dv::AbstractDataArray{Bool})
     has_na ? NA : false
 end
 
-Stats.range{T}(dv::AbstractDataVector{T}) = maximum(dv) - minimum(dv)
+StatsBase.range{T}(dv::AbstractDataVector{T}) = maximum(dv) - minimum(dv)
 
 function rle{T}(v::AbstractVector{T})
     n = length(v)

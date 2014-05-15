@@ -1,11 +1,11 @@
-function Stats.addcounts!{T,U}(cm::Dict{U,Int}, x::AbstractDataArray{T})
+function StatsBase.addcounts!{T,U}(cm::Dict{U,Int}, x::AbstractDataArray{T})
     for v in x
         cm[v] = get(cm, v, 0) + 1
     end
     return cm
 end
 
-function Stats.addcounts!{T,U,W}(cm::Dict{U,W}, x::AbstractDataArray{T}, wv::WeightVec{W})
+function StatsBase.addcounts!{T,U,W}(cm::Dict{U,W}, x::AbstractDataArray{T}, wv::WeightVec{W})
     n = length(x)
     length(wv) == n || raise_dimerror()
     w = values(wv)
@@ -19,11 +19,11 @@ function Stats.addcounts!{T,U,W}(cm::Dict{U,W}, x::AbstractDataArray{T}, wv::Wei
     return cm
 end
 
-function Stats.countmap{T}(x::AbstractDataArray{T})
+function StatsBase.countmap{T}(x::AbstractDataArray{T})
     addcounts!(Dict{Union(T, NAtype), Int}(), x)
 end
 
-function Stats.countmap{T,W}(x::AbstractDataArray{T}, wv::WeightVec{W})
+function StatsBase.countmap{T,W}(x::AbstractDataArray{T}, wv::WeightVec{W})
     addcounts!(Dict{Union(T, NAtype), W}(), x, wv)
 end
 
