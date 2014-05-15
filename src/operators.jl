@@ -683,6 +683,8 @@ end
 
 # Define methods for UniformScaling. Otherwise we get ambiguity
 # warnings...
+if isdefined(Base, :UniformScaling)
+
 function +{TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
     n = Base.LinAlg.chksquare(A)
     B = similar(A,promote_type(TA,TJ))
@@ -744,6 +746,8 @@ end
     invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
 -(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
     invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+
+end # if isdefined(Base, :UniformScaling)
 
 for f in (:(Base.(:.+)), :(Base.(:.-)), :(Base.(:*)), :(Base.(:.*)),
           :(Base.(:.^)), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
@@ -930,7 +934,9 @@ function Base.any(dv::AbstractDataArray{Bool})
     has_na ? NA : false
 end
 
+if isdefined(StatsBase, :range)
 StatsBase.range{T}(dv::AbstractDataVector{T}) = maximum(dv) - minimum(dv)
+end
 
 function rle{T}(v::AbstractVector{T})
     n = length(v)
