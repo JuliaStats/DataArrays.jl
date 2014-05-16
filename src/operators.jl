@@ -934,10 +934,6 @@ function Base.any(dv::AbstractDataArray{Bool})
     has_na ? NA : false
 end
 
-if isdefined(StatsBase, :range)
-StatsBase.range{T}(dv::AbstractDataVector{T}) = maximum(dv) - minimum(dv)
-end
-
 function rle{T}(v::AbstractVector{T})
     n = length(v)
     current_value = v[1]
