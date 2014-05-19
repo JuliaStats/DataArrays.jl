@@ -1095,78 +1095,106 @@ end
 #' @description
 #'
 #' Find the unique values in a DataArray, noting if `NA` occurs in the
-#' DataArray.
+#' `DataArray`.
 #'
-#' @param da::DataArray{T} DataArray whose unique values are desired.
+#' @param da::DataArray{T} `DataArray` whose unique values are desired.
 #'
-#' @returns v::Vector{T} Vector containing the unique values from `da`.
-#' @returns hasna::Bool Did `da` contain any `NA` entries?
+#' @returns v::Vector{T} `Vector` containing the unique values from `da`.
+#' @returns firstna::Int The index of the first `NA` value, or 0 if
+#'          none is present.
 #'
 #' @examples
 #'
 #' dv = @data [1, 2, NA, 4]
-#' distinct_values, hasna = finduniques(dv)
+#' distinct_values, firstna = finduniques(dv)
 function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Bool
-    unique_values = Dict{T, Bool}()
+    out = Array(T,0)
+    seen = Set{T}()
     n = length(da)
-    hasna = false
+    firstna = 0
     for i in 1:n
-        if da.na[i]
-            hasna = true
-        else
-            unique_values[da.data[i]] = true
+        if da.na[i] && firstna == 0
+            firstna = length(out) + 1
+        elseif !in(da.data[i], seen)
+            push!(seen, da.data[i])
+            push!(out, da.data[i])
         end
     end
-    return unique_values, hasna
+    return out, firstna
 end
 
 #' @description
 #'
-#' Return a DataVector containing the unique values of a DataArray,
-#' including NA if it is encountered.
+#' Return a DataVector containing the unique values of a `DataArray`,
+#' in the order they appear in the data, including `NA` if any missing entries
+#' are encountered.
 #'
-#' @param da::DataArray{T} DataArray whose unique values are desired.
+#' @param da::DataArray{T} `DataArray` whose unique values are desired.
 #'
-#' @returns dv::DataVector{T} DataVector containing the unique values
-#'          from `da`, including NA if there are any missing entries
-#'          in `da`.
+#' @returns dv::DataVector{T} `DataVector` containing the unique values
+#'          from `da`, in the order they appear, including `NA` if there are
+#'          any missing entries in `da`.
 #'
 #' @examples
 #'
-#' dv = @data [1, 2, NA, 4]
+#' dv = @data [1, -2, 1, NA, 4]
 #' distinct_values = unique(dv)
 function Base.unique{T}(da::DataArray{T}) # -> DataVector{T}
-    unique_values, hasna = finduniques(da)
+    unique_values, firstna = finduniques(da)
     n = length(unique_values)
-    if hasna
+    if firstna > 0
         res = DataArray(Array(T, n + 1))
-        i = 0
-        for val in keys(unique_values)
-            i += 1
+        i = 1
+        for val in unique_values
+            if i == firstna
+                res.na[i] = true
+                i += 1
+            end
             res.data[i] = val
+            i += 1
         end
-        res.na[n + 1] = true
+
         return res
     else
-        return DataArray(collect(keys(unique_values)))
+        return DataArray(unique_values)
     end
 end
 
 #' @description
 #'
-#' Return a DataVector containing the unique values of a DataArray,
-#' excluding any NA's.
+#' Return a DataVector containing the unique values of a `DataArray`,
+#' excluding `NA`.
 #'
-#' @param da::DataArray{T} DataArray whose unique values are desired.
 #'
-#' @returns dv::DataVector{T} DataVector containing the unique values
-#'          from `da`, excluding any NA's.
+#' @param da::DataArray{T} `DataArray` whose unique values are desired.
+#'
+#' @returns dv::DataVector{T} `DataVector` containing the unique values
+#'          from `da`, excluding `NA`.
 #'
 #' @examples
 #'
-#' dv = @data [1, 2, NA, 4]
+#' dv = @data [1, -2, 1, NA, 4]
 #' distinct_values = levels(dv)
 function levels(da::DataArray) # -> DataVector{T}
-    unique_values, hasna = finduniques(da)
-    return DataArray(collect(keys(unique_values)))
+    unique_values, firstna = finduniques(da)
+    return DataArray(unique_values)
+end
+
+#' @description
+#'
+#' Return a Vector containing the unique values of an `Array`. This
+#' function is identical to `unique` and is only defined for consistency
+#' with `DataArray`s and `PooledDataArray`s.
+#'
+#'
+#' @param a::Array{T} `Array` whose unique values are desired.
+#'
+#' @returns v::Vector{T} `Vector` containing the unique values from `da`.
+#'
+#' @examples
+#'
+#' v = [1, -2, 1, 4]
+#' distinct_values = levels(v)
+function levels(a::AbstractArray) # -> Vector{T}
+    return unique(a)
 end
