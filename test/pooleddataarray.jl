@@ -27,6 +27,9 @@ module TestPDA
     @assert levels(setlevels!(copy(p), [1 => 111])) == [111, 8, 9]
     @assert levels(setlevels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
 
+    @assert isequal(unique(p), @pdata [9, 8, NA, 1])
+    @assert isequal(unique(reverse(p)), @pdata [1, NA, 8, 9])
+
     pp = PooledDataArray(Any[])
     @assert length(pp) == 0
     @assert length(levels(pp)) == 0

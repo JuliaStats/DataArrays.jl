@@ -256,11 +256,6 @@ isna(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
 ## PooledDataArray utilities
 ##
 ## TODO: Add methods with these names for DataArray's
-##       Decide whether levels() or unique() is primitive. Make the other
-##       an alias.
-##  Tom: I don't think levels and unique are the same. R doesn't include NA's
-##       with levels, but it does with unique. Having these different is
-##       useful.
 ##
 ##############################################################################
 
@@ -280,21 +275,84 @@ function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
     PooledDataArray(RefArray(newrefs), d.pool)
 end
 
-function Base.unique{T}(x::PooledDataArray{T})
-    if anyna(x)
-        n = length(x.pool)
-        d = Array(T, n + 1)
-        for i in 1:n
-            d[i] = x.pool[i]
+#' @description
+#'
+#' Return a DataVector containing the unique values of a `PooledDataArray`,
+#' in the order they appear in the data, including `NA` if any missing entries
+#' are encountered. For `PooledDataArray`s, this function is much less efficient
+#' than `levels`, which does not return the values in the same order.
+#'
+#' @param da::DataArray{T} `DataArray` whose unique values are desired.
+#'
+#' @returns dv::DataVector{T} `DataVector` containing the unique values
+#'          from `pda`, in the order they appear, including `NA` if there are
+#'          any missing entries in `pda`.
+#'
+#' @examples
+#'
+#' pdv = @pdata [1, -2, 1, NA, 4]
+#' distinct_values = unique(pdv)
+function Base.unique{T}(pda::PooledDataArray{T})
+    n = length(pda)
+    nlevels = length(pda.pool)
+    unique_values = Array(T, 0)
+    sizehint(unique_values, nlevels)
+    seen = Set{eltype(pda.refs)}()
+
+    firstna = 0
+    for i in 1:n
+        if isna(pda, i) && firstna == 0
+            firstna = length(unique_values) + 1
+        elseif !in(pda.refs[i], seen)
+            push!(seen, pda.refs[i])
+            push!(unique_values, pda.refs[i])
+        else
+            continue
         end
-        m = falses(n + 1)
-        m[n + 1] = true
-        return DataArray(d, m)
+
+        if firstna > 0 && length(unique_values) == nlevels
+            break
+        end
+    end
+
+    if firstna > 0
+        res = DataArray(Array(T, nlevels + 1))
+        i = 0
+        for val in unique_values
+            i += 1
+            if i == firstna
+                res.na[i] = true
+                i += 1
+            end
+            res.data[i] = pda.pool[val]
+        end
+
+        return res
     else
-        return DataArray(copy(x.pool), falses(length(x.pool)))
+        return DataArray(unique_values)
     end
 end
 
+#' @description
+#'
+#' Return a DataVector containing the levels of a `PooledDataArray`,
+#' excluding `NA`. For `PooledDataArray`s, this function is much more
+#' efficient than `unique`, and it returns the levels in the order used
+#' when calling `setlevels!` rather than in the order of appearance.
+#' Contrary to `unique`, it also returns levels which are not present in
+#' the vector.
+#'
+#'
+#' @param pda::PooledDataArray{T} PooledDataArray whose levels values are
+#' desired.
+#'
+#' @returns dv::DataVector{T} DataVector containing the levels
+#'          of `da`, excluding `NA`.
+#'
+#' @examples
+#'
+#' pdv = @pdata [1, -2, 1, NA, 4]
+#' distinct_values = levels(pdv)
 levels{T}(pda::PooledDataArray{T}) = copy(pda.pool)
 
 function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
