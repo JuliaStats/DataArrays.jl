@@ -1107,14 +1107,18 @@ end
 #'
 #' dv = @data [1, 2, NA, 4]
 #' distinct_values, firstna = finduniques(dv)
-function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Bool
+function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Int
     out = Array(T,0)
     seen = Set{T}()
     n = length(da)
     firstna = 0
     for i in 1:n
-        if da.na[i] && firstna == 0
-            firstna = length(out) + 1
+        if isna(da, i)
+            if firstna == 0
+                firstna = length(out) + 1
+            else
+                continue
+            end
         elseif !in(da.data[i], seen)
             push!(seen, da.data[i])
             push!(out, da.data[i])

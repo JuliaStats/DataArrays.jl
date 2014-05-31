@@ -301,8 +301,10 @@ function Base.unique{T}(pda::PooledDataArray{T})
 
     firstna = 0
     for i in 1:n
-        if isna(pda, i) && firstna == 0
-            firstna = length(unique_values) + 1
+        if isna(pda, i)
+            if firstna == 0
+                firstna = length(unique_values) + 1
+            end
         elseif !in(pda.refs[i], seen)
             push!(seen, pda.refs[i])
             push!(unique_values, pda.refs[i])

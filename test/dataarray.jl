@@ -41,9 +41,11 @@ module TestDataArray
     @test isequal(copy(x), x)
     @test isequal(copy!(y, x), x)
 
-    x = @data [1, -2, 1, NA, 4]
-    @assert isequal(unique(x), @data [1, -2, NA, 4])
+    x = @data [1, NA, -2, 1, NA, 4]
+    @assert isequal(unique(x), @data [1, NA, -2, 4])
     @assert isequal(unique(reverse(x)), @data [4, NA, 1, -2])
+    @assert isequal(unique(dropna(x)), @data [1, -2, 4])
+    @assert isequal(unique(reverse(dropna(x))), @data [4, 1, -2])
     @assert isequal(levels(x), @data [1, -2, 4])
     @assert isequal(levels(reverse(x)), @data [4, 1, -2])
 
