@@ -767,11 +767,7 @@ Base.(:^)(::NAtype, ::Integer) = NA
 Base.(:^)(::NAtype, ::Number) = NA
 
 for (vf, sf) in ((:(Base.(:+)), :(Base.(:+))),
-                 (:(Base.(:.+)), :(Base.(:+))),
-                 (:(Base.(:-)), :(Base.(:-))),
-                 (:(Base.(:.-)), :(Base.(:-))),
-                 (:(Base.(:.*)), :(Base.(:*))),
-                 (:(Base.(:.^)), :(Base.(:^))))
+                 (:(Base.(:-)), :(Base.(:-))))
     @eval begin
         # Necessary to avoid ambiguity warnings
         @swappable ($vf)(A::BitArray, B::AbstractDataArray{Bool}) = ($vf)(bitunpack(A), B)
@@ -780,9 +776,6 @@ for (vf, sf) in ((:(Base.(:+)), :(Base.(:+))),
         @dataarray_binary_array $vf $sf promote_type(eltype(a), eltype(b))
     end
 end
-
-@swappable Base.(:./)(A::BitArray, B::AbstractDataArray{Bool}) = ./(bitunpack(A), B)
-@swappable Base.(:./)(A::BitArray, B::DataArray{Bool}) = ./(bitunpack(A), B)
 
 # / and ./ are defined separately since they promote to floating point
 for f in ((:(Base.(:/)), :(Base.(:./))))
@@ -800,8 +793,6 @@ Base.(:/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
     DataArray(Array(T, size(b)), trues(size(b)))
 @dataarray_binary_scalar Base.(:./) Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?
                                       promote_type(eltype(a), typeof(b)) : Float64 true
-@dataarray_binary_array Base.(:./) Base.(:/) eltype(a) <: FloatingPoint || eltype(b) <: FloatingPoint ?
-                                             promote_type(eltype(a), eltype(b)) : Float64
 
 for f in biscalar_operators
     @eval begin

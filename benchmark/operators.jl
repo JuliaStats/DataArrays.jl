@@ -38,7 +38,8 @@ macro perf(fn, replications, idx...)
         df = compare([()->$fn for i=$idx], $replications)
         gc_enable()
         gc()
-        df["Function"] = TEST_NAMES[$idx]
+        df[:Function] = TEST_NAMES[$idx]
+        df[:Relative] = df[:Average]./df[1, :Average]
         println(df)
     end
 end
@@ -61,6 +62,7 @@ const Bool2 = make_test_types(make_bools, 1000)
 @perf isequal(Float1[i], Float2[i]) 10000
 @perf .==(Float1[i], Float2[i]) 100
 @perf +(Float1[i], Float2[i]) 100
+@perf .+(Float1[i], Float2[i]) 100
 @perf .*(Float1[i], Float2[i]) 100
 @perf ./(Float1[i], Float2[i]) 50
 @perf *(Float1[i], Float2[i]) 10 div(length(Float1), 2)+1:length(Float1)
