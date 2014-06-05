@@ -937,7 +937,7 @@ function Base.convert{S,T,R<:Integer,N}(::Type{DataArray{S,N}},
     return res
 end
 Base.convert{S,T,R<:Integer,N}(::Type{DataArray{S}}, pda::PooledDataArray{T,R,N}) =
-    convert(DataArray{T,N}, pda)
+    convert(DataArray{S,N}, pda)
 Base.convert{T,R<:Integer,N}(::Type{DataArray}, pda::PooledDataArray{T,R,N}) =
     convert(DataArray{T,N}, pda)
 

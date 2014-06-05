@@ -921,33 +921,10 @@ function Base.convert{S, T, N}(::Type{Array{S, N}},
         return convert(Array{S, N}, x.data)
     end
 end
-
-#' @description
-#'
-#' Convert a DataArray{T} to an Array{T}. Throws an `NAException`
-#' if the input contains `NA` values that prohibit conversion.
-#'
-#' @param da::DataArray{T} The DataArray that will be converted.
-#'
-#' @returns a::Array{T} The elements of `da` if none were `NA`.
-#'
-#' @examples
-#'
-#' da = @data [1 2; 3 NA]
-#' a = convert(Array, da)
-#'
-#' da = @data [1 2; 3 4]
-#' a = convert(Array, da)
-# TODO: Consider making a copy here
-function Base.convert{T, N}(::Type{Array},
-                            x::DataArray{T, N}) # -> Array{T}
-    if anyna(x)
-        err = "Cannot convert DataArray with NA's to base type"
-        throw(NAException(err))
-    else
-        return x.data
-    end
-end
+Base.convert{S,T,N}(::Type{Array{S}}, x::DataArray{T,N}) =
+    convert(Array{S,N}, x)
+Base.convert{T,N}(::Type{Array}, x::DataArray{T,N}) =
+    convert(Array{T,N}, x)
 
 #' @description
 #'
@@ -966,23 +943,10 @@ function Base.convert{S, T, N}(::Type{DataArray{S, N}},
                                a::AbstractArray{T, N}) # -> DataArray{S, N}
     return DataArray(convert(Array{S, N}, a), falses(size(a)))
 end
-
-#' @description
-#'
-#' Convert an Array{T} to a DataArray{T}.
-#'
-#' @param a::Array{T} The Array that will be converted.
-#'
-#' @returns da::DataArray{T} The converted DataArray.
-#'
-#' @examples
-#'
-#' a = [1 2; 3 4]
-#' da = convert(DataArray, a)
-function Base.convert{T, N}(::Type{DataArray},
-                            a::AbstractArray{T, N}) # -> DataArray{T, N}
-    return DataArray(convert(Array{T, N}, a), falses(size(a)))
-end
+Base.convert{S,T,N}(::Type{DataArray{S}}, x::AbstractArray{T,N}) =
+    convert(DataArray{S,N}, x)
+Base.convert{T, N}(::Type{DataArray}, x::AbstractArray{T, N}) =
+    convert(DataArray{T,N}, x)
 
 #' @description
 #'
@@ -999,24 +963,6 @@ end
 function Base.convert{S, T, N}(::Type{DataArray{S, N}},
                                x::DataArray{T, N}) # -> DataArray{S, N}
     return DataArray(convert(Array{S}, x.data), x.na)
-end
-
-#' @description
-#'
-#' NO-OP: See convert(DataArray{S}, DataArray{T}) for rationale.
-#' TODO: Make operative by doing copy?
-#'
-#' @param da::DataArray{T} The DataArray that will be converted.
-#'
-#' @returns out::DataArray{T} The converted DataArray.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' dv_alt = convert(DataVector, dv)
-function Base.convert{T, N}(::Type{DataArray},
-                            x::DataArray{T, N}) # -> DataArray{T, N}
-    return DataArray(x.data, x.na)
 end
 
 #' @description
