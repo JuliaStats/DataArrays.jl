@@ -13,6 +13,12 @@ n2 = 32
 n3 = 17
 rb = 1:5
 
+@test broadcast!(+, DataArray(Int, 2, 2), eye(2), [1, 4]) == [2 1; 4 5]
+@test broadcast!(+, DataArray(Int, 2, 2), eye(2), [1  4]) == [2 4; 1 5]
+@test broadcast!(+, DataArray(Int, 2, 2), [1  0], [1, 4]) == [2 1; 5 4]
+@test broadcast!(+, DataArray(Int, 2, 2), [1, 0], [1  4]) == [2 5; 1 4]
+@test broadcast!(+, DataArray(Int, 2), [1, 0], [1, 4]) == [2, 4]
+@test broadcast!(+, DataArray(Int, 2), [1, 0], 2) == [3, 2]
 for arr in (identity, as_dataarray, as_pda, as_dataarray_bigfloat, as_pda_bigfloat)
     @test broadcast(+, arr(eye(2)), arr([1, 4])) == [2 1; 4 5]
     @test broadcast(+, arr(eye(2)), arr([1  4])) == [2 4; 1 5]
@@ -42,7 +48,7 @@ for arr in (identity, as_dataarray, as_pda, as_dataarray_bigfloat, as_pda_bigflo
 
     @test arr([ 1    2])   .* arr([3,   4])   == [ 3 6; 4 8]
     @test arr([24.0 12.0]) ./ arr([2.0, 3.0]) == [12 6; 8 4]
-    @test arr([1 2]) ./ arr([3, 4]) == [1/3 2/3; 1/4 2/4]
+    @test arr([1 2]) ./ arr([8, 4]) == [1/8 2/8; 1/4 2/4]
     @test arr([1 2]) .\ arr([3, 4]) == [3 1.5; 4 2]
     @test arr([3 4]) .^ arr([1, 2]) == [3 4; 9 16]
     @test arr(bitpack([true false])) .* arr(bitpack([true, true])) == [true false; true false]

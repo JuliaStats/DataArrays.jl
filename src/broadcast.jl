@@ -28,7 +28,8 @@ function gen_broadcast_dataarray(nd::Int, arrtype::(DataType...), outtype, f::Fu
     narrays = length(arrtype)
     As = [symbol("A_$(i)") for i = 1:narrays]
     dataarrays = find([arrtype...] .== DataArray)
-    have_fastpath = outtype == DataArray && all(x->x <: Union(DataArray, AbstractArray), arrtype)
+    abstractdataarrays = find([arrtype...] .!= AbstractArray)
+    have_fastpath = outtype == DataArray && all(x->!(x <: PooledDataArray), arrtype)
     @eval begin
         local _F_, _F_fastpath
         $(if have_fastpath
@@ -47,16 +48,16 @@ function gen_broadcast_dataarray(nd::Int, arrtype::(DataType...), outtype, f::Fu
                     end for k in dataarrays]...))
 
                     Bdata = B.data
+                    Bchunks = B.na.chunks
                     $(if !isempty(dataarrays)
                         quote
-                            Bchunks = B.na.chunks
                             for i = 1:length(Bchunks)
                                 @inbounds Bchunks[i] = $(Expr(:call, :|, [:($(symbol("na_$(k)"))[i]) for k in dataarrays]...))
                             end
                             @inbounds Bchunks[end] &= Base.@_msk_end length(Bdata)
                         end
                       else
-                        :(fill!(B.na, false))
+                        :(fill!(Bchunks, 0))
                       end
                     )
 
@@ -140,7 +141,7 @@ function gen_broadcast_dataarray(nd::Int, arrtype::(DataType...), outtype, f::Fu
                     for k = 1:narrays]...))
 
                     # Check if NA
-                    if $(Expr(:call, :|, [symbol("isna_$k") for k in find([arrtype...] .!= AbstractArray)]...))
+                    if $(isempty(abstractdataarrays) ? false : Expr(:call, :|, [symbol("isna_$k") for k in abstractdataarrays]...))
                         # Set NA
                         $(if outtype == DataArray
                             quote
