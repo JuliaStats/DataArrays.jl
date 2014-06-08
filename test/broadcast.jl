@@ -3,7 +3,9 @@ using DataArrays, Base.Test
 
 # Based on broadcast tests from base
 as_dataarray(x) = convert(DataArray, x)
+as_dataarray_bigfloat(x) = convert(DataArray{BigFloat}, x)
 as_pda(x) = convert(PooledDataArray, x)
+as_pda_bigfloat(x) = convert(PooledDataArray{BigFloat}, x)
 
 bittest(f::Function, ewf::Function, a...) = (@test ewf(a...) == bitpack(broadcast(f, a...)))
 n1 = 21
@@ -11,7 +13,7 @@ n2 = 32
 n3 = 17
 rb = 1:5
 
-for arr in (identity, as_dataarray, as_pda)
+for arr in (identity, as_dataarray, as_pda, as_dataarray_bigfloat, as_pda_bigfloat)
     @test broadcast(+, arr(eye(2)), arr([1, 4])) == [2 1; 4 5]
     @test broadcast(+, arr(eye(2)), arr([1  4])) == [2 4; 1 5]
     @test broadcast(+, arr([1  0]), arr([1, 4])) == [2 1; 5 4]

@@ -1,126 +1,186 @@
 using DataArrays, Base.Cartesian, Base.@get!
-using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache, check_broadcast_shape,
+using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache,
                       promote_eltype, broadcast_shape, eltype_plus, type_minus, type_div,
                       type_pow
 
-function gen_broadcast_body_dataarray(nd::Int, arrtype::(DataType...), outtype, f::Function)
-    F = Expr(:quote, f)
-    narrays = length(arrtype)
-    quote
-        @assert ndims(B) == $nd
-        @ncall $narrays check_broadcast_shape size(B) k->A_k
-
-        # Set up input DataArray/PooledDataArrays
-        $(Expr(:block, [
-            arrtype[k] == DataArray ? quote
-                $(symbol("na_$(k)")) = $(symbol("A_$(k)")).na.chunks
-                $(symbol("data_$(k)")) = $(symbol("A_$(k)")).data
-                $(symbol("state_$(k)_0")) = $(symbol("state_$(k)_$(nd)")) = 1
-                @nexprs $nd d->($(symbol("skip_$(k)_d")) = size($(symbol("data_$(k)")), d) == 1)
-            end : arrtype[k] == PooledDataArray ? quote
-                $(symbol("refs_$(k)")) = $(symbol("A_$(k)")).refs
-                $(symbol("pool_$(k)")) = $(symbol("A_$(k)")).pool
-            end : nothing
-        for k = 1:length(arrtype)]...))
-
-        # Set up output DataArray/PooledDataArray
-        $(if outtype == DataArray
-            quote
-                Bc = B.na.chunks
-                fill!(Bc, 0)
-                Bdata = B.data
-                ind = 1
+# Check that all arguments are broadcast compatible with shape
+# Differs from Base in that we check for exact matches
+function check_broadcast_shape(shape::Dims, As::Union(AbstractArray,Number)...)
+    samesize = true
+    for A in As
+        if ndims(A) > length(shape)
+            error("cannot broadcast array to have fewer dimensions")
+        end
+        for k in 1:length(shape)
+            n, nA = shape[k], size(A, k)
+            samesize &= (n == nA)
+            if n != nA != 1
+                error("array could not be broadcast to match destination")
             end
-        elseif outtype == PooledDataArray
-            quote
-                Bpool = B.pool = similar(B.pool, 0)
-                Brefs = B.refs
-                Brefdict = Dict{eltype(Bpool),eltype(Brefs)}()
-            end
-        end)
-
-        @nloops($nd, i, $(outtype == DataArray ? (:Bdata) : (:Brefs)),
-            # pre
-            d->($(Expr(:block, [
-                arrtype[k] == DataArray ? quote
-                    $(symbol("state_$(k)_")){d-1} = $(symbol("state_$(k)_d"));
-                    $(symbol("j_$(k)_d")) = $(symbol("skip_$(k)_d")) ? 1 : i_d
-                end : quote
-                    $(symbol("j_$(k)_d")) = size($(symbol("A_$(k)")), d) == 1 ? 1 : i_d
-                end
-            for k = 1:length(arrtype)]...))),
-
-            # post
-            d->($(Expr(:block, [quote
-                $(symbol("skip_$(k)_d")) || ($(symbol("state_$(k)_d")) = $(symbol("state_$(k)_0")))
-            end for k in find([arrtype...] .== DataArray)]...))),
-
-            # body
-            begin
-                # Advance iterators for DataArray and extract NA values
-                $(Expr(:block, [
-                    arrtype[k] == DataArray ? quote
-                        #@inbounds $(symbol("isna_$(k)")) = Base.unsafe_bitgetindex($(symbol("na_$(k)")), $(symbol("state_$(k)_0")))
-                        # XXX use the code above if/when unsafe_bitgetindex is inlined
-                        @inbounds $(symbol("isna_$(k)")) = ($(symbol("na_$(k)"))[Base.@_div64($(symbol("state_$(k)_0"))-1)+1] & (uint64(1)<<Base.@_mod64($(symbol("state_$(k)_0"))-1))) != 0
-                    end : arrtype[k] == PooledDataArray ? quote
-                        @inbounds $(symbol("r_$(k)")) = @nref $nd $(symbol("refs_$(k)")) d->$(symbol("j_$(k)_d"))
-                        $(symbol("isna_$(k)")) = $(symbol("r_$(k)")) == 0
-                    end : nothing
-                for k = 1:length(arrtype)]...))
-                
-                # Check if NA
-                if $(Expr(:call, :|, [symbol("isna_$k") for k in find([arrtype...] .!= AbstractArray)]...))
-                    # Set NA
-                    $(if outtype == DataArray
-                        quote
-                            i1, i2 = Base.get_chunks_id(ind)
-                            @inbounds Bc[i1] |= uint64(1) << i2
-                        end
-                    elseif outtype == PooledDataArray
-                        :(@inbounds (@nref $nd Brefs i) = zero(eltype(Brefs)))
-                    end)
-                else
-                    # If not NA, extract data values
-                    $(Expr(:block, [
-                        arrtype[k] == DataArray ? quote
-                            @inbounds $(symbol("v_$(k)")) = $(symbol("data_$(k)"))[$(symbol("state_$(k)_0"))]
-                        end : arrtype[k] == PooledDataArray ? quote
-                            @inbounds $(symbol("v_$(k)")) = $(symbol("pool_$(k)"))[$(symbol("r_$(k)"))]
-                        end : quote
-                            @inbounds $(symbol("v_$(k)")) = @nref $nd $(symbol("A_$(k)")) d->$(symbol("j_$(k)_d"))
-                        end
-                    for k = 1:narrays]...))
-
-                    # Compute and store return value
-                    x = (@ncall $narrays $F v)
-                    $(if outtype == DataArray
-                        :(@inbounds Bdata[ind] = x)
-                    elseif outtype == PooledDataArray
-                        quote
-                            @inbounds (@nref $nd Brefs i) = @get! Brefdict x begin
-                                push!(Bpool, x)
-                                convert(eltype(Brefs), length(Bpool))
-                            end
-                        end
-                    end)
-                end
-
-                $(Expr(:block, [:($(symbol("state_$(k)_0")) += 1) for k in find([arrtype...] .== DataArray)]...))
-                $(if outtype == DataArray
-                    :(ind += 1)
-                end)
-            end)
+        end
     end
+    samesize
 end
 
-function gen_broadcast_function_to(genbody::Function, nd::Int, arrtype::(DataType...), outtype::DataType, f::Function)
-    As = [symbol("A_"*string(i)) for i = 1:length(arrtype)]
-    body = genbody(nd, arrtype, outtype, f)
+const NO_NA_CHECK_FUNCTIONS = Set([*, %, +, -, <=, <, ==, >, >=])
+function gen_broadcast_dataarray(nd::Int, arrtype::(DataType...), outtype, f::Function)
+    F = Expr(:quote, f)
+    narrays = length(arrtype)
+    As = [symbol("A_$(i)") for i = 1:narrays]
+    dataarrays = find([arrtype...] .== DataArray)
+    have_fastpath = outtype == DataArray && all(x->x <: Union(DataArray, AbstractArray), arrtype)
     @eval begin
-        local _F_
+        local _F_, _F_fastpath
+        $(if have_fastpath
+            quote
+                function _F_fastpath(B::$(outtype), $(As...))
+                    # Skip the NA check for sufficiently inexpensive
+                    # functions that won't throw domain errors or
+                    # errors on access
+                    no_na_check = $(f in NO_NA_CHECK_FUNCTIONS)
+
+                    # "fast path" -> use precomputed NA mask
+                    $(Expr(:block, [quote
+                        $(symbol("na_$(k)")) = $(symbol("A_$(k)")).na.chunks
+                        $(symbol("data_$(k)")) = $(symbol("A_$(k)")).data
+                        no_na_check = no_na_check && isbits(eltype($(symbol("data_$(k)"))))
+                    end for k in dataarrays]...))
+
+                    Bdata = B.data
+                    $(if !isempty(dataarrays)
+                        quote
+                            Bchunks = B.na.chunks
+                            for i = 1:length(Bchunks)
+                                @inbounds Bchunks[i] = $(Expr(:call, :|, [:($(symbol("na_$(k)"))[i]) for k in dataarrays]...))
+                            end
+                            @inbounds Bchunks[end] &= Base.@_msk_end length(Bdata)
+                        end
+                      else
+                        :(fill!(B.na, false))
+                      end
+                    )
+
+                    for i = 1:length(Bdata)
+                        $(if !isempty(dataarrays)
+                            :(no_na_check || @inbounds ((Bchunks[Base.@_div64(i-1)+1] & (uint64(1)<<Base.@_mod64(i-1))) == 0) || continue)
+                        end)
+                        $(Expr(:block, [
+                            :(@inbounds $(symbol("v_$(k)")) = $(arrtype[k] == DataArray ? symbol("data_$(k)") : symbol("A_$(k)"))[i])
+                        for k = 1:narrays]...))
+                        @inbounds Bdata[i] = (@ncall $narrays $F v)
+                    end
+                    return B
+                end
+            end
+        end)
         function _F_(B::$(outtype), $(As...))
-            $body
+            @assert ndims(B) == $nd
+            samesize = @ncall $narrays check_broadcast_shape size(B) k->A_k
+            $(if have_fastpath
+                :(samesize && return _F_fastpath(B, $(As...)))
+            end)
+
+            # Set up input DataArray/PooledDataArrays
+            $(Expr(:block, [
+                arrtype[k] == DataArray ? quote
+                    $(symbol("na_$(k)")) = $(symbol("A_$(k)")).na.chunks
+                    $(symbol("data_$(k)")) = $(symbol("A_$(k)")).data
+                    $(symbol("state_$(k)_0")) = $(symbol("state_$(k)_$(nd)")) = 1
+                    @nexprs $nd d->($(symbol("skip_$(k)_d")) = size($(symbol("data_$(k)")), d) == 1)
+                end : arrtype[k] == PooledDataArray ? quote
+                    $(symbol("refs_$(k)")) = $(symbol("A_$(k)")).refs
+                    $(symbol("pool_$(k)")) = $(symbol("A_$(k)")).pool
+                end : nothing
+            for k = 1:narrays]...))
+
+            # Set up output DataArray/PooledDataArray
+            $(if outtype == DataArray
+                quote
+                    Bc = B.na.chunks
+                    fill!(Bc, 0)
+                    Bdata = B.data
+                    ind = 1
+                end
+            elseif outtype == PooledDataArray
+                quote
+                    Bpool = B.pool = similar(B.pool, 0)
+                    Brefs = B.refs
+                    Brefdict = Dict{eltype(Bpool),eltype(Brefs)}()
+                end
+            end)
+
+            @nloops($nd, i, $(outtype == DataArray ? (:Bdata) : (:Brefs)),
+                # pre
+                d->($(Expr(:block, [
+                    arrtype[k] == DataArray ? quote
+                        $(symbol("state_$(k)_")){d-1} = $(symbol("state_$(k)_d"));
+                        $(symbol("j_$(k)_d")) = $(symbol("skip_$(k)_d")) ? 1 : i_d
+                    end : quote
+                        $(symbol("j_$(k)_d")) = size($(symbol("A_$(k)")), d) == 1 ? 1 : i_d
+                    end
+                for k = 1:narrays]...))),
+
+                # post
+                d->($(Expr(:block, [quote
+                    $(symbol("skip_$(k)_d")) || ($(symbol("state_$(k)_d")) = $(symbol("state_$(k)_0")))
+                end for k in dataarrays]...))),
+
+                # body
+                begin
+                    # Advance iterators for DataArray and extract NA values
+                    $(Expr(:block, [
+                        arrtype[k] == DataArray ? quote
+                            #@inbounds $(symbol("isna_$(k)")) = Base.unsafe_bitgetindex($(symbol("na_$(k)")), $(symbol("state_$(k)_0")))
+                            # XXX use the code above if/when unsafe_bitgetindex is inlined
+                            @inbounds $(symbol("isna_$(k)")) = ($(symbol("na_$(k)"))[Base.@_div64($(symbol("state_$(k)_0"))-1)+1] & (uint64(1)<<Base.@_mod64($(symbol("state_$(k)_0"))-1))) != 0
+                        end : arrtype[k] == PooledDataArray ? quote
+                            @inbounds $(symbol("r_$(k)")) = @nref $nd $(symbol("refs_$(k)")) d->$(symbol("j_$(k)_d"))
+                            $(symbol("isna_$(k)")) = $(symbol("r_$(k)")) == 0
+                        end : nothing
+                    for k = 1:narrays]...))
+
+                    # Check if NA
+                    if $(Expr(:call, :|, [symbol("isna_$k") for k in find([arrtype...] .!= AbstractArray)]...))
+                        # Set NA
+                        $(if outtype == DataArray
+                            quote
+                                i1, i2 = Base.get_chunks_id(ind)
+                                @inbounds Bc[i1] |= uint64(1) << i2
+                            end
+                        elseif outtype == PooledDataArray
+                            :(@inbounds (@nref $nd Brefs i) = zero(eltype(Brefs)))
+                        end)
+                    else
+                        # If not NA, extract data values
+                        $(Expr(:block, [
+                            arrtype[k] == DataArray ? quote
+                                @inbounds $(symbol("v_$(k)")) = $(symbol("data_$(k)"))[$(symbol("state_$(k)_0"))]
+                            end : arrtype[k] == PooledDataArray ? quote
+                                @inbounds $(symbol("v_$(k)")) = $(symbol("pool_$(k)"))[$(symbol("r_$(k)"))]
+                            end : quote
+                                @inbounds $(symbol("v_$(k)")) = @nref $nd $(symbol("A_$(k)")) d->$(symbol("j_$(k)_d"))
+                            end
+                        for k = 1:narrays]...))
+
+                        # Compute and store return value
+                        x = (@ncall $narrays $F v)
+                        $(if outtype == DataArray
+                            :(@inbounds Bdata[ind] = x)
+                        elseif outtype == PooledDataArray
+                            quote
+                                @inbounds (@nref $nd Brefs i) = @get! Brefdict x begin
+                                    push!(Bpool, x)
+                                    convert(eltype(Brefs), length(Bpool))
+                                end
+                            end
+                        end)
+                    end
+
+                    $(Expr(:block, [:($(symbol("state_$(k)_0")) += 1) for k in dataarrays]...))
+                    $(if outtype == DataArray
+                        :(ind += 1)
+                    end)
+                end)
         end
         _F_
     end
@@ -131,15 +191,21 @@ datype(A_1::DataArray, As...) = tuple(DataArray, datype(As...)...)
 datype(A_1, As...) = tuple(AbstractArray, datype(As...)...)
 datype() = ()
 
+datype_int(A_1::PooledDataArray, As...) = (uint64(2) | (datype_int(As...) << 2))
+datype_int(A_1::DataArray, As...) = (uint64(1) | (datype_int(As...) << 2))
+datype_int(A_1, As...) = (datype_int(As...) << 2)
+datype_int() = uint64(0)
+
 for bsig in (DataArray, PooledDataArray), asig in (Union(Array,BitArray,Number), Any)
-    @eval let cache = Dict{Function,Dict{(DataType...),Dict{Int,Function}}}()
+    @eval let cache = Dict{Function,Dict{Uint64,Dict{Int,Function}}}()
         function Base.broadcast!(f::Function, B::$bsig, As::$asig...)
             nd = ndims(B)
-            arrtype = datype(As...)
+            length(As) <= 32 || error("too many arguments")
+            arrtype = datype_int(As...)
 
-            cache_f    = @get! cache      f        Dict{(DataType...),Dict{Int,Function}}()
+            cache_f    = @get! cache      f        Dict{Uint64,Dict{Int,Function}}()
             cache_f_na = @get! cache_f    arrtype  Dict{Int,Function}()
-            func       = @get! cache_f_na nd       gen_broadcast_function_to(gen_broadcast_body_dataarray, nd, arrtype, $bsig, f)
+            func       = @get! cache_f_na nd       gen_broadcast_dataarray(nd, datype(As...), $bsig, f)
 
             # println(code_typed(func, typeof(tuple(B, As...))))
             # println(code_llvm(func, typeof(tuple(B, As...))))
