@@ -47,7 +47,7 @@ end
 function parsevector(ex::Expr)
     stub = findstub_vector(ex)
     data, na = fixargs(ex.args, stub)
-    return Expr(:vcat, data...), Expr(:vcat, na...)
+    return Expr(ex.head, data...), Expr(ex.head, na...)
 end
 
 function parsematrix(ex::Expr)

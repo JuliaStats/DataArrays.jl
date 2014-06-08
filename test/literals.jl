@@ -6,6 +6,10 @@ module TestLiterals
     @test isequal(dv,
                   DataArray([1, 0, 3],
                             [false, true, false]))
+    dv = @data [1 NA 3]
+    @test isequal(dv,
+                  DataArray([1 0 3],
+                            [false true false]))
 
     dv = @data {1, NA, 3}
     @test isequal(dv,
@@ -36,6 +40,11 @@ module TestLiterals
     @test isequal(pdv,
                   PooledDataArray({1, 0, 3},
                                   [false, true, false]))
+
+    pdv = @pdata [1 NA 3]
+    @test isequal(pdv,
+                  PooledDataArray([1 0 3],
+                                  [false true false]))
 
     pdm = @pdata [1 NA; 3 4]
     @test isequal(pdm,
