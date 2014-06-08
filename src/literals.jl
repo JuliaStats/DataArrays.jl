@@ -75,16 +75,22 @@ function parsedata(ex::Expr)
 end
 
 macro data(ex)
-    if ex.head != :vcat
-        return Expr(:call, :DataArray, esc(ex))
+    if ex.head != :vcat && ex.head != :hcat
+        return quote
+            tmp = $(esc(ex))
+            DataArray(tmp, bitbroadcast(x->isequal(x, NA), tmp))
+        end
     end
     dataexpr, naexpr = parsedata(ex)
     return Expr(:call, :DataArray, esc(dataexpr), esc(naexpr))
 end
 
 macro pdata(ex)
-    if ex.head != :vcat
-        return Expr(:call, :PooledDataArray, esc(ex))
+    if ex.head != :vcat && ex.head != :hcat
+        return quote
+            tmp = $(esc(ex))
+            PooledDataArray(tmp, bitbroadcast(x->isequal(x, NA), tmp))
+        end
     end
     dataexpr, naexpr = parsedata(ex)
     return Expr(:call, :PooledDataArray, esc(dataexpr), esc(naexpr))
