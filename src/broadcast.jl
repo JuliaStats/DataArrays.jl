@@ -10,23 +10,6 @@ function gen_broadcast_body_dataarray(nd::Int, arrtype::(DataType...), outtype, 
         @assert ndims(B) == $nd
         @ncall $narrays check_broadcast_shape size(B) k->A_k
 
-        # Set up output DataArray/PooledDataArray
-        $(if outtype == DataArray
-            quote
-                Bc = B.na.chunks
-                fill!(Bc, 0)
-                Bdata = B.data
-                ind = 1
-            end
-        elseif outtype == PooledDataArray
-            quote
-                Bpool = B.pool
-                Brefs = B.refs
-                Brefdict = Dict{eltype(Bpool),eltype(Brefs)}()
-                empty!(Bpool)
-            end
-        end)
-
         # Set up input DataArray/PooledDataArrays
         $(Expr(:block, [
             arrtype[k] == DataArray ? quote
@@ -39,6 +22,22 @@ function gen_broadcast_body_dataarray(nd::Int, arrtype::(DataType...), outtype, 
                 $(symbol("pool_$(k)")) = $(symbol("A_$(k)")).pool
             end : nothing
         for k = 1:length(arrtype)]...))
+
+        # Set up output DataArray/PooledDataArray
+        $(if outtype == DataArray
+            quote
+                Bc = B.na.chunks
+                fill!(Bc, 0)
+                Bdata = B.data
+                ind = 1
+            end
+        elseif outtype == PooledDataArray
+            quote
+                Bpool = B.pool = similar(B.pool, 0)
+                Brefs = B.refs
+                Brefdict = Dict{eltype(Bpool),eltype(Brefs)}()
+            end
+        end)
 
         @nloops($nd, i, $(outtype == DataArray ? (:Bdata) : (:Brefs)),
             # pre
@@ -209,6 +208,10 @@ macro da_broadcast_binary(func)
     end
 end
 
+# Broadcasting DataArrays returns a DataArray
+@da_broadcast_vararg Base.broadcast(f::Function, As...) = databroadcast(f, As...)
+
+# Definitions for operators, 
 Base.(:(.*))(A::BitArray, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(*, A, B)
 Base.(:(.*))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::BitArray) = databroadcast(*, A, B)
 @da_broadcast_vararg Base.(:(.*))(As...) = databroadcast(*, As...)
@@ -217,13 +220,15 @@ Base.(:(.*))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::BitArray) = da
 @da_broadcast_binary Base.(:(.-))(A, B) = broadcast!(-, DataArray(type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
 @da_broadcast_binary Base.(:(./))(A, B) = broadcast!(/, DataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 @da_broadcast_binary Base.(:(.\))(A, B) = broadcast!(\, DataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(*, A, B)
-Base.(:(.^))(A::BitArray, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(*, A, B)
-Base.(:(.^))(A::AbstractArray{Bool}, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(*, A, B)
-Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::BitArray) = databroadcast(*, A, B)
-Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::AbstractArray{Bool}) = databroadcast(*, A, B)
+Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(>=, A, B)
+Base.(:(.^))(A::BitArray, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(>=, A, B)
+Base.(:(.^))(A::AbstractArray{Bool}, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(>=, A, B)
+Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::BitArray) = databroadcast(>=, A, B)
+Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
 @da_broadcast_binary Base.(:(.^))(A, B) = broadcast!(^, DataArray(type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 
+# XXX is a PDA the right return type for these?
+Base.broadcast(f::Function, As::PooledDataArray...) = pdabroadcast(f, As...)
 Base.(:(.*))(As::PooledDataArray...) = pdabroadcast(*, As...)
 Base.(:(.%))(A::PooledDataArray, B::PooledDataArray) = pdabroadcast(%, A, B)
 Base.(:(.+))(As::PooledDataArray...) = broadcast!(+, PooledDataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
@@ -233,6 +238,6 @@ Base.(:(./))(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(/, PooledDataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 Base.(:(.\))(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(\, PooledDataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-Base.(:(.^))(A::PooledDataArray{Bool}, B::PooledDataArray{Bool}) = pdabroadcast(*, A, B)
+Base.(:(.^))(A::PooledDataArray{Bool}, B::PooledDataArray{Bool}) = databroadcast(>=, A, B)
 Base.(:(.^))(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(^, PooledDataArray(type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
