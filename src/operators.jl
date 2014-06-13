@@ -659,7 +659,6 @@ for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
         @swappable ($(sf))(::NAtype, b) = NA
 
         @dataarray_binary_scalar $(vf) $(sf) Bool true
-        @dataarray_binary_array $(vf) $(sf) Bool
     end
 end
 
