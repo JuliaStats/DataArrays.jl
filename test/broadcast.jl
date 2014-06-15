@@ -118,4 +118,10 @@ rt = Base.return_types(broadcast!, (Function, DataArray{Float64, 3}, Array{Float
 @test isequal(broadcast(isequal, @pdata([NA, 1]), @pdata([NA 1])), @pdata([true false; false true]))
 @test isequal(broadcast(&, @data([NA, false]), @data([NA true false])), @data([NA NA false; false false false]))
 @test isequal(broadcast(|, @data([NA, false]), @data([NA true false])), @data([NA true NA; NA true false]))
+
+# Test map!
+@test_throws ErrorException map!(+, DataArray(Float64, 2, 2), @data([1, 2]), @data([1 2]))
+@test map!(+, DataArray(Float64, 2), @data([1, 2]), @data([1, 2])) == @data([2, 4])
+@test isequal(map!(+, DataArray(Float64, 3), @data([1, NA, 3]), @data([NA, 2, 3])), @data([NA, NA, 6]))
+@test map!(isequal, DataArray(Float64, 3), @data([1, NA, NA]), @data([1, NA, 3])) == @data([true, true, false])
 end
