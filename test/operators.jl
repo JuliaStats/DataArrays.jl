@@ -32,7 +32,7 @@ module TestOperators
         @assert isna(f(1, NA))
     end
 
-    # All arithmetic operators return NA when operating on two NA's
+    # All arithmetic operators7 return NA when operating on two NA's
     # All arithmetic operators return NA when operating on a scalar and an NA
     # All arithmetic operators return NA when operating on an NA and a scalar
     for f in map(eval, DataArrays.arithmetic_operators)
@@ -110,7 +110,9 @@ module TestOperators
     dv = convert(DataArray, ones(5))
     @test_da_pda dv begin
         for f in map(eval, [:(Base.(:.+)),
+                            :(Base.(:+)),
                             :(Base.(:.-)),
+                            :(Base.(:-)),
                             :(Base.(:*)),
                             :(Base.(:.*)),
                             :(Base.(:./)),

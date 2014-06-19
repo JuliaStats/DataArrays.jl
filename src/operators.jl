@@ -760,6 +760,12 @@ for f in (:(Base.(:.+)), :(Base.(:.-)), :(Base.(:*)), :(Base.(:.*)),
     end
 end
 
+for f in (:(Base.(:+)), :(Base.(:-)))
+    # Array with NA
+    @eval @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
+        DataArray(Array(T, size(b)), trues(size(b)))
+end
+
 Base.(:^)(::NAtype, ::NAtype) = NA
 Base.(:^)(a, ::NAtype) = NA
 Base.(:^)(::NAtype, ::Integer) = NA
