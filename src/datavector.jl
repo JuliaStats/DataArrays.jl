@@ -61,6 +61,68 @@ function Base.shift!{T}(dv::DataVector{T})
     end
 end
 
+function Base.splice!(dv::DataVector, inds::Union(Integer, UnitRange{Int}))
+    v = dv[inds]
+    deleteat!(dv.data, inds)
+    deleteat!(dv.na, inds)
+    v
+end
+
+function Base.splice!(dv::DataVector, inds::Union(Integer, UnitRange{Int}), ins::AbstractVector)
+    # We cannot merely use the implementation in Base because this
+    # needs to handle NA in the replacement vector
+    v = dv[inds]
+    m = length(ins)
+    a = dv.data
+    if m == 0
+        deleteat!(a, inds)
+        deleteat!(dv.na, inds)
+        return v
+    end
+
+    n = length(a)
+    f = first(inds)
+    l = last(inds)
+    d = length(inds)
+
+    if m < d
+        delta = d - m
+        if f-1 < n-l
+            Base._deleteat_beg!(a, f, delta)
+        else
+            Base._deleteat_end!(a, l-delta+1, delta)
+        end
+    elseif m > d
+        delta = m - d
+        if f-1 < n-l
+            Base._growat_beg!(a, f, delta)
+        else
+            Base._growat_end!(a, l+1, delta)
+        end
+    end
+
+    for k = 1:m
+        if !isna(ins, k)
+            if isa(ins, DataVector)
+                a[f+k-1] = ins.data[k]
+            elseif isa(ins, PooledDataVector)
+                a[f+k-1] = ins.pool[ins.refs[k]]
+            else
+                a[f+k-1] = ins[k]
+            end
+        end
+    end
+
+    splice!(dv.na, inds, isna(ins))
+    v
+end
+
+function Base.deleteat!(dv::DataVector, inds)
+    deleteat!(dv.data, inds)
+    deleteat!(dv.na, inds)
+    dv
+end
+
 # TODO: should this be an AbstractDataVector, so it works with PDV's?
 function Base.map(f::Function, dv::DataVector)
     n = length(dv)
@@ -98,6 +160,20 @@ end
 Base.shift!(pdv::PooledDataVector) = pdv.pool[shift!(pdv.refs)]
 
 Base.reverse(x::AbstractDataVector) = x[end:-1:1]
+
+function Base.splice!(pdv::PooledDataVector, inds::Union(Integer, UnitRange{Int}))
+    v = pdv[inds]
+    deleteat!(pdv.refs, inds)
+    v
+end
+
+function Base.splice!(pdv::PooledDataVector, inds::Union(Integer, UnitRange{Int}), ins::AbstractVector)
+    v = pdv[inds]
+    splice!(pdv.refs, inds, [getpoolidx(pdv, v) for v in ins])
+    v
+end
+
+Base.deleteat!(pdv::PooledDataVector, inds) = (deleteat!(pdv.refs, inds); pdv)
 
 # Pad a vector with NA's
 
