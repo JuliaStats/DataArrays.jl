@@ -21,15 +21,13 @@ Conceptualizing the use of `NA` as a signal of uncertainty will help you underst
 
 # DataArray's
 
-Most Julian arrays cannot contain `NA` values: only `Array{NAtype}` or `Array{Any}` can contain `NA` values. Of these, only `Array{Any}` could contain values of any type other than `NAtype`.
+Most Julian arrays cannot contain `NA` values: only `Array{NAtype}` and heterogeneous Arrays can contain `NA` values. Of these, only heterogeneous arrays could contain values of any type other than `NAtype`.
 
-The generic use of `Array{Any}` is discouraged in Julia because it is inefficient: accessing any value in an `Array{Any}` requires dereferencing a pointer. The `DataArray` type allows one to work arond this inefficiency by providing tightly-typed arrays that can contain values of exactly one type, but can also contain `NA` values.
+The generic use of heterogeneous Arrays is discouraged in Julia because it is inefficient: accessing any value requires dereferencing a pointer. The `DataArray` type allows one to work arond this inefficiency by providing tightly-typed arrays that can contain values of exactly one type, but can also contain `NA` values.
 
 For example, a `DataArray{Int}` can contain integers and NA values. We can construct one as follows:
 
 	da = @data([1, 2, NA, 4])
-
-Because DataArrays are tightly-typed, they are both more efficient and more type-safe than using `Array{Any}`.
 
 # PooledDataArray's
 
