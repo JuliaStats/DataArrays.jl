@@ -618,6 +618,9 @@ function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
     return pool_idx
 end
 
+getpoolidx{T,R<:Union(Uint8, Uint16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::NAtype) = zero(R)
+getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::NAtype) = zero(R)
+
 # x[SingleIndex] = NA
 # TODO: Delete values from pool that no longer exist?
 # Not a good idea.  Add another function called drop_unused_levels to do this.
