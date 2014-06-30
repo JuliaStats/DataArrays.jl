@@ -17,7 +17,7 @@
 # arrays of pool indices from normal arrays
 type RefArray{R<:Integer,N}
     a::Array{R,N}
-end 
+end
 
 type PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
     refs::Array{R, N}
@@ -90,7 +90,7 @@ function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
 end
 
 # Constructor from array, w/ missingness and ref type
-function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N}, 
+function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
                                          m::AbstractArray{Bool, N},
                                          r::Type{R} = DEFAULT_POOLED_REF_TYPE)
     pool = sort(unique(d[!m]))
@@ -116,14 +116,14 @@ PooledDataArray{N}(d::BitArray{N}, m::AbstractArray{Bool, N}) = PooledDataArray(
 # Convert a DataArray to a PooledDataArray
 PooledDataArray{T,R<:Integer}(da::DataArray{T},
                               r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(da.data, da.na, r)
-PooledDataArray{T,R<:Integer}(da::DataArray{T}, 
+PooledDataArray{T,R<:Integer}(da::DataArray{T},
                               pool::Vector{T},
                               r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(da.data, pool, da.na, r)
 
 # Convert a Array{T} to a PooledDataArray
 PooledDataArray{T,R<:Integer}(d::Array{T},
                               r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(d, falses(size(d)), r)
-PooledDataArray{T,R<:Integer}(d::Array{T}, 
+PooledDataArray{T,R<:Integer}(d::Array{T},
                               pool::Vector{T},
                               r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(d, pool, falses(size(d)), r)
 
@@ -160,6 +160,12 @@ Base.copy(pda::PooledDataArray) = PooledDataArray(RefArray(copy(pda.refs)),
                                                   copy(pda.pool))
 # TODO: Implement copy_to()
 
+function Base.resize!{T,R}(pda::PooledDataArray{T,R,1}, n::Int)
+    oldn = length(pda.refs)
+    resize!(pda.refs, n)
+    pda.refs[oldn+1:n] = zero(R)
+    pda
+end
 
 function Base.append!{T,R1,R2}(x::PooledDataArray{T,R1,1}, y::PooledDataArray{T,R2,1})
     pool = myunique(vcat(x.pool, y.pool))
@@ -365,7 +371,7 @@ function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
     tidx::Array{R} = findat(newpool, x.pool)
     refs = zeros(R, length(x))
     for i in 1:length(refs)
-        if x.refs[i] != 0 
+        if x.refs[i] != 0
             refs[i] = tidx[x.refs[i]]
         end
     end
@@ -774,9 +780,9 @@ function Base.sortperm(pda::PooledDataArray)
         return groupsort_indexer(pda)[1]
     else
         return sortperm(reorder!(copy(pda)))
-    end 
-end 
-        
+    end
+end
+
 Base.sortperm(pda::PooledDataArray, ::Base.Sort.ReverseOrdering) = reverse(sortperm(pda))
 Base.sort(pda::PooledDataArray) = pda[sortperm(pda)]
 Base.sort(pda::PooledDataArray, ::Base.Sort.ReverseOrdering) = pda[reverse(sortperm(pda))]

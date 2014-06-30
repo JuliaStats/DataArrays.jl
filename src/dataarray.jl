@@ -49,7 +49,7 @@ typealias DataMatrix{T} DataArray{T, 2}
 #'
 #' NB: This definition exists because Julia requires that we redefine
 #' inner DataArray constructor as an outer constuctor.
-#' 
+#'
 #' @param d::Array The non-NA values of the DataArray being constructed.
 #' @param m::BitArray A Boolean mask indicating whether each element of
 #'        the DataArray is missing or not.
@@ -69,7 +69,7 @@ end
 #'
 #' Create a DataArray from a set of data values and missingness
 #' mask as an `Array{Bool}`.
-#' 
+#'
 #' @param d::Array The non-NA values of the DataArray being constructed.
 #' @param m::Array{Bool} A Boolean mask indicating whether each element of
 #'        the DataArray is missing or not.
@@ -88,7 +88,7 @@ end
 #'
 #' Create a DataArray of a given type and dimensionality. All
 #' entries will be set to `NA` by default.
-#' 
+#'
 #' @param T::Type The type of the output DataArray.
 #' @param dims::Integer... The size of the output DataArray.
 #'
@@ -105,7 +105,7 @@ end
 #'
 #' Create a DataArray of a given type and dimensionality. All
 #' entries will be set to `NA` by default.
-#' 
+#'
 #' @param T::Type The type of the output DataArray.
 #' @param dims::NTuple{N, Int} The size of the output DataArray.
 #'
@@ -121,7 +121,7 @@ end
 #' @description
 #'
 #' Create a copy of a DataArray.
-#' 
+#'
 #' @param da::DataArray The DataArray that will be copied.
 #'
 #' @returns out::DataArray A copy of `da`.
@@ -143,7 +143,7 @@ end
 #' @description
 #'
 #' Create a deep copy of a DataArray.
-#' 
+#'
 #' @param da::DataArray The DataArray that will be deep copied.
 #'
 #' @returns out::DataArray A deep-copy of `da`.
@@ -154,6 +154,14 @@ end
 #' dv_new = deepcopy(dv)
 function Base.deepcopy(d::DataArray) # -> DataArray{T}
     return DataArray(deepcopy(d.data), deepcopy(d.na))
+end
+
+function Base.resize!{T}(da::DataArray{T,1}, n::Int)
+    resize!(da.data, n)
+    oldn = length(da.na)
+    resize!(da.na, n)
+    da.na[oldn+1:n] = true
+    da
 end
 
 #' @description
@@ -201,7 +209,7 @@ end
 #' @description
 #'
 #' Create a new DataArray{T} that is similar to an existing DataArray.
-#' 
+#'
 #' @param da::DataArray DataArray based on which a new DataArray
 #'        will be created.
 #' @param T::Type The element type of the output DataArray.
@@ -221,7 +229,7 @@ end
 #' @description
 #'
 #' Find the sizes along each dimension of the DataArray.
-#' 
+#'
 #' @param da::DataArray{Bool} DataArray whose size is desired.
 #'
 #' @returns a::Array{Int} Array containing the indices of all `true` values
@@ -236,7 +244,7 @@ Base.size(d::DataArray) = size(d.data) # -> (Int...)
 #' @description
 #'
 #' Determine the number of dimensions (i.e. order) of a DataArray.
-#' 
+#'
 #' @param da::DataArray{Bool} DataArray whose dimensionality is desired.
 #'
 #' @returns d::Int The number of dimensions of `da`.
@@ -250,7 +258,7 @@ Base.ndims(da::DataArray) = ndims(da.data) # -> Int
 #' @description
 #'
 #' Determine the length (e.g. number of elements) of a DataArray.
-#' 
+#'
 #' @param da::DataArray The DataArray whose length is desired.
 #'
 #' @returns n::Int The length of `da`.
@@ -264,7 +272,7 @@ Base.length(d::DataArray) = length(d.data) # -> Int
 #' @description
 #'
 #' Find the index of the last element of `da`.
-#' 
+#'
 #' @param da::DataArray The DataArray whose final element's index is desired.
 #'
 #' @returns i::Int The index of the final element of `da`.
@@ -278,7 +286,7 @@ Base.endof(da::DataArray) = endof(da.data) # -> Int
 #' @description
 #'
 #' Find the indices of all `true` values in a `DataArray{Bool}`.
-#' 
+#'
 #' @param da::DataArray{Bool} DataArray whose `true` values will be found.
 #'
 #' @returns a::Array{Int} Array containing the indices of all `true` values
@@ -308,7 +316,7 @@ end
 #' @description
 #'
 #' Turn a DataArray into an Array. Raises an error if NA's are encountered.
-#' 
+#'
 #' @param da::DataArray{T} DataArray that will be converted to an Array.
 #'
 #' @returns a::Array{T} Array containing values of `da`.
@@ -336,7 +344,7 @@ end
 #'
 #' Turn a DataArray into an Array. Replace any NA's with the value
 #' of second argument, `replacement`.
-#' 
+#'
 #' @param da::DataArray{T} DataArray that will be converted to an Array.
 #' @param replacement::T Value that will replace NA's in `da`.
 #'
@@ -365,7 +373,7 @@ end
 #'
 #' Turn a DataArray into an Array. Replace any NA's with the value
 #' of second argument, `replacement`.
-#' 
+#'
 #' @param da::DataArray{T} DataArray that will be converted to an Array.
 #' @param replacement::Any Value that will replace NA's in `da`.
 #'        Converted to the `eltype`, `T`, of `da`.
@@ -405,7 +413,7 @@ dropna(v::AbstractVector) = copy(v) # -> AbstractVector
 #' NB: Because NA's are dropped instead of replaced, this function only
 #'     works on DataVector's and will not work on DataArray's of higher
 #'     order.
-#' 
+#'
 #' @param dv::DataVector{T} DataArray that will be converted to an Array.
 #'
 #' @returns v::Array{T} Array containing only the non-NA values of `dv`.
@@ -902,7 +910,7 @@ end
 #'
 #' @param da::DataArray{T} The DataArray that will be converted.
 #'
-#' @returns a::Array{S} The (possibly type-converted) elements of 
+#' @returns a::Array{S} The (possibly type-converted) elements of
 #'         `da` if none were `NA`.
 #'
 #' @examples
