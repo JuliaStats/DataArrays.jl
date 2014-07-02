@@ -45,29 +45,46 @@ function findstub_matrix(ex::Expr)
 end
 
 function parsevector(ex::Expr)
-    stub = findstub_vector(ex)
-    data, na = fixargs(ex.args, stub)
-    return Expr(ex.head, data...), Expr(ex.head, na...)
+    if ex.head in (:ref, :typed_hcat, :typed_vcat)
+        data, na = fixargs(ex.args[2:end], :(zero($(ex.args[1]))))
+        return Expr(ex.head, ex.args[1], data...),
+               Expr(ex.head == :typed_hcat ? :hcat : :vcat, na...)
+    else
+        stub = findstub_vector(ex)
+        data, na = fixargs(ex.args, stub)
+        return Expr(ex.head, data...), Expr(ex.head, na...)
+    end
 end
 
 function parsematrix(ex::Expr)
-    stub = findstub_matrix(ex)
-    nrows = length(ex.args)
+    if ex.head == :typed_vcat
+        stub = :(zero($(ex.args[1])))
+        rows = 2:length(ex.args)
+    else
+        stub = findstub_matrix(ex)
+        rows = 1:length(ex.args)
+    end
+
+    nrows = length(rows)
     datarows = Array(Expr, nrows)
     narows = Array(Expr, nrows)
-    for row in 1:nrows
-        data, na = fixargs(ex.args[row].args, stub)
-        datarows[row] = Expr(:row, data...)
-        narows[row] = Expr(:row, na...)
+    for irow in 1:nrows
+        data, na = fixargs(ex.args[rows[irow]].args, stub)
+        datarows[irow] = Expr(:row, data...)
+        narows[irow] = Expr(:row, na...)
     end
-    return Expr(:vcat, datarows...), Expr(:vcat, narows...)
+    if ex.head == :typed_vcat
+        return Expr(:typed_vcat, ex.args[1], datarows...), Expr(:vcat, narows...)
+    else
+        return Expr(:vcat, datarows...), Expr(:vcat, narows...)
+    end
 end
 
 function parsedata(ex::Expr)
     if length(ex.args) == 0
         return :([]), Expr(:call, :Array, :Bool, 0)
     end
-    if isa(ex.args[1], Expr) && ex.args[1].head == :row
+    if ex.head == :typed_vcat || (isa(ex.args[1], Expr) && ex.args[1].head == :row)
         return parsematrix(ex)
     else
         return parsevector(ex)
@@ -75,7 +92,7 @@ function parsedata(ex::Expr)
 end
 
 macro data(ex)
-    if ex.head != :vcat && ex.head != :hcat
+    if !(ex.head in (:vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
             tmp = $(esc(ex))
             DataArray(tmp, bitbroadcast(x->isequal(x, NA), tmp))
@@ -86,7 +103,7 @@ macro data(ex)
 end
 
 macro pdata(ex)
-    if ex.head != :vcat && ex.head != :hcat
+    if !(ex.head in (:vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
             tmp = $(esc(ex))
             PooledDataArray(tmp, bitbroadcast(x->isequal(x, NA), tmp))
