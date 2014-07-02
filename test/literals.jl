@@ -2,14 +2,35 @@ module TestLiterals
     using Base.Test
     using DataArrays
 
+    dv = @data []
+    @test isequal(dv, DataArray([], Bool[]))
+    @test typeof(dv) == DataVector{None}
+
+    dv = @data Float64[]
+    @test isequal(dv, DataArray(Float64[], Bool[]))
+    @test typeof(dv) == DataVector{Float64}
+
     dv = @data [1, NA, 3]
     @test isequal(dv,
                   DataArray([1, 0, 3],
                             [false, true, false]))
+
     dv = @data [1 NA 3]
     @test isequal(dv,
                   DataArray([1 0 3],
                             [false true false]))
+
+    dv = @data Float64[1, NA, 3]
+    @test isequal(dv,
+                  DataArray(Float64[1, 0, 3],
+                            [false, true, false]))
+    @test typeof(dv) == DataVector{Float64}
+
+    dv = @data Float64[1 NA 3]
+    @test isequal(dv,
+                  DataArray(Float64[1 0 3],
+                            [false true false]))
+    @test typeof(dv) == DataMatrix{Float64}
 
     dv = @data {1, NA, 3}
     @test isequal(dv,
@@ -20,6 +41,12 @@ module TestLiterals
     @test isequal(dm,
                   DataArray([1 0; 3 4],
                             [false true; false false]))
+
+    dm = @data Float64[1 NA; 3 4]
+    @test isequal(dm,
+                  DataArray(Float64[1 0; 3 4],
+                            [false true; false false]))
+    @test typeof(dm) == DataMatrix{Float64}
     
     dm = @data {1 NA; 3 4}
     @test isequal(dm,
@@ -36,6 +63,13 @@ module TestLiterals
     @test isequal(pdv,
                   PooledDataArray([1, 0, 3],
                                   [false, true, false]))
+
+    pdv = @pdata Float64[1, NA, 3]
+    @test isequal(pdv,
+                  PooledDataArray(Float64[1, 0, 3],
+                                  [false, true, false]))
+    @test typeof(pdv) == PooledDataArray{Float64,Uint32,1}
+
     pdv = @pdata {1, NA, 3}
     @test isequal(pdv,
                   PooledDataArray({1, 0, 3},
@@ -46,10 +80,23 @@ module TestLiterals
                   PooledDataArray([1 0 3],
                                   [false true false]))
 
+    pdv = @pdata Float64[1 NA 3]
+    @test isequal(pdv,
+                  PooledDataArray(Float64[1 0 3],
+                                  [false true false]))
+    @test typeof(pdv) == PooledDataArray{Float64,Uint32,2}
+
     pdm = @pdata [1 NA; 3 4]
     @test isequal(pdm,
                   PooledDataArray([1 0; 3 4],
                                   [false true; false false]))
+
+    pdm = @pdata Float64[1 NA; 3 4]
+    @test isequal(pdm,
+                  PooledDataArray(Float64[1 0; 3 4],
+                                  [false true; false false]))
+    @test typeof(pdm) == PooledDataArray{Float64,Uint32,2}
+
     pdm = @pdata {1 NA; 3 4}
     @test isequal(pdm,
                   PooledDataArray({1 0; 3 4},
