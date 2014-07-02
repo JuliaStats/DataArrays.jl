@@ -63,6 +63,7 @@ module DataArrays
     include("datamatrix.jl")
     include("linalg.jl")
     include("operators.jl")
+    include("reduce.jl")
     include("broadcast.jl")
     include("sort.jl")
     include("extras.jl")
