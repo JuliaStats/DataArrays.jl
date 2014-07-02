@@ -1,7 +1,7 @@
 function fixargs(args::Vector{Any}, stub::Any)
     n = length(args)
     data = Array(Any, n)
-    na = Array(Any, n)
+    na = BitArray(n)
     for i in 1:n
         if args[i] == :NA
             data[i] = stub
@@ -47,12 +47,11 @@ end
 function parsevector(ex::Expr)
     if ex.head in (:ref, :typed_hcat, :typed_vcat)
         data, na = fixargs(ex.args[2:end], :(zero($(ex.args[1]))))
-        return Expr(ex.head, ex.args[1], data...),
-               Expr(ex.head == :typed_hcat ? :hcat : :vcat, na...)
+        return Expr(ex.head, ex.args[1], data...), ex.head == :typed_hcat ? na' : na
     else
         stub = findstub_vector(ex)
         data, na = fixargs(ex.args, stub)
-        return Expr(ex.head, data...), Expr(ex.head, na...)
+        return Expr(ex.head, data...), ex.head == :hcat ? na' : na
     end
 end
 

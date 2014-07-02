@@ -2,6 +2,14 @@ module TestLiterals
     using Base.Test
     using DataArrays
 
+    dv = @data []
+    @test isequal(dv, DataArray([], Bool[]))
+    @test typeof(dv) == DataVector{None}
+
+    dv = @data Float64[]
+    @test isequal(dv, DataArray(Float64[], Bool[]))
+    @test typeof(dv) == DataVector{Float64}
+
     dv = @data [1, NA, 3]
     @test isequal(dv,
                   DataArray([1, 0, 3],
