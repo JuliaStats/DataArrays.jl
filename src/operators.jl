@@ -261,7 +261,7 @@ macro dataarray_unary(f, intype, outtype, N...)
         function $(f){T<:$(intype)}(d::$(isempty(N) ? :(DataArray{T}) : :(DataArray{T,$(N[1])})))
             data = d.data
             res = similar(data, $(outtype))
-            @bitenumerate d.na i na begin
+            @itr for (i, na) in enumerate(d.na)
                 if !na
                     @inbounds res[i] = $(f)(data[i])
                 end
@@ -295,11 +295,11 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
                     :(function $(vectorfunc)(a::DataArray, b::$t)
                         data = a.data
                         res = similar(data, $outtype)
-                        @bitenumerate a.na i na begin
+                        @itr(for (i, na) in enumerate(a.na)
                             if !na
                                 @inbounds res[i] = $(scalarfunc)(data[i], b)
                             end
-                        end
+                        end)
                         DataArray(res, copy(a.na))
                     end),
                     :(function $(vectorfunc)(a::AbstractDataArray, b::$t)
@@ -333,11 +333,11 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                     data2 = $(btype == :DataArray || btype == :(DataArray{Bool}) ? :(b.data) : :b)
                     res = Array($outtype, promote_shape(size(a), size(b)))
                     resna = $narule
-                    @bitenumerate resna i na begin
+                    @itr(for (i, na) in enumerate(resna)
                         if !na
                             @inbounds res[i] = $(scalarfunc)(data1[i], data2[i])
                         end
-                    end
+                    end)
                     DataArray(res, resna)
                 end
             end
@@ -399,7 +399,7 @@ for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
                 data = d.data
                 sz = (size(data, 1), size(data, 2))
                 res = similar(data, size(data, 2), size(data, 1))
-                @bitenumerate d.na i na begin
+                @itr for (i, na) in enumerate(d.na)
                     if !na
                         jnew, inew = ind2sub(sz, i)
                         @inbounds res[inew, jnew] = $(elf)(data[i])
@@ -494,7 +494,7 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
 
         function $(f){T<:Real}(d::DataArray{T}, args::Integer...)
             data = similar(d.data)
-            @bitenumerate d.na i na begin
+            @itr for (i, na) in enumerate(d.na)
                 if !na
                     @inbounds data[i] = $(f)(d[i], args...)
                 end
@@ -565,7 +565,7 @@ function Base.isequal(a::DataArray, b::DataArray)
     if size(a) != size(b) || a.na != b.na
         return false
     end
-    @bitenumerate a.na i na begin
+    @itr for (i, na) in enumerate(a.na)
         @inbounds if !na && !isequal(a.data[i], b.data[i])
             return false
         end
@@ -589,7 +589,7 @@ function Base.(:(==))(a::DataArray, b::DataArray)
     bdata = b.data
     bchunks = b.na.chunks
     has_na = false
-    @bitenumerate a.na i na begin
+    @itr for (i, na) in enumerate(a.na)
         if na || Base.unsafe_bitgetindex(bchunks, i)
             has_na = true
         else
@@ -607,7 +607,7 @@ end
     size(a) == size(b) || return false
     adata = a.data
     has_na = false
-    @bitenumerate a.na i na begin
+    @itr for (i, na) in enumerate(a.na)
         if na
             has_na = true
         else
@@ -828,7 +828,7 @@ for f in cumulative_vector_operators
         new_data = ($f)(dv.data)
         new_na = falses(length(dv))
         hitna = false
-        @bitenumerate dv.na i na begin
+        @itr for (i, na) in enumerate(dv.na)
             hitna |= na
             if hitna
                 new_na[i] = true
@@ -879,7 +879,7 @@ end
 function Base.all(dv::DataArray{Bool})
     data = dv.data
     has_na = false
-    @bitenumerate dv.na i na begin
+    @itr for (i, na) in enumerate(dv.na)
         if !na
             data[i] || return false
         else
@@ -904,7 +904,7 @@ end
 
 function Base.any(dv::DataArray{Bool})
     has_na = false
-    @bitenumerate dv.na i na begin
+    @itr for (i, na) in enumerate(dv.na)
         if !na
             if dv.data[i]
                 return true

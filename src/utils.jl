@@ -8,14 +8,3 @@ function typeloop(vals)
     end
     return toptype
 end
-
-# Enumerate a BitArray. This is faster than using enumerate()
-macro bitenumerate(ba, i, x, code)
-    esc(quote
-        $i = 1
-        for $x in $ba
-            $code
-            $i += 1
-        end
-    end)
-end

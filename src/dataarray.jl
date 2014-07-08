@@ -299,12 +299,12 @@ Base.endof(da::DataArray) = endof(da.data) # -> Int
 function Base.find(da::DataArray{Bool}) # -> Array{Int}
     data = da.data
     ntrue = 0
-    @inbounds @bitenumerate da.na i na begin
+    @inbounds @itr for (i, na) in enumerate(da.na)
         ntrue += !na && data[i]
     end
     res = Array(Int, ntrue)
     count = 1
-    @inbounds @bitenumerate da.na i na begin
+    @inbounds @itr for (i, na) in enumerate(da.na)
         if !na && data[i]
             res[count] = i
             count += 1
