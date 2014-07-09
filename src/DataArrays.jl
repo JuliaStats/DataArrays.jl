@@ -1,7 +1,7 @@
 using StatsBase
 
 module DataArrays
-    using StatsBase
+    using StatsBase, Base.Cartesian
 
     const DEFAULT_POOLED_REF_TYPE = Uint32
 
@@ -60,6 +60,7 @@ module DataArrays
     include("dataarray.jl")
     include("pooleddataarray.jl")
     include("datavector.jl")
+    include("indexing.jl")
     include("datamatrix.jl")
     include("linalg.jl")
     include("operators.jl")

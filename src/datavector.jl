@@ -1,17 +1,3 @@
-# dv[SingleItemIndex, SingleItemIndex)
-function Base.getindex(d::DataVector,
-                       i::SingleIndex,
-                       j::SingleIndex)
-    if j != 1
-        throw(ArgumentError("Second index must be 1"))
-    end
-    if d.na[i]
-        return NA
-    else
-        return d.data[i]
-    end
-end
-
 head(dv::AbstractDataVector) = dv[1:min(6, length(dv))]
 tail(dv::AbstractDataVector) = dv[max(length(dv) - 6, 1):length(dv)]
 
