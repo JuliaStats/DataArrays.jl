@@ -1,3 +1,5 @@
+## Unsafe scalar indexing
+
 # Extract relevant fields of a DataArray to a tuple
 # The extracted tuple can be passed to `unsafe_isna`,
 # `unsafe_getindex_notna`, `unsafe_setna!`, `unsafe_setnotna!`, and
@@ -42,24 +44,6 @@ unsafe_dasetindex!(da::DataArray, extr, val, idx::Real) = setindex!(extr[1], val
 unsafe_dasetindex!(pda::PooledDataArray, extr, val, idx::Real) =
     setindex!(extr[1], getpoolidx(pda, val), idx)
 
-# Indexing with NA throws an error
-function Base.to_index(A::DataArray)
-    any(A.na) && error("cannot index an array with a DataArray containing NA values")
-    Base.to_index(A.data)
-end
-
-# Fast implementation of checkbounds for DataArray input
-Base.checkbounds(sz::Int, I::AbstractDataVector{Bool}) =
-    length(I) == sz || throw(BoundsError())
-function Base.checkbounds{T<:Real}(sz::Int, I::AbstractDataArray{T})
-    anyna(I) && error("cannot index into an array with a DataArray containing NAs")
-    extr = daextract(I)
-    for i = 1:length(I)
-        @inbounds v = unsafe_getindex_notna(I, extr, i)
-        checkbounds(sz, v)
-    end
-end
-
 ## PooledDataArray helper functions
 
 # Append newpool to pool. Return indices of newpool in pool.
@@ -81,26 +65,35 @@ function combine_pools!(pool, newpool)
     poolidx
 end
 
-## getindex
+## General indexing functions
 
-#' @description
-#'
-#' Get a set of elements of a DataArray.
-#'
-#' @param da::DataArray{T, N} A DataArray whose element will be retrieved.
-#' @param ind::Real The index of the element to be retrieved.
-#'
-#' @returns out::Union(T, NAtype) The value of `da` at the requested
-#'          index.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' da[1]
-#'
-#' da = @data([NA, 2, 3])
-#' da[1]
+# Indexing with NA throws an error
+function Base.to_index(A::DataArray)
+    any(A.na) && error("cannot index an array with a DataArray containing NA values")
+    Base.to_index(A.data)
+end
 
+# Fast implementation of checkbounds for DataArray input
+Base.checkbounds(sz::Int, I::AbstractDataVector{Bool}) =
+    length(I) == sz || throw(BoundsError())
+function Base.checkbounds{T<:Real}(sz::Int, I::AbstractDataArray{T})
+    anyna(I) && error("cannot index into an array with a DataArray containing NAs")
+    extr = daextract(I)
+    for i = 1:length(I)
+        @inbounds v = unsafe_getindex_notna(I, extr, i)
+        checkbounds(sz, v)
+    end
+end
+
+# Fallbacks to avoid ambiguity
+setindex!(t::AbstractDataArray, x, i::Real) =
+    error("setindex! not defined for ",typeof(t))
+getindex(t::AbstractDataArray, i::Real) =
+    error("indexing not defined for ", typeof(t))
+
+## getindex: DataArray
+
+# Scalar case
 @nsplat N function getindex(da::DataArray, I::NTuple{N,Real}...)
     if getindex(da.na, I...)
         return NA
@@ -109,17 +102,7 @@ end
     end
 end
 
-@nsplat N function getindex(pda::PooledDataArray, I::NTuple{N,Real}...)
-    if getindex(pda.refs, I...) == 0
-        return NA
-    else
-        return pda.pool[getindex(pda.refs, I...)]
-    end
-end
-
-getindex(t::AbstractDataArray, i::Real) = error("indexing not defined for ", typeof(t))
-
-# Indexing for DataArrays with vectors
+# Vector case
 @ngenerate N typeof(dest) function _getindex!(dest::DataArray, src::DataArray,
                                               I::NTuple{N,Union(Int,AbstractVector)}...)
     Base.checksize(dest, I...)
@@ -145,88 +128,69 @@ function _getindex{T}(A::DataArray{T}, I::(Union(Int,AbstractVector)...))
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
 
-# Necessary to make sure the right method gets dispatched for these cases
-function Base.getindex(A::DataArray, I::AbstractVector)
-    checkbounds(A, I)
-    _getindex(A, (Base.to_index(I),))
-end
-
-function Base.getindex(A::DataArray, I::AbstractArray)
-    checkbounds(A, I)
-    _getindex(A, (Base.to_index(I),))
-end
-
 @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
     checkbounds(A, I...)
     _getindex(A, Base.to_index(I...))
 end
 
-# Indexing for PooledDataArrays with vectors
+# Dispatch our implementation for these cases instead of Base
+function Base.getindex(A::DataArray, I::AbstractVector)
+    checkbounds(A, I)
+    _getindex(A, (Base.to_index(I),))
+end
+function Base.getindex(A::DataArray, I::AbstractArray)
+    checkbounds(A, I)
+    _getindex(A, (Base.to_index(I),))
+end
+
+## getindex: PooledDataArray
+
+# Scalar case
+@nsplat N function getindex(pda::PooledDataArray, I::NTuple{N,Real}...)
+    if getindex(pda.refs, I...) == 0
+        return NA
+    else
+        return pda.pool[getindex(pda.refs, I...)]
+    end
+end
+
+# Vector case
 @nsplat N function Base.getindex(A::PooledDataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
     PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
 end
 
+# Dispatch our implementation for these cases instead of Base
 Base.getindex(A::PooledDataArray, I::AbstractVector) =
     PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
-
 Base.getindex(A::PooledDataArray, I::AbstractArray) =
     PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
 
-## setindex
+## setindex!: DataArray
 
-#' @description
-#'
-#' Set one element of a DataArray to `NA`.
-#'
-#' @param da::DataArray{T, N} A DataArray whose element will be modified.
-#' @param val::NAtype The `NA` value being assigned to an element of `da`.
-#' @param ind::Real A real value specifying the index of the element
-#'        of `da` being modified.
-#'
-#' @returns da::DataArray{T, N} The modified DataArray.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' da[1] = NA
 function Base.setindex!(da::DataArray, val::NAtype, i::Real)
     da.na[i] = true
     return da
 end
 
-function Base.setindex!(pda::PooledDataArray, val::NAtype, ind::Real)
-    pda.refs[ind] = 0
-    return pda
-end
-
-setindex!(t::AbstractDataArray, x, i::Real) =
-    error("setindex! not defined for ",typeof(t))
-
-#' @description
-#'
-#' Set one element of a DataArray to a new value, `val`.
-#'
-#' @param da::DataArray{T, N} A DataArray whose element will be modified.
-#' @param val::Any The value being assigned to an element of `da`.
-#' @param ind::Real A real value specifying the index of the element
-#'        of `da` being modified.
-#'
-#' @returns da::DataArray{T, N} The modified DataArray.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' da[1] = 4
 function Base.setindex!(da::DataArray, val, ind::Real)
     da.data[ind] = val
     da.na[ind] = false
     return da
 end
 
+## setindex!: PooledDataArray
+
+function Base.setindex!(pda::PooledDataArray, val::NAtype, ind::Real)
+    pda.refs[ind] = 0
+    return pda
+end
+
 function Base.setindex!(x::PooledDataArray, val, ind::Real)
     x.refs[ind] = getpoolidx(x, val)
     return x
 end
+
+## setindex!: both DataArray and PooledDataArray
 
 @ngenerate N typeof(A) function Base.setindex!(A::AbstractDataArray, x,
                                                J::NTuple{N,Union(Real,AbstractArray)}...)
