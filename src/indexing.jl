@@ -68,16 +68,15 @@ function combine_pools!(pool, newpool)
     sizehint(seen, length(pool)+length(newpool))
 
     # Create mapping from pool elements to indices
-    i = 1
+    i = 0
     for elem in pool
-        seen[elem] = i
-        i += 1
+        seen[elem] = (i += 1)
     end
 
     # Find pool elements in existing array, or add them
     poolidx = Array(Int, length(newpool))
     for j = 1:length(newpool)
-        poolidx[j] = Base.@get!(seen, newpool[j], (i += 1))
+        poolidx[j] = Base.@get!(seen, newpool[j], (push!(pool, newpool[j]); i += 1))
     end
     poolidx
 end
@@ -146,7 +145,13 @@ function _getindex{T}(A::DataArray{T}, I::(Union(Int,AbstractVector)...))
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
 
+# Necessary to make sure the right method gets dispatched for these cases
 function Base.getindex(A::DataArray, I::AbstractVector)
+    checkbounds(A, I)
+    _getindex(A, (Base.to_index(I),))
+end
+
+function Base.getindex(A::DataArray, I::AbstractArray)
     checkbounds(A, I)
     _getindex(A, (Base.to_index(I),))
 end
@@ -160,6 +165,12 @@ end
 @nsplat N function Base.getindex(A::PooledDataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
     PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
 end
+
+Base.getindex(A::PooledDataArray, I::AbstractVector) =
+    PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
+
+Base.getindex(A::PooledDataArray, I::AbstractArray) =
+    PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
 
 ## setindex
 
