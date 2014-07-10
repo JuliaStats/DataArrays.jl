@@ -18,7 +18,7 @@ for T in (Float64, BigFloat)
     a = Array(T, n)
     ra = randn(n-nna)
     a[!na] = ra
-    for da in (DataArray(a, na), PooledDataArray(a, na))
+    for da in (DataArray(a, na), PooledDataArray(a, na), (pda = PooledDataArray(a, na); setlevels!(pda, shuffle!(pda.pool))))
         @test isequal(sort(da), [DataArray(sort(dropna(da))), DataArray(T, nna)])
         @test isequal(da[sortperm(da)], [DataArray(sort(dropna(da))), DataArray(T, nna)])
         if isa(da, DataArray)
