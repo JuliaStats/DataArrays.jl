@@ -1,4 +1,4 @@
-function groupsort_indexer(x::AbstractVector, ngroups::Integer)
+function groupsort_indexer(x::AbstractVector, ngroups::Integer, nalast::Bool=false)
     # translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
 
     # count group sizes, location 0 for NA
@@ -11,10 +11,17 @@ function groupsort_indexer(x::AbstractVector, ngroups::Integer)
 
     # mark the start of each contiguous group of like-indexed data
     where = fill(1, ngroups + 1)
-    for i = 2:ngroups+1
-        where[i] = where[i - 1] + counts[i - 1]
+    if nalast
+        for i = 3:ngroups+1
+            where[i] = where[i - 1] + counts[i - 1]
+        end
+        where[1] = where[end] + counts[end]
+    else
+        for i = 2:ngroups+1
+            where[i] = where[i - 1] + counts[i - 1]
+        end
     end
-    
+
     # this is our indexer
     result = fill(0, n)
     for i = 1:n
@@ -25,4 +32,4 @@ function groupsort_indexer(x::AbstractVector, ngroups::Integer)
     result, where, counts
 end
 
-groupsort_indexer(pv::PooledDataVector) = groupsort_indexer(pv.refs, length(pv.pool))
+groupsort_indexer(pv::PooledDataVector, nalast::Bool=false) = groupsort_indexer(pv.refs, length(pv.pool), nalast)

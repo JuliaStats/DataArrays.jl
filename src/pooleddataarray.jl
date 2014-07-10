@@ -773,19 +773,24 @@ end
 ##
 ##############################################################################
 
-# TODO handle sortperm for non-sorted keys
-Base.sortperm(pda::PooledDataArray) = groupsort_indexer(pda)[1]
-function Base.sortperm(pda::PooledDataArray)
-    if issorted(pda.pool)
-        return groupsort_indexer(pda)[1]
-    else
-        return sortperm(reorder!(copy(pda)))
+function Base.sortperm(pda::PooledDataArray; alg::Base.Sort.Algorithm=Base.Sort.DEFAULT_UNSTABLE,
+                       lt::Function=isless, by::Function=identity,
+                       rev::Bool=false, order=Base.Sort.Forward)
+    order = Base.ord(lt, by, rev, order)
+
+    # TODO handle custom ordering efficiently
+    if !isa(order, Base.Order.ForwardOrdering) && !isa(order, Base.Order.ReverseOrdering)
+        return sort!([1:length(pda)], alg, Base.Order.Perm(order,pda))
     end
+
+    # TODO handle non-sorted keys without copying
+    perm = issorted(pda.pool) ? groupsort_indexer(pda, true)[1] : sortperm(reorder(pda))
+    isa(order, Base.Order.ReverseOrdering) && reverse!(perm)
+    perm
 end
 
-Base.sortperm(pda::PooledDataArray, ::Base.Sort.ReverseOrdering) = reverse(sortperm(pda))
-Base.sort(pda::PooledDataArray) = pda[sortperm(pda)]
-Base.sort(pda::PooledDataArray, ::Base.Sort.ReverseOrdering) = pda[reverse(sortperm(pda))]
+Base.sort(pda::PooledDataArray; kw...) = pda[sortperm(pda; kw...)]
+
 type FastPerm{O<:Base.Sort.Ordering,V<:AbstractVector} <: Base.Sort.Ordering
     ord::O
     vec::V
