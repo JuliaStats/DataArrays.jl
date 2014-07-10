@@ -130,12 +130,24 @@ end
 #'
 #' dv = @data [false, false, true, false]
 #' dv_new = copy(dv)
-function Base.copy(d::DataArray) # -> DataArray{T}
-    return DataArray(copy(d.data), copy(d.na))
-end
+Base.copy(d::DataArray) = Base.copy!(similar(d), d) # -> DataArray{T}
 
 function Base.copy!(dest::DataArray, src::DataArray) # -> DataArray{T}
-    copy!(dest.data, src.data)
+    if isbits(eltype(src)) && isbits(eltype(dest))
+        copy!(dest.data, src.data)
+    else
+        # Elements of src_data are not necessarily initialized, so
+        # only copy initialized elements
+        dest_data = dest.data
+        src_data = src.data
+        length(dest_data) >= length(src_data) || error(BoundsError())
+        src_chunks = src.na.chunks
+        for i = 1:length(src_data)
+            @inbounds if !Base.unsafe_bitgetindex(src_chunks, i)
+                dest_data[i] = src_data[i]
+            end
+        end
+    end
     copy!(dest.na, src.na)
     dest
 end

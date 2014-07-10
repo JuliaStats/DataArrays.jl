@@ -556,8 +556,8 @@ Base.isequal(::NAtype, ::NAtype) = true
 Base.isequal(::NAtype, b) = false
 Base.isequal(a, ::NAtype) = false
 Base.isless(::NAtype, ::NAtype) = false
-Base.isless(::NAtype, b) = true
-Base.isless(a, ::NAtype) = false
+Base.isless(::NAtype, b) = false
+Base.isless(a, ::NAtype) = true
 
 # This is for performance only; the definition in Base is sufficient
 # for AbstractDataArrays
