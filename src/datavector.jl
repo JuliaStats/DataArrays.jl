@@ -161,6 +161,13 @@ end
 
 Base.deleteat!(pdv::PooledDataVector, inds) = (deleteat!(pdv.refs, inds); pdv)
 
+function Base.append!(da::AbstractDataVector, items::AbstractVector)
+    oldn = length(da)
+    resize!(da, oldn+length(items))
+    da[oldn+1:end] = items
+    da
+end
+
 # Pad a vector with NA's
 
 function padNA(dv::AbstractDataVector,

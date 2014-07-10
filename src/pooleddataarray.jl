@@ -167,65 +167,6 @@ function Base.resize!{T,R}(pda::PooledDataArray{T,R,1}, n::Int)
     pda
 end
 
-function Base.append!{T,R1,R2}(x::PooledDataArray{T,R1,1}, y::PooledDataArray{T,R2,1})
-    pool = myunique(vcat(x.pool, y.pool))
-    xn, yn = length(x), length(y)
-    resize!(x.refs, xn + yn)
-
-    xtidx::Array{R1} = findat(pool, x.pool)
-    for i in 1:xn
-        if x.refs[i] != 0
-            x.refs[i] = xtidx[x.refs[i]]
-        end
-    end
-
-    ytidx::Array{R1} = findat(pool, y.pool)
-    for i in 1:yn
-        x.refs[xn + i] = y.refs[i] == 0 ? 0 : ytidx[y.refs[i]]
-    end
-
-    x.pool = pool
-    return x
-end
-
-
-function Base.append!{T,R}(x::PooledDataArray{T,R,1}, y::AbstractArray{T,1})
-    poolref = Dict{T, R}()
-    for i in 1:length(x.pool)
-        poolref[x.pool[i]] = i
-    end
-    for v in y
-        if !isna(v) && !haskey(poolref, v)
-            poolref[v] = length(poolref) + 1
-        end
-    end
-
-    pool = Array(T, length(poolref))
-    for (v, i) in poolref
-        pool[i] = v
-    end
-
-    xn, yn = length(x), length(y)
-    resize!(x.refs, xn + yn)
-
-    xtidx::Array{R} = findat(pool, x.pool)
-    for i in 1:xn
-        if x.refs[i] != 0
-            x.refs[i] = xtidx[x.refs[i]]
-        end
-    end
-
-    for i in 1:yn
-        if !isna(y[i])
-            x.refs[i+xn] = poolref[y[i]]
-        end
-    end
-    x.pool = pool
-    return x
-end
-
-
-
 ##############################################################################
 ##
 ## Predicates, including the new isna()
