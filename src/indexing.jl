@@ -194,6 +194,13 @@ end
 
 @ngenerate N typeof(A) function Base.setindex!(A::AbstractDataArray, x,
                                                J::NTuple{N,Union(Real,AbstractArray)}...)
+    if !isa(x, AbstractArray) && isa(A, PooledDataArray)
+        # Only perform one pool lookup when assigning a scalar value in
+        # a PooledDataArray
+        setindex!(A.refs, getpoolidx(A, x), J...)
+        return A
+    end
+
     Aextr = daextract(A)
     @ncall N checkbounds A J
     @nexprs N d->(I_d = Base.to_index(J_d))
