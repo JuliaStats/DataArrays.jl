@@ -1,6 +1,16 @@
 module TestSort
 using DataArrays, Base.Test
 
+dv1 = @data([9, 1, 8, NA, 3, 3, 7, NA])
+dv2 = 1.0 * dv1
+dv3 = DataArray([1:8])
+pdv1 = convert(PooledDataArray, dv1)
+
+@test sortperm(dv1) == sortperm(dv2)
+@test sortperm(dv1) == sortperm(pdv1)
+@test isequal(sort(dv1), convert(DataArray, sort(dv1)))
+@test isequal(sort(dv1), convert(DataArray, sort(pdv1)))
+
 for T in (Float64, BigFloat)
     n = 1000
     na = randbool(n)
@@ -8,10 +18,13 @@ for T in (Float64, BigFloat)
     a = Array(T, n)
     ra = randn(n-nna)
     a[!na] = ra
-    da = DataArray(a, na)
-    @test isequal(sort(da), [DataArray(sort(dropna(da))), DataArray(T, nna)])
-    @test isequal(da[sortperm(da)], [DataArray(sort(dropna(da))), DataArray(T, nna)])
-    @test isequal(sort(da, rev=true), [DataArray(T, nna), DataArray(sort(dropna(da), rev=true))])
-    @test isequal(da[sortperm(da, rev=true)], [DataArray(T, nna), DataArray(sort(dropna(da), rev=true))])
+    for da in (DataArray(a, na), PooledDataArray(a, na))
+        @test isequal(sort(da), [DataArray(sort(dropna(da))), DataArray(T, nna)])
+        @test isequal(da[sortperm(da)], [DataArray(sort(dropna(da))), DataArray(T, nna)])
+        if isa(da, DataArray)
+            @test isequal(sort(da, rev=true), [DataArray(T, nna), DataArray(sort(dropna(da), rev=true))])
+            @test isequal(da[sortperm(da, rev=true)], [DataArray(T, nna), DataArray(sort(dropna(da), rev=true))])
+        end
+    end
 end
 end

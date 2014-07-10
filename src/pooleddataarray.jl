@@ -777,7 +777,7 @@ end
 Base.sortperm(pda::PooledDataArray) = groupsort_indexer(pda)[1]
 function Base.sortperm(pda::PooledDataArray)
     if issorted(pda.pool)
-        return groupsort_indexer(pda)[1]
+        return groupsort_indexer(pda, true)[1]
     else
         return sortperm(reorder!(copy(pda)))
     end
