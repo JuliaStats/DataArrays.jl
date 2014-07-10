@@ -38,7 +38,6 @@ module DataArrays
            padNA,
            pdata,
            percent_change,
-           Perm,
            PooledDataArray,
            PooledDataMatrix,
            PooledDataVecs,
