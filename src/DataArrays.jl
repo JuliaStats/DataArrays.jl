@@ -1,7 +1,7 @@
 using StatsBase
 
 module DataArrays
-    using StatsBase
+    using StatsBase, Iterators
 
     const DEFAULT_POOLED_REF_TYPE = Uint32
 
