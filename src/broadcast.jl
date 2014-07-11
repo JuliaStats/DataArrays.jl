@@ -22,11 +22,6 @@ function check_broadcast_shape(shape::Dims, As::Union(AbstractArray,Number)...)
     samesize
 end
 
-# Set na or data portion of DataArray
-_unsafe_dasetindex!(data, na_chunks, val::NAtype, idx::Int) =
-    na_chunks[Base.@_div64(int(idx)-1)+1] |= (uint64(1) << Base.@_mod64(int(idx)-1))
-_unsafe_dasetindex!(data, na_chunks, val, idx::Int) = setindex!(data, val, idx)
-
 # Get ref for value for a PooledDataArray, adding to the pool if
 # necessary
 _unsafe_pdaref!(Bpool, Brefdict::Dict, val::NAtype) = 0
@@ -53,7 +48,7 @@ function gen_na_conds(f, nd, arrtype, outtype, daidx=find([arrtype...] .!= Abstr
         quote
             $val = $(Expr(:call, f, args...))
             $(if outtype == DataArray
-                :(@inbounds _unsafe_dasetindex!(Bdata, Bc, $val, ind))
+                :(@inbounds unsafe_dasetindex!(Bdata, Bc, $val, ind))
             elseif outtype == PooledDataArray
                 :(@inbounds (@nref $nd Brefs i) = _unsafe_pdaref!(Bpool, Brefdict, $val))
             end)

@@ -2,7 +2,7 @@
 # TODO: Pull in existing tests into this file
 # TODO: Rename to TestDataArray
 module TestDataArrays
-	using DataArrays
+	using DataArrays, Base.Test
 
 	# DataArray{T, N}(d::Array{T, N}, m::BitArray{N} = falses(size(d)))
 	DataArray([1, 2], falses(2))
@@ -136,29 +136,13 @@ module TestDataArrays
 	dinds = @data([true, false, false])
 	[1, 2, 3][dinds]
 
-	# Base.getindex(x::Array, inds::AbstractDataVector{Bool})
-	dinds = @data([true, false, false])
-	[1 2; 3 4][dinds]
-
-	# Base.getindex(x::Array, inds::AbstractDataArray{Bool})
-	dinds = @data([true, false, false])
-	[1 2; 3 4][dinds]
-
 	# Base.getindex{S, T}(x::Vector{S}, inds::AbstractDataArray{T})
 	dinds = @data([1, 2, NA]) 
-	[1.0, 2.0, 3.0, 4.0][dinds]
+	@test_throws ErrorException [1.0, 2.0, 3.0, 4.0][dinds]
 
 	# Base.getindex{S, T}(x::Array{S}, inds::AbstractDataArray{T})
 	dinds = @data([1, 2, NA]) 
-	[1.0 2.0; 3.0 4.0][dinds]
-
-	# Base.getindex(x::Array, inds::AbstractDataVector{Bool})
-	dinds = @data([true, false, false])
-	[1 2; 3 4][dinds]
-
-	# Base.getindex(x::Array, inds::AbstractDataArray{Bool})
-	dinds = @data([true, false, false])
-	[1 2; 3 4][dinds]
+	@test_throws ErrorException [1.0 2.0; 3.0 4.0][dinds]
 
 	# Base.getindex(d::DataArray, i::SingleIndex)
 	da = @data([1, 2, NA, 4])
@@ -170,12 +154,12 @@ module TestDataArrays
 	# Base.getindex(d::DataArray, inds::AbstractDataVector{Bool})
 	da = @data([1, 2, NA, 4])
 	dinds = @data([true, false, false, NA])
-	da[dinds]
+	@test_throws ErrorException da[dinds]
 
 	# Base.getindex(d::DataArray, inds::AbstractDataVector)
 	da = @data([1, 2, NA, 4])
 	dinds = @data([1, 2, NA, 2])
-	da[dinds]
+	@test_throws ErrorException da[dinds]
 
 	# Base.getindex{T <: Number, N}(d::DataArray{T,N}, inds::BooleanIndex)
 	# da = @data([1, 2, NA, 4])
