@@ -1,6 +1,6 @@
 numeric_predicates = (:(Base.iseven), :(Base.ispow2), :(Base.isfinite), :(Base.isprime), :(Base.isinf), :(Base.isodd))
 
-type_predicates = (:(Base.isinteger), :(Base.isreal), :(Base.iscomplex))
+type_predicates = (:(Base.isinteger), :(Base.isreal))
 
 container_predicates = (:(Base.isempty),)
 
