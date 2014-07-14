@@ -34,11 +34,12 @@ end
 
 # Kernel that skips NA without branching
 # Only used for cases where branching is more expensive than computing for NAs
-function mapreduce_seq_impl_skipna(f::Union(Base.IdFun, Base.AbsFun, Base.Abs2Fun),
-                                   op::Union(Base.AddFun, Base.MulFun, Base.AndFun, Base.OrFun),
-                                   T::Union(Type{Uint8}, Type{Uint16}, Type{Uint32}, Type{Uint64},
-                                            Type{Int8}, Type{Int16}, Type{Int32}, Type{Int64},
-                                            Type{Float32}, Type{Float64}),
+typealias FastMapFuns Union(Base.IdFun, Base.AbsFun, Base.Abs2Fun)
+typealias FastReduceFuns Union(Base.AddFun, Base.MulFun, Base.AndFun, Base.OrFun)
+typealias FastBitsTypes Union(Type{Uint8}, Type{Uint16}, Type{Uint32}, Type{Uint64},
+                              Type{Int8}, Type{Int16}, Type{Int32}, Type{Int64},
+                              Type{Float32}, Type{Float64})
+function mapreduce_seq_impl_skipna(f::FastMapFuns, op::FastReduceFuns, T::FastBitsTypes,
                                    A::DataArray, ifirst::Int, ilast::Int)
     data = A.data
     na = A.na
@@ -106,14 +107,13 @@ end
 # NA, it returns NA. Otherwise we will fall back to the implementation
 # in Base, which is slow because it's type-unstable, but guarantees the
 # correct semantics
-function Base._mapreduce(f::Union(Base.IdFun, Base.AbsFun, Base.Abs2Fun,
-                                  Base.ExpFun, Base.LogFun, Base.CentralizedAbs2Fun),
-                         op::Union(Base.AddFun, Base.MulFun, Base.MaxFun, Base.MinFun),
-                         A::DataArray)
+typealias SafeMapFuns Union(Base.IdFun, Base.AbsFun, Base.Abs2Fun,
+                            Base.ExpFun, Base.LogFun, Base.CentralizedAbs2Fun)
+typealias SafeReduceFuns Union(Base.AddFun, Base.MulFun, Base.MaxFun, Base.MinFun)
+function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
     any(A.na) && return NA
     Base._mapreduce(f, op, A.data)
 end
-
 
 function Base.mapreduce(f, op::Function, A::DataArray; skipna::Bool=false)
     is(op, +) ? (skipna ? _mapreduce_skipna(f, Base.AddFun(), A) : Base._mapreduce(f, Base.AddFun(), A)) :

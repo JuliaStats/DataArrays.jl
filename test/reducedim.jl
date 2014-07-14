@@ -1,0 +1,131 @@
+module TestReducedim
+using DataArrays, Base.Test
+
+# Test for fast unit stride BitArray functions
+function test_any()
+    bits = randbool(64*5)
+    for i = 1:length(bits), j = i:length(bits)
+        v = false
+        for k = i:j
+            v |= bits[k]
+        end
+        Base.Test.@test DataArrays._any(bits, i, j) == v
+    end
+end
+test_any()
+
+# mapslices from Base, hacked to work for these cases
+function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
+    dims = intersect(region, 1:ndims(A))
+    if isempty(dims)
+        if skipna
+            naval = f(T[], 1)
+            A = copy(A)
+            A[isna(A)] = isempty(naval) ? NA : naval[1]
+        end
+        return A
+    end
+
+    if isempty(dims)
+        return map(f,A)
+    end
+
+    dimsA = [size(A)...]
+    ndimsA = ndims(A)
+    alldims = [1:ndimsA]
+
+    otherdims = setdiff(alldims, dims)
+
+    idx = cell(ndimsA)
+    fill!(idx, 1)
+    Asliceshape = tuple(dimsA[dims]...)
+    itershape   = tuple(dimsA[otherdims]...)
+    for d in dims
+        idx[d] = 1:size(A,d)
+    end
+
+    r1 = f(reshape(A[idx...], Asliceshape); skipna=skipna)
+
+    # determine result size and allocate
+    Rsize = copy(dimsA)
+    # TODO: maybe support removing dimensions
+    if !isa(r1, AbstractArray) || ndims(r1) == 0
+        r2 = similar(A, T, 1)
+        r2[1] = r1
+        r1 = r2
+    end
+    Rsize[dims] = [size(r1)...; ones(Int,max(0,length(dims)-ndims(r1)))]
+    R = similar(r1, tuple(Rsize...))
+
+    ridx = cell(ndims(R))
+    fill!(ridx, 1)
+    for d in dims
+        ridx[d] = 1:size(R,d)
+    end
+
+    R[ridx...] = r1
+
+    first = true
+    Base.cartesianmap(itershape) do idxs...
+        if first
+            first = false
+        else
+            ia = [idxs...]
+            idx[otherdims] = ia
+            ridx[otherdims] = ia
+            try
+                R[ridx...] = f(reshape(A[idx...], Asliceshape); skipna=skipna)
+            catch e
+                if isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed."
+                    R[ridx...] = NA
+                else
+                    rethrow(e)
+                end
+            end
+        end
+    end
+
+    return R
+end
+
+macro test_da_approx_eq(da1, da2)
+    quote
+        v1 = $da1
+        v2 = $da2
+        na = isna(v1)
+        if na != isna(v2)
+            println(v1)
+            println(v2)
+        end
+        @test na == isna(v2)
+        defined = !na
+        if any(defined)
+            @test_approx_eq v1[defined] v2[defined]
+        end
+    end
+end
+
+for Areduc in (DataArray(rand(3, 4, 5, 6)),
+               DataArray(rand(3, 4, 5, 6), rand(3, 4, 5, 6) .< 0.2))
+    for skipna = (false, true)
+        for region in {
+            1, 2, 3, 4, 5, (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4),
+            (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)}
+            r = DataArray(fill(NaN, Base.reduced_dims(size(Areduc), region)))
+            @test_da_approx_eq sum!(r, Areduc; skipna=skipna) safe_mapslices(sum, Areduc, region, skipna)
+            @test_da_approx_eq prod!(r, Areduc; skipna=skipna) safe_mapslices(prod, Areduc, region, skipna)
+            @test_da_approx_eq maximum!(r, Areduc; skipna=skipna) safe_mapslices(maximum, Areduc, region, skipna)
+            @test_da_approx_eq minimum!(r, Areduc; skipna=skipna) safe_mapslices(minimum, Areduc, region, skipna)
+            @test_da_approx_eq Base.sumabs!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs(Areduc), region, skipna)
+            @test_da_approx_eq Base.sumabs2!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs2(Areduc), region, skipna)
+
+            @test_da_approx_eq sum(Areduc, region; skipna=skipna) safe_mapslices(sum, Areduc, region, skipna)
+            @test_da_approx_eq prod(Areduc, region; skipna=skipna) safe_mapslices(prod, Areduc, region, skipna)
+            @test_da_approx_eq maximum(Areduc, region; skipna=skipna) safe_mapslices(maximum, Areduc, region, skipna)
+            @test_da_approx_eq minimum(Areduc, region; skipna=skipna) safe_mapslices(minimum, Areduc, region, skipna)
+            @test_da_approx_eq Base.sumabs(Areduc, region; skipna=skipna) safe_mapslices(sum, abs(Areduc), region, skipna)
+            @test_da_approx_eq Base.sumabs2(Areduc, region; skipna=skipna) safe_mapslices(sum, abs2(Areduc), region, skipna)
+        end
+    end
+end
+end

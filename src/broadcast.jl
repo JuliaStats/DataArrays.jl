@@ -1,4 +1,4 @@
-using DataArrays, Base.Cartesian, Base.@get!
+using DataArrays, Base.@get!
 using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache,
                       promote_eltype, broadcast_shape, eltype_plus, type_minus, type_div,
                       type_pow

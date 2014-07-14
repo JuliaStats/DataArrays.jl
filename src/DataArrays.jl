@@ -64,6 +64,7 @@ module DataArrays
     include("linalg.jl")
     include("operators.jl")
     include("reduce.jl")
+    include("reducedim.jl")
     include("broadcast.jl")
     include("sort.jl")
     include("extras.jl")
