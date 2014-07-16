@@ -123,13 +123,24 @@ for Areduc in (DataArray(rand(3, 4, 5, 6)),
             1, 2, 3, 4, 5, (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4),
             (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)}
             # println("region = $region, skipna = $skipna")
+
             outputs = {DataArray(fill(NaN, Base.reduced_dims(size(Areduc), region)))}
-            !anyna(Areduc) && push!(outputs, outputs[1].data)
+            has_na = anyna(Areduc)
+            if has_na && !skipna
+                # Should throw an error reducing to non-DataArray
+                @test_throws ErrorException sum!(outputs[1].data, Areduc; skipna=skipna)
+            else
+                # Should be able to reduce to non-DataArray
+                push!(outputs, outputs[1].data)
+            end
+
             for r in outputs
                 @test_da_approx_eq sum!(r, Areduc; skipna=skipna) safe_mapslices(sum, Areduc, region, skipna)
                 @test_da_approx_eq prod!(r, Areduc; skipna=skipna) safe_mapslices(prod, Areduc, region, skipna)
-                @test_da_approx_eq maximum!(r, Areduc; skipna=skipna) safe_mapslices(maximum, Areduc, region, skipna)
-                @test_da_approx_eq minimum!(r, Areduc; skipna=skipna) safe_mapslices(minimum, Areduc, region, skipna)
+                if !has_na
+                    @test_da_approx_eq maximum!(r, Areduc; skipna=skipna) safe_mapslices(maximum, Areduc, region, skipna)
+                    @test_da_approx_eq minimum!(r, Areduc; skipna=skipna) safe_mapslices(minimum, Areduc, region, skipna)
+                end
                 @test_da_approx_eq Base.sumabs!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs(Areduc), region, skipna)
                 @test_da_approx_eq Base.sumabs2!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs2(Areduc), region, skipna)
                 @test_da_approx_eq mean!(r, Areduc; skipna=skipna) safe_mapslices(mean, Areduc, region, skipna)
@@ -153,4 +164,14 @@ for Areduc in (DataArray(rand(3, 4, 5, 6)),
         end
     end
 end
+
+# Test NA-skipping behavior for maximum
+a = @data([NA NA; 3 4])
+@test isequal(maximum(a, 1; skipna=true), [3 4])
+@test isequal(maximum!(zeros(1, 2), a; skipna=true), [3 4])
+
+# Maximum should give an NA in the output if all values along dimension are NA
+@test isequal(maximum(a, 2; skipna=true), @data([NA 4])')
+# Maximum should refuse to reduce to a non-DataArray
+@test_throws ErrorException maximum!(zeros(2, 1), a; skipna=true)
 end
