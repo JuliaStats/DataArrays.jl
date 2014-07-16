@@ -35,7 +35,7 @@ macro perf(fn, replications, idx...)
     quote
         println($name)
         gc_disable()
-        df = compare([()->$fn for i=$idx], $replications)
+        df = compare([let i=i; ()->$fn; end for i=$idx], $replications)
         gc_enable()
         gc()
         df[:Function] = TEST_NAMES[$idx]
@@ -71,7 +71,6 @@ const Bool2 = make_test_types(make_bools, 1000)
 @perf Bool1[i] $ Bool2[i] 100
 
 # Vector operators
-@perf sum(Float1[i]) 250 1:div(length(Float1), 2)
 @perf diff(Float1[i]) 50 1:div(length(Float1), 2)
 @perf cumsum(Float1[i]) 50 1:div(length(Float1), 2)
 end

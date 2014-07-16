@@ -32,30 +32,6 @@ function mapreduce_seq_impl_skipna(f, op, T, A::DataArray, ifirst::Int, ilast::I
     v
 end
 
-# Kernel that skips NA without branching
-# Only used for cases where branching is more expensive than computing for NAs
-typealias FastMapFuns Union(Base.IdFun, Base.AbsFun, Base.Abs2Fun)
-typealias FastReduceFuns Union(Base.AddFun, Base.MulFun, Base.AndFun, Base.OrFun)
-typealias FastBitsTypes Union(Type{Uint8}, Type{Uint16}, Type{Uint32}, Type{Uint64},
-                              Type{Int8}, Type{Int16}, Type{Int32}, Type{Int64},
-                              Type{Float32}, Type{Float64})
-function mapreduce_seq_impl_skipna(f::FastMapFuns, op::FastReduceFuns, T::FastBitsTypes,
-                                   A::DataArray, ifirst::Int, ilast::Int)
-    data = A.data
-    na = A.na
-    chunks = na.chunks
-
-    v, i = skipna_init(f, op, na, data, ifirst, ilast)
-
-    while i < ilast
-        i += 1
-        @inbounds na = Base.unsafe_bitgetindex(chunks, i)
-        @inbounds d = data[i]
-        v = ifelse(na, v, evaluate(op, v, evaluate(f, d)))
-    end
-    v
-end
-
 # Pairwise map-reduce
 function mapreduce_pairwise_impl_skipna{T}(f, op, A::DataArray{T}, bytefirst::Int, bytelast::Int, n_notna::Int, blksize::Int)
     if n_notna <= blksize

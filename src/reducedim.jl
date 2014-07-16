@@ -59,7 +59,7 @@ end
 
 ## NA-preserving
 @ngenerate N typeof(R) function _mapreducedim!{T,N}(f::SafeMapFuns, op::SafeReduceFuns,
-                                                    R::AbstractArray, A::DataArray{T,N})
+                                                    R::DataArray, A::DataArray{T,N})
     data = A.data
     na = A.na
 
@@ -73,18 +73,14 @@ end
         extr = daextract(R)
         for i = 1:nslices
             if _any(na, ibase+1, ibase+lsiz)
-                if isa(R, DataArray)
-                    unsafe_setna!(R, extr, i)
-                else
-                    error("cannot reduce a DataArray containing NAs to an AbstractArray")
-                end
+                unsafe_setna!(R, extr, i)
             else
                 v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
                 @inbounds unsafe_dasetindex!(R, extr, v, i)
             end
             ibase += lsiz
         end
-    elseif isa(R, DataArray)
+    else
         @nextract N sizeR d->size(R,d)
         na_chunks = A.na.chunks
 
@@ -118,6 +114,33 @@ end
             end)
 
         R.na = bitpack(new_na)
+    end
+    return R
+end
+
+## NA-preserving to array
+@ngenerate N typeof(R) function _mapreducedim!{T,N}(f::SafeMapFuns, op::SafeReduceFuns,
+                                                    R::AbstractArray, A::DataArray{T,N})
+    data = A.data
+    na = A.na
+
+    lsiz = Base.check_reducdims(R, data)
+    isempty(data) && return R
+
+    if lsiz > 16
+        # use mapreduce_impl, which is probably better tuned to achieve higher performance
+        nslices = div(length(A), lsiz)
+        ibase = 0
+        extr = daextract(R)
+        for i = 1:nslices
+            if _any(na, ibase+1, ibase+lsiz)
+                error("cannot reduce a DataArray containing NAs to an AbstractArray")
+            else
+                v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
+                @inbounds unsafe_dasetindex!(R, extr, v, i)
+            end
+            ibase += lsiz
+        end
     else
         @nextract N sizeR d->size(R,d)
 
@@ -317,7 +340,7 @@ Base.evaluate(f::MapReduceDim2ArgHelperFun, x) = evaluate(f.f, x, f.val)
 
 # A version of _mapreducedim! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
-@ngenerate N typeof(R) function _mapreducedim_2arg!{T,N}(f, op, R::AbstractArray,
+@ngenerate N typeof(R) function _mapreducedim_2arg!{T,N}(f, op, R::DataArray,
                                                          A::DataArray{T,N},
                                                          S::AbstractArray)
     data = A.data
@@ -347,7 +370,7 @@ Base.evaluate(f::MapReduceDim2ArgHelperFun, x) = evaluate(f.f, x, f.val)
             end
             ibase += lsiz
         end
-    elseif isa(R, DataArray)
+    else
         @nextract N sizeR d->size(R,d)
         na_chunks = A.na.chunks
         new_data = R.data
@@ -376,19 +399,6 @@ Base.evaluate(f::MapReduceDim2ArgHelperFun, x) = evaluate(f.f, x, f.val)
             end)
 
         R.na = bitpack(new_na)
-    else
-        @nextract N sizeR d->size(R,d)
-
-        # If reducing to a non-DataArray, throw an error at the start on NA
-        (any(isna(A)) || any(isna(S))) && error("cannot reduce a DataArray containing NAs to an AbstractArray")
-        @nloops N i data d->(j_d = sizeR_d==1 ? 1 : i_d) begin
-            @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
-            @inbounds x = (@nref N data i)
-            v = evaluate(f, x, s)
-            @inbounds v0 = (@nref N R j)
-            nv = evaluate(op, v0, v)
-            @inbounds (@nref N R j) = nv
-        end
     end
     return R
 end
@@ -413,11 +423,7 @@ end
 
     # If there are any NAs in S, assume these will produce NAs in R
     if isa(S, DataArray)
-        if isa(R, DataArray)
-            copy!(R.na, S.na)
-        elseif any(S.na)
-            error("cannot reduce a DataArray containing NAs to an AbstractArray")
-        end
+        copy!(R.na, S.na)
     end
 
     if lsiz > 16
