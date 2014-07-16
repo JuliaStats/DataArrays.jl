@@ -103,9 +103,11 @@ function gen_broadcast_dataarray(nd::Int, arrtype::(DataType...), outtype, f::Fu
             # Set up output DataArray/PooledDataArray
             $(if outtype == DataArray
                 quote
-                    Bc = B.na.chunks
-                    fill!(Bc, 0)
                     Bdata = B.data
+                    # Copy in case aliased
+                    # TODO: check for aliasing?
+                    Bna = falses(size(Bdata))
+                    Bc = Bna.chunks
                     ind = 1
                 end
             elseif outtype == PooledDataArray
@@ -158,6 +160,10 @@ function gen_broadcast_dataarray(nd::Int, arrtype::(DataType...), outtype, f::Fu
                         :(ind += 1)
                     end)
                 end)
+
+            $(if outtype == DataArray
+                :(B.na = Bna)
+            end)
         end
         _F_
     end
