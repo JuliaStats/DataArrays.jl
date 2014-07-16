@@ -105,10 +105,6 @@ macro test_da_approx_eq(da1, da2)
         v1 = $da1
         v2 = $da2
         na = isna(v1)
-        if na != isna(v2)
-            println(v1)
-            println(v2)
-        end
         @test na == isna(v2)
         defined = !na
         if any(defined)
@@ -127,14 +123,17 @@ for Areduc in (DataArray(rand(3, 4, 5, 6)),
             1, 2, 3, 4, 5, (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4),
             (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)}
             # println("region = $region, skipna = $skipna")
-            r = DataArray(fill(NaN, Base.reduced_dims(size(Areduc), region)))
-            @test_da_approx_eq sum!(r, Areduc; skipna=skipna) safe_mapslices(sum, Areduc, region, skipna)
-            @test_da_approx_eq prod!(r, Areduc; skipna=skipna) safe_mapslices(prod, Areduc, region, skipna)
-            @test_da_approx_eq maximum!(r, Areduc; skipna=skipna) safe_mapslices(maximum, Areduc, region, skipna)
-            @test_da_approx_eq minimum!(r, Areduc; skipna=skipna) safe_mapslices(minimum, Areduc, region, skipna)
-            @test_da_approx_eq Base.sumabs!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs(Areduc), region, skipna)
-            @test_da_approx_eq Base.sumabs2!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs2(Areduc), region, skipna)
-            @test_da_approx_eq mean!(r, Areduc; skipna=skipna) safe_mapslices(mean, Areduc, region, skipna)
+            outputs = {DataArray(fill(NaN, Base.reduced_dims(size(Areduc), region)))}
+            !anyna(Areduc) && push!(outputs, outputs[1].data)
+            for r in outputs
+                @test_da_approx_eq sum!(r, Areduc; skipna=skipna) safe_mapslices(sum, Areduc, region, skipna)
+                @test_da_approx_eq prod!(r, Areduc; skipna=skipna) safe_mapslices(prod, Areduc, region, skipna)
+                @test_da_approx_eq maximum!(r, Areduc; skipna=skipna) safe_mapslices(maximum, Areduc, region, skipna)
+                @test_da_approx_eq minimum!(r, Areduc; skipna=skipna) safe_mapslices(minimum, Areduc, region, skipna)
+                @test_da_approx_eq Base.sumabs!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs(Areduc), region, skipna)
+                @test_da_approx_eq Base.sumabs2!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs2(Areduc), region, skipna)
+                @test_da_approx_eq mean!(r, Areduc; skipna=skipna) safe_mapslices(mean, Areduc, region, skipna)
+            end
 
             @test_da_approx_eq sum(Areduc, region; skipna=skipna) safe_mapslices(sum, Areduc, region, skipna)
             @test_da_approx_eq prod(Areduc, region; skipna=skipna) safe_mapslices(prod, Areduc, region, skipna)
@@ -143,10 +142,13 @@ for Areduc in (DataArray(rand(3, 4, 5, 6)),
             @test_da_approx_eq Base.sumabs(Areduc, region; skipna=skipna) safe_mapslices(sum, abs(Areduc), region, skipna)
             @test_da_approx_eq Base.sumabs2(Areduc, region; skipna=skipna) safe_mapslices(sum, abs2(Areduc), region, skipna)
             @test_da_approx_eq mean(Areduc, region; skipna=skipna) safe_mapslices(mean, Areduc, region, skipna)
+
             if region != 5
                 @test_da_approx_eq var(Areduc, region; skipna=skipna) safe_mapslices(var, Areduc, region, skipna)
                 @test_da_approx_eq var(Areduc, region; mean=0, skipna=skipna) safe_mapslices(myvarzm, Areduc, region, skipna)
-                @test_da_approx_eq var(Areduc, region; mean=fill!(r, 1), skipna=skipna) safe_mapslices(myvar1m, Areduc, region, skipna)
+                for r in outputs
+                    @test_da_approx_eq var(Areduc, region; mean=fill!(r, 1), skipna=skipna) safe_mapslices(myvar1m, Areduc, region, skipna)
+                end
             end
         end
     end

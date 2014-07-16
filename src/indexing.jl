@@ -44,6 +44,7 @@ unsafe_dasetindex!(da::PooledDataArray, extr, val::NAtype, idx::Real) = nothing
 unsafe_dasetindex!(da::DataArray, extr, val, idx::Real) = setindex!(extr[1], val, idx)
 unsafe_dasetindex!(pda::PooledDataArray, extr, val, idx::Real) =
     setindex!(extr[1], getpoolidx(pda, val), idx)
+unsafe_dasetindex!(a::AbstractArray, extr, val, idx::Real) = setindex!(a, val, idx)
 
 ## PooledDataArray helper functions
 

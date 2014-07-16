@@ -224,8 +224,14 @@ _mapreducedim_skipna!(f, op, R::AbstractArray, A::DataArray) =
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 
 # for MinFun/MaxFun, min or max is NA if all values along a dimension are NA
+function _mapreducedim_skipna!(f, op::Union(Base.MinFun, Base.MaxFun), R::DataArray, A::DataArray)
+    R.na = bitpack(all!(fill(true, size(R)), A.na))
+    _mapreducedim_skipna_impl!(f, op, R, nothing, A)
+end
 function _mapreducedim_skipna!(f, op::Union(Base.MinFun, Base.MaxFun), R::AbstractArray, A::DataArray)
-    R.na = bitpack(all!(fill(true, size(R.na)), A.na))
+    if any(all!(fill(true, size(R)), A.na))
+        error("all values along specified dimension are NA for one element of reduced dimension; cannot reduce to non-DataArray")
+    end
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 end
 
@@ -374,7 +380,7 @@ Base.evaluate(f::MapReduceDim2ArgHelperFun, x) = evaluate(f.f, x, f.val)
         @nextract N sizeR d->size(R,d)
         na_chunks = A.na.chunks
         new_data = R.data
-        new_na = bitunpack(S.na)
+        new_na = isa(S, DataArray) ? bitunpack(S.na) : fill(false, size(S))
 
         @nexprs 1 d->(state_0 = state_{N} = 1)
         @nexprs N d->(skip_d = sizeR_d == 1)
