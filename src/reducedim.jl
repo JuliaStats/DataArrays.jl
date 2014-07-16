@@ -364,11 +364,7 @@ Base.evaluate(f::MapReduceDim2ArgHelperFun, x) = evaluate(f.f, x, f.val)
         extr = daextract(R)
         for i = 1:nslices
             if unsafe_isna(S, Sextr, i) || _any(na, ibase+1, ibase+lsiz)
-                if isa(R, DataArray)
-                    unsafe_setna!(R, extr, i)
-                else
-                    error("cannot reduce a DataArray containing NAs to an AbstractArray")
-                end
+                unsafe_setna!(R, extr, i)
             else
                 @inbounds s = unsafe_getindex_notna(S, Sextr, i)
                 v = Base.mapreduce_impl(MapReduceDim2ArgHelperFun(f, s), op, data, ibase+1, ibase+lsiz)
