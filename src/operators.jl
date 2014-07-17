@@ -9,6 +9,7 @@ const numeric_unary_operators = [:(Base.(:+)),
 const logical_unary_operators = [:(Base.(:!))]
 
 const elementary_functions = [:(Base.abs),
+                              :(Base.abs2),
                               :(Base.sign),
                               :(Base.acos),
                               :(Base.acosh),
@@ -146,14 +147,7 @@ const bit_operators = [:(Base.(:&)),
                        :(Base.(:|)),
                        :(Base.(:$))]
 
-const unary_vector_operators = [:(Base.minimum),
-                                :(Base.maximum),
-                                :(Base.prod),
-                                :(Base.sum),
-                                :(Base.mean),
-                                :(Base.median),
-                                :(Base.std),
-                                :(Base.var),
+const unary_vector_operators = [:(Base.median),
                                 :(StatsBase.mad),
                                 :(Base.norm),
                                 :(StatsBase.skewness),
@@ -460,9 +454,17 @@ end
 # XXX: The below should be revisited once we have a way to infer what
 # the proper return type of an array should be.
 
+# One-argument elementary functions that do something different for
+# Complex
+for f in (:(Base.abs), :(Base.abs2))
+    @eval begin
+        @dataarray_unary $(f) Complex T.parameters[1]
+    end
+end
+
 # One-argument elementary functions that return the same type as their
 # inputs
-for f in (:(Base.abs), :(Base.conj), :(Base.sign))
+for f in (:(Base.abs), :(Base.abs2), :(Base.conj), :(Base.sign))
     @eval begin
         $(f)(::NAtype) = NA
         @dataarray_unary $(f) Number T
@@ -672,7 +674,8 @@ Base.(:.^)(::MathConst{:e}, B::AbstractDataArray) = exp(B)
 
 for f in (:(Base.(:+)), :(Base.(:.+)), :(Base.(:-)), :(Base.(:.-)),
           :(Base.(:*)), :(Base.(:.*)), :(Base.(:.^)), :(Base.div),
-          :(Base.mod), :(Base.fld), :(Base.rem))
+          :(Base.mod), :(Base.fld), :(Base.rem), :(Base.min),
+          :(Base.max))
     @eval begin
         # Scalar with NA
         ($f)(::NAtype, ::NAtype) = NA

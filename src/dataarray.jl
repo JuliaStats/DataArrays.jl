@@ -152,6 +152,9 @@ function Base.copy!(dest::DataArray, src::DataArray) # -> DataArray{T}
     dest
 end
 
+Base.fill!(A::DataArray, ::NAtype) = (fill!(A.na, true); A)
+Base.fill!(A::DataArray, v) = (fill!(A.data, v); fill!(A.na, false); A)
+
 #' @description
 #'
 #' Create a deep copy of a DataArray.

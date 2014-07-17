@@ -12,6 +12,7 @@ daextract(a) = nothing
 # Check for NA
 unsafe_isna(da::DataArray, extr, idx::Real) = Base.unsafe_bitgetindex(extr[2], idx)
 unsafe_isna(pda::PooledDataArray, extr, idx::Real) = extr[1][idx] == 0
+unsafe_isna(a, extr, idx::Real) = false
 unsafe_getindex_notna(da::DataArray, extr, idx::Real) = getindex(extr[1], idx)
 unsafe_getindex_notna(pda::PooledDataArray, extr, idx::Real) = getindex(extr[2], extr[1][idx])
 unsafe_getindex_notna(a, extr, idx::Real) = Base.unsafe_getindex(a, idx)
@@ -43,6 +44,7 @@ unsafe_dasetindex!(da::PooledDataArray, extr, val::NAtype, idx::Real) = nothing
 unsafe_dasetindex!(da::DataArray, extr, val, idx::Real) = setindex!(extr[1], val, idx)
 unsafe_dasetindex!(pda::PooledDataArray, extr, val, idx::Real) =
     setindex!(extr[1], getpoolidx(pda, val), idx)
+unsafe_dasetindex!(a::AbstractArray, extr, val, idx::Real) = setindex!(a, val, idx)
 
 ## PooledDataArray helper functions
 
