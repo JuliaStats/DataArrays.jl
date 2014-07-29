@@ -491,9 +491,39 @@ end
 
 #' @description
 #'
+#' Determine if any of the entries of an DataArray are `NA`.
+#'
+#' @param da::DataArray{T, N} The DataArray whose elements will
+#'        be assessed.
+#'
+#' @returns out::Bool Are any of the elements of `da` an `NA` value?
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' anyna(da)
+anyna(da::DataArray) = any(da.na) # -> Bool
+
+#' @description
+#'
+#' Determine if all of the entries of an DataArray are `NA`.
+#'
+#' @param da::DataArray{T, N} The DataArray whose elements will
+#'        be assessed.
+#'
+#' @returns out::Bool Are all of the elements of `da` an `NA` value?
+#'
+#' @examples
+#'
+#' da = @data([1, 2, 3])
+#' allna(da)
+allna(da::DataArray) = all(da.na) # -> Bool
+
+#' @description
+#'
 #' Determine if the entries of an DataArray are `NaN`.
 #'
-#' @param a::DataArray{T, N} The DataArray whose elements will
+#' @param da::DataArray{T, N} The DataArray whose elements will
 #'        be assessed.
 #'
 #' @returns na::DataArray{Bool} Elementwise Boolean whether entry is `NaN`.
@@ -511,7 +541,7 @@ end
 #' Determine if the entries of an DataArray are finite, which means
 #' neither `+/-NaN` nor `+/-Inf`.
 #'
-#' @param a::DataArray{T, N} The DataArray whose elements will
+#' @param da::DataArray{T, N} The DataArray whose elements will
 #'        be assessed.
 #'
 #' @returns na::DataArray{Bool} Elementwise Boolean whether entry is finite.

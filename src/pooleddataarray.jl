@@ -188,7 +188,7 @@ isna(pda::PooledDataArray) = pda.refs .== 0
 #' Safe and type-stable way to determine if element `i` of an
 #' PooledDataArray is `NA`.
 #'
-#' @param a::PooledDataArray The PooledDataArray whose missingness will
+#' @param pda::PooledDataArray The PooledDataArray whose missingness will
 #'        be assessed.
 #' @param i::Integer The index of the element to be checked for `NA`.
 #'
@@ -199,6 +199,46 @@ isna(pda::PooledDataArray) = pda.refs .== 0
 #' a = @pdata([1, 2, 3])
 #' isna(a, 1)
 isna(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
+
+#' @description
+#'
+#' Determine if any of the entries of an PooledDataArray are `NA`.
+#'
+#' @param pda::PooledDataArray The PooledDataArray whose elements will
+#'        be assessed.
+#'
+#' @returns out::Bool Are any of the elements of `pda` an `NA` value?
+#'
+#' @examples
+#'
+#' pda = @pdata([1, 2, 3])
+#' anyna(pda)
+function anyna(pda::PooledDataArray)
+    for ref in pda.refs
+        ref == 0 && return true
+    end
+    return false
+end
+
+#' @description
+#'
+#' Determine if all of the entries of an PooledDataArray are `NA`.
+#'
+#' @param pda::PooledDataArray The PooledDataArray whose elements will
+#'        be assessed.
+#'
+#' @returns out::Bool Are all of the elements of `pda` an `NA` value?
+#'
+#' @examples
+#'
+#' pda = @pdata([1, 2, 3])
+#' allna(pda)
+function allna(pda::PooledDataArray)
+    for ref in pda.refs
+        ref == 0 || return false
+    end
+    return true
+end
 
 ##############################################################################
 ##

@@ -16,7 +16,7 @@ typealias AbstractDataMatrix{T} AbstractDataArray{T, 2}
 
 #' @description
 #' Determine the type of the elements of an AbstractDataArray.
-#' 
+#'
 #' @param ada::AbstractDataArray{T} The AbstractDataArray whose
 #'        element type is desired.
 #'
@@ -56,21 +56,6 @@ anyna(a::AbstractArray) = false # -> Bool
 
 #' @description
 #'
-#' Determine if any of the entries of an DataArray are `NA`.
-#'
-#' @param da::DataArray{T, N} The DataArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are any of the elements of `a` an `NA` value?
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' anyna(da)
-anyna(d::AbstractDataArray) = any(isna, d) # -> Bool
-
-#' @description
-#'
 #' Determine if all of the entries of an AbstractArray are `NA`.
 #'
 #' @param a::AbstractArray{T, N} The AbstractArray whose elements will
@@ -83,21 +68,6 @@ anyna(d::AbstractDataArray) = any(isna, d) # -> Bool
 #' a = [1, 2, 3]
 #' allna(a)
 allna(a::AbstractArray) = false # -> Bool
-
-#' @description
-#'
-#' Determine if all of the entries of an DataArray are `NA`.
-#'
-#' @param da::DataArray{T, N} The DataArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are all of the elements of `a` an `NA` value?
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' allna(da)
-allna(d::AbstractDataArray) = all(isna, d) # -> Bool
 
 #' @description
 #'

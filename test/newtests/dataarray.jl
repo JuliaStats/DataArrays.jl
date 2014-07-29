@@ -137,11 +137,11 @@ module TestDataArrays
 	[1, 2, 3][dinds]
 
 	# Base.getindex{S, T}(x::Vector{S}, inds::AbstractDataArray{T})
-	dinds = @data([1, 2, NA]) 
+	dinds = @data([1, 2, NA])
 	@test_throws ErrorException [1.0, 2.0, 3.0, 4.0][dinds]
 
 	# Base.getindex{S, T}(x::Array{S}, inds::AbstractDataArray{T})
-	dinds = @data([1, 2, NA]) 
+	dinds = @data([1, 2, NA])
 	@test_throws ErrorException [1.0 2.0; 3.0 4.0][dinds]
 
 	# Base.getindex(d::DataArray, i::SingleIndex)
@@ -258,26 +258,6 @@ module TestDataArrays
 	isfinite(DataArray([1, 2], falses(2)))
 	isfinite(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
 	isfinite(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
-
-	# anyna(a::AbstractArray)
-	anyna([1, 2])
-	anyna(repeat([1, 2], outer = [1, 2]))
-	anyna(repeat([1, 2], outer = [1, 2, 2]))
-
-	# anyna(d::AbstractDataArray)
-	anyna(DataArray([1, 2], falses(2)))
-	anyna(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-	anyna(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
-
-	# allna(a::AbstractArray)
-	allna([1, 2])
-	allna(repeat([1, 2], outer = [1, 2]))
-	allna(repeat([1, 2], outer = [1, 2, 2]))
-
-	# allna(d::AbstractDataArray)
-	allna(DataArray([1, 2], falses(2)))
-	allna(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-	allna(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
 	# Base.start(x::AbstractDataArray)
 	start(DataArray([1, 2], falses(2)))
