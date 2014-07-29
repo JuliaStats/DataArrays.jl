@@ -24,7 +24,7 @@ module TestData
     @assert isa(dvint3, DataVector{Int})
     @assert isa(dvflt, DataVector{Float64})
     @assert isa(dvstr, DataVector{ASCIIString})
-    # @test throws_exception(DataArray([5:8], falses(2)), Exception) 
+    # @test throws_exception(DataArray([5:8], falses(2)), Exception)
 
     #test_group("PooledDataVector creation")
     pdvstr = @pdata ["one", "one", "two", "two", NA, "one", "one"]
@@ -94,11 +94,11 @@ module TestData
 
     #test_group("DataVector to something else")
     @assert all(dropna(dvint) .== [1, 2, 4])
-    @assert all(array(dvint, 0) .== [1, 2, 0, 4])
+    @assert all(convert(Vector, dvint, 0) .== [1, 2, 0, 4])
     utf8three = convert(UTF8String, "three")
     asciithree = convert(ASCIIString, "three")
-    @assert all(array(dvstr, utf8three) .== ["one", "two", "three", "four"])
-    @assert all(array(dvstr, asciithree) .== ["one", "two", "three", "four"])
+    @assert all(convert(Vector, dvstr, utf8three) .== ["one", "two", "three", "four"])
+    @assert all(convert(Vector, dvstr, asciithree) .== ["one", "two", "three", "four"])
     @assert all(convert(Vector{Int}, dvint2) .== [5:8])
     @assert all([i + 1 for i in dvint2] .== [6:9])
     @assert all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
@@ -106,19 +106,19 @@ module TestData
 
     #test_group("PooledDataVector to something else")
     @assert all(dropna(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
-    @assert all(array(pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
+    @assert all(convert(Vector, pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
     @assert all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
     @assert string(pdvstr[1:3]) == "[one, one, two]"
 
     #test_group("DataVector Filter and Replace")
     @assert isequal(dropna(dvint), [1, 2, 4])
-    @assert isequal(array(dvint, 7), [1, 2, 7, 4])
+    @assert isequal(convert(Vector, dvint, 7), [1, 2, 7, 4])
     @assert sum(dropna(dvint)) == 7
-    @assert sum(array(dvint, 7)) == 14
+    @assert sum(convert(Vector, dvint, 7)) == 14
 
     #test_group("PooledDataVector Filter and Replace")
     @assert reduce(string, "", dropna(pdvstr)) == "oneonetwotwooneone"
-    @assert reduce(string, "", array(pdvstr, "!")) == "oneonetwotwo!oneone"
+    @assert reduce(string, "", convert(Vector, pdvstr, "!")) == "oneonetwotwo!oneone"
 
     #test_group("DataVector assignment")
     assigntest = @data [1, 2, NA, 4]
@@ -157,7 +157,7 @@ module TestData
     ret = (pdvstr2[[true, false, true, false]] = "three")
     @assert ret == "three"
     @assert pdvstr2[1] == "three"
-    ret = (pdvstr2[[false, true, false, true]] = ["four", "five"]) 
+    ret = (pdvstr2[[false, true, false, true]] = ["four", "five"])
     @assert isequal(ret, ["four", "five"])
     @assert isequal(pdvstr2[3:4], (@data ["three", "five"]))
     pdvstr2 = @pdata ["one", "one", "two", "two"]
