@@ -1,19 +1,19 @@
 module TestOperators
-	using Base.Test
-	using DataArrays, StatsBase
+    using Base.Test
+    using DataArrays, StatsBase
 
-	macro test_da_pda(da, code)
-	    esc(quote
-	        let $da = copy($da)
-	            $code
-	        end
-	        let $da = PooledDataArray($da)
-	            $code
-	        end
-	    end)
-	end
+    macro test_da_pda(da, code)
+        esc(quote
+            let $da = copy($da)
+                $code
+            end
+            let $da = PooledDataArray($da)
+                $code
+            end
+        end)
+    end
 
-	# All unary operators return NA when evaluating NA
+    # All unary operators return NA when evaluating NA
     for f in map(eval, DataArrays.unary_operators)
         @assert isna(f(NA))
     end
@@ -213,7 +213,7 @@ module TestOperators
                     isequal((curdv/2)[i], (curdv[i]/2))
         end
     end
-    
+
     # Unary vector operators on DataVector's
     dv = convert(DataArray, ones(5))
     for f in map(eval, DataArrays.unary_vector_operators)

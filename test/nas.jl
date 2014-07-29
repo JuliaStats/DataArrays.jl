@@ -1,45 +1,66 @@
 module TestNAs
-	using Base.Test
-	using DataArrays
+    using Base.Test
+    using DataArrays
 
-	dv = DataArray([1, 2, 3], bitpack([false, false, false]))
 
-	dv = DataArray([1, 2, 3], [false, false, false])
+    # anyna(a::AbstractArray)
+    anyna([1, 2])
+    anyna(repeat([1, 2], outer = [1, 2]))
+    @test !anyna(repeat([1, 2], outer = [1, 2, 2]))
 
-	failNA(dv)
-	dropna(dv)
-	replaceNA(dv, 3)
-	for v in each_failNA(dv)
-		println(v)
-	end
-	for v in each_dropna(dv)
-		println(v)
-	end
-	for v in each_replaceNA(dv, 3)
-		println(v)
-	end
+    # anyna(da::DataArray)
+    anyna(DataArray([1, 2], falses(2)))
+    anyna(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    da = DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
+    @test !anyna(da)
+    da[2] = NA
+    @test anyna(da)
 
-	dv[1] = NA
+    # anyna(pda::PooledDataArray)
+    anyna(PooledDataArray([1, 2], falses(2)))
+    anyna(PooledDataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    pda = PooledDataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
+    @test !anyna(pda)
+    pda[2] = NA
+    @test anyna(pda)
 
-	failNA(dv)
-	dropna(dv)
-	replaceNA(dv, 3)
-	for v in each_failNA(dv)
-		println(v)
-	end
-	for v in each_dropna(dv)
-		println(v)
-	end
-	for v in each_replaceNA(dv, 3)
-		println(v)
-	end
+    # allna(a::AbstractArray)
+    allna([1, 2])
+    allna(repeat([1, 2], outer = [1, 2]))
+    @test !allna(repeat([1, 2], outer = [1, 2, 2]))
 
-	dv = DataArray(ComplexPair, 5)
+    # allna(da::DataArray)
+    allna(DataArray([1, 2], falses(2)))
+    allna(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    da = DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
+    da[1] = NA
+    @test !allna(da)
+    da[:] = NA
+    @test allna(da)
 
-	type MyType
-		a::Int
-		b::Int
-	end
+    # allna(da::PooledDataArray)
+    allna(PooledDataArray([1, 2], falses(2)))
+    allna(PooledDataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    pda = PooledDataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
+    pda[1] = NA
+    @test !allna(pda)
+    pda[:] = NA
+    @test allna(pda)
 
-	dv = DataArray(MyType, 5)
+    dv = DataArray([1, 2, 3], bitpack([false, false, false]))
+
+    dv = DataArray([1, 2, 3], [false, false, false])
+
+    a = dropna(dv)
+    for v in each_failNA(dv); end
+    @test collect(each_failNA(dv)) == a
+    @test collect(each_dropna(dv)) == a
+    @test collect(each_replaceNA(dv, 4)) == a
+
+    dv[1] = NA
+
+    a = dropna(dv)
+    @test_throws NAException for v in each_failNA(dv); end
+    @test collect(each_dropna(dv)) == a
+    @test collect(each_replaceNA(dv, 4)) == [4, a]
 end
