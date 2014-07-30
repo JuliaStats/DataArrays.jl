@@ -41,36 +41,6 @@ Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 
 #' @description
 #'
-#' Determine if any of the entries of an AbstractArray are `NA`.
-#'
-#' @param a::AbstractArray{T, N} The AbstractArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are any of the elements of `a` an `NA` value?
-#'
-#' @examples
-#'
-#' a = [1, 2, 3]
-#' anyna(a)
-anyna(a::AbstractArray) = false # -> Bool
-
-#' @description
-#'
-#' Determine if all of the entries of an AbstractArray are `NA`.
-#'
-#' @param a::AbstractArray{T, N} The AbstractArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are all of the elements of `a` an `NA` value?
-#'
-#' @examples
-#'
-#' a = [1, 2, 3]
-#' allna(a)
-allna(a::AbstractArray) = false # -> Bool
-
-#' @description
-#'
 #' Determine if the values of an AbstractArray are `NA`.
 #'
 #' @param a::AbstractArray{T, N} The AbstractArray whose missingness will
@@ -101,3 +71,99 @@ isna(a::AbstractArray) = falses(size(a)) # -> BitArray
 #' isna(a, 1)
 isna(a::AbstractArray, i::Real) = false # -> Bool
 
+#' @description
+#'
+#' Determine if any of the entries of an AbstractArray are `NA`.
+#'
+#' @param a::AbstractArray{T, N} The AbstractArray whose elements will
+#'        be assessed.
+#'
+#' @returns out::Bool Are any of the elements of `a` an `NA` value?
+#'
+#' @examples
+#'
+#' a = [1, 2, 3]
+#' anyna(a)
+anyna(a::AbstractArray) = false # -> Bool
+
+#' @description
+#'
+#' Determine if all of the entries of an AbstractArray are `NA`.
+#'
+#' @param a::AbstractArray{T, N} The AbstractArray whose elements will
+#'        be assessed.
+#'
+#' @returns out::Bool Are all of the elements of `a` an `NA` value?
+#'
+#' @examples
+#'
+#' a = [1, 2, 3]
+#' allna(a)
+allna(a::AbstractArray) = false # -> Bool
+
+#' @description
+#'
+#' NO-OP: Turn a Vector into a Vector. See dropna(dv::DataVector) for
+#'        rationale.
+#'
+#' @param v::Vector{T} Vector that will be converted to a Vector.
+#'
+#' @returns v::Vector{T} Vector containing all of the values of `v`.
+#'
+#' @examples
+#'
+#' v = [1, 2, 3, 4]
+#' v = dropna(v)
+dropna(v::AbstractVector) = copy(v) # -> AbstractVector
+
+# Iterators
+# TODO: Use values()
+#       Use DataValueIterator type?
+
+type EachFailNA{T}
+    da::AbstractDataArray{T}
+end
+each_failna{T}(da::AbstractDataArray{T}) = EachFailNA(da)
+Base.start(itr::EachFailNA) = 1
+Base.done(itr::EachFailNA, ind::Integer) = ind > length(itr.da)
+function Base.next(itr::EachFailNA, ind::Integer)
+    if isna(itr.da[ind])
+        throw(NAException())
+    else
+        (itr.da[ind], ind + 1)
+    end
+end
+
+type EachDropNA{T}
+    da::AbstractDataArray{T}
+end
+each_dropna{T}(da::AbstractDataArray{T}) = EachDropNA(da)
+function _next_nonna_ind{T}(da::AbstractDataArray{T}, ind::Int)
+    ind += 1
+    while ind <= length(da) && isna(da, ind)
+        ind += 1
+    end
+    ind
+end
+Base.start(itr::EachDropNA) = _next_nonna_ind(itr.da, 0)
+Base.done(itr::EachDropNA, ind::Int) = ind > length(itr.da)
+function Base.next(itr::EachDropNA, ind::Int)
+    (itr.da[ind], _next_nonna_ind(itr.da, ind))
+end
+
+type EachReplaceNA{S, T}
+    da::AbstractDataArray{S}
+    replacement::T
+end
+function each_replacena(da::AbstractDataArray, replacement::Any)
+    EachReplaceNA(da, convert(eltype(da), replacement))
+end
+function each_replacena(replacement::Any)
+    x -> each_replacena(x, replacement)
+end
+Base.start(itr::EachReplaceNA) = 1
+Base.done(itr::EachReplaceNA, ind::Integer) = ind > length(itr.da)
+function Base.next(itr::EachReplaceNA, ind::Integer)
+    item = isna(itr.da, ind) ? itr.replacement : itr.da[ind]
+    (item, ind + 1)
+end
