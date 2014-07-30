@@ -404,11 +404,9 @@ dropna(dv::DataVector) = copy(dv.data[!dv.na]) # -> Vector
 type EachFailNA{T}
     da::AbstractDataArray{T}
 end
-each_failNA{T}(da::AbstractDataArray{T}) = EachFailNA(da)
+each_failna{T}(da::AbstractDataArray{T}) = EachFailNA(da)
 Base.start(itr::EachFailNA) = 1
-function Base.done(itr::EachFailNA, ind::Integer)
-    return ind > length(itr.da)
-end
+Base.done(itr::EachFailNA, ind::Integer) = ind > length(itr.da)
 function Base.next(itr::EachFailNA, ind::Integer)
     if isna(itr.da[ind])
         throw(NAException())
@@ -421,37 +419,34 @@ type EachDropNA{T}
     da::AbstractDataArray{T}
 end
 each_dropna{T}(da::AbstractDataArray{T}) = EachDropNA(da)
-Base.start(itr::EachDropNA) = 1
-function Base.done(itr::EachDropNA, ind::Integer)
-    return ind > length(itr.da)
-end
-function Base.next(itr::EachDropNA, ind::Integer)
-    while ind <= length(itr.da) && isna(itr.da[ind])
+function _next_nonna_ind{T}(da::AbstractDataArray{T}, ind::Int)
+    ind += 1
+    while ind <= length(da) && isna(da, ind)
         ind += 1
     end
-    (itr.da[ind], ind + 1)
+    ind
+end
+Base.start(itr::EachDropNA) = _next_nonna_ind(itr.da, 0)
+Base.done(itr::EachDropNA, ind::Int) = ind > length(itr.da)
+function Base.next(itr::EachDropNA, ind::Int)
+    (itr.da[ind], _next_nonna_ind(itr.da, ind))
 end
 
 type EachReplaceNA{S, T}
     da::AbstractDataArray{S}
-    replacement_val::T
+    replacement::T
 end
-function each_replaceNA(da::AbstractDataArray, val::Any)
-    EachReplaceNA(da, convert(eltype(da), val))
+function each_replacena(da::AbstractDataArray, replacement::Any)
+    EachReplaceNA(da, convert(eltype(da), replacement))
 end
-function each_replaceNA(val::Any)
-    x -> each_replaceNA(x, val)
+function each_replacena(replacement::Any)
+    x -> each_replacena(x, replacement)
 end
 Base.start(itr::EachReplaceNA) = 1
-function Base.done(itr::EachReplaceNA, ind::Integer)
-    return ind > length(itr.da)
-end
+Base.done(itr::EachReplaceNA, ind::Integer) = ind > length(itr.da)
 function Base.next(itr::EachReplaceNA, ind::Integer)
-    if isna(itr.da[ind])
-        (itr.replacement_val, ind + 1)
-    else
-        (itr.da[ind], ind + 1)
-    end
+    item = isna(itr.da, ind) ? itr.replacement : itr.da[ind]
+    (item, ind + 1)
 end
 
 #' @description
