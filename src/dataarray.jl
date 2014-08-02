@@ -366,21 +366,6 @@ end
 
 #' @description
 #'
-#' NO-OP: Turn a Vector into a Vector. See dropna(dv::DataVector) for
-#'        rationale.
-#'
-#' @param v::Vector{T} Vector that will be converted to a Vector.
-#'
-#' @returns v::Vector{T} Vector containing all of the values of `v`.
-#'
-#' @examples
-#'
-#' v = [1, 2, 3, 4]
-#' v = dropna(v)
-dropna(v::AbstractVector) = copy(v) # -> AbstractVector
-
-#' @description
-#'
 #' Turn a DataVector into a Vector. Drop any NA's.
 #'
 #' NB: Because NA's are dropped instead of replaced, this function only
@@ -396,63 +381,6 @@ dropna(v::AbstractVector) = copy(v) # -> AbstractVector
 #' dv = @data [1, 2, NA, 4]
 #' v = dropna(dv)
 dropna(dv::DataVector) = copy(dv.data[!dv.na]) # -> Vector
-
-# Iterators
-# TODO: Use values()
-#       Use DataValueIterator type?
-
-type EachFailNA{T}
-    da::AbstractDataArray{T}
-end
-each_failNA{T}(da::AbstractDataArray{T}) = EachFailNA(da)
-Base.start(itr::EachFailNA) = 1
-function Base.done(itr::EachFailNA, ind::Integer)
-    return ind > length(itr.da)
-end
-function Base.next(itr::EachFailNA, ind::Integer)
-    if isna(itr.da[ind])
-        throw(NAException())
-    else
-        (itr.da[ind], ind + 1)
-    end
-end
-
-type EachDropNA{T}
-    da::AbstractDataArray{T}
-end
-each_dropna{T}(da::AbstractDataArray{T}) = EachDropNA(da)
-Base.start(itr::EachDropNA) = 1
-function Base.done(itr::EachDropNA, ind::Integer)
-    return ind > length(itr.da)
-end
-function Base.next(itr::EachDropNA, ind::Integer)
-    while ind <= length(itr.da) && isna(itr.da[ind])
-        ind += 1
-    end
-    (itr.da[ind], ind + 1)
-end
-
-type EachReplaceNA{S, T}
-    da::AbstractDataArray{S}
-    replacement_val::T
-end
-function each_replaceNA(da::AbstractDataArray, val::Any)
-    EachReplaceNA(da, convert(eltype(da), val))
-end
-function each_replaceNA(val::Any)
-    x -> each_replaceNA(x, val)
-end
-Base.start(itr::EachReplaceNA) = 1
-function Base.done(itr::EachReplaceNA, ind::Integer)
-    return ind > length(itr.da)
-end
-function Base.next(itr::EachReplaceNA, ind::Integer)
-    if isna(itr.da[ind])
-        (itr.replacement_val, ind + 1)
-    else
-        (itr.da[ind], ind + 1)
-    end
-end
 
 #' @description
 #'

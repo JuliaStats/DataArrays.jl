@@ -791,5 +791,6 @@ function dropna{T}(pdv::PooledDataVector{T})
             res[total] = pdv.pool[pdv.refs[i]]
         end
     end
-    return res[1:total]
+    resize!(res, total)
+    return res
 end

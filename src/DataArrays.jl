@@ -21,9 +21,9 @@ module DataArrays
            DataMatrix,
            DataVector,
            dropna,
-           each_failNA,
+           each_failna,
            each_dropna,
-           each_replaceNA,
+           each_replacena,
            EachFailNA,
            EachDropNA,
            EachReplaceNA,
@@ -75,6 +75,8 @@ module DataArrays
     include("deprecated.jl")
 
     Base.@deprecate removeNA dropna
+    Base.@deprecate each_failNA each_failna
+    Base.@deprecate each_replaceNA each_replacena
     Base.@deprecate set_levels setlevels
     Base.@deprecate set_levels! setlevels!
 end

@@ -49,18 +49,18 @@ module TestNAs
 
     dv = DataArray([1, 2, 3], bitpack([false, false, false]))
 
-    dv = DataArray([1, 2, 3], [false, false, false])
+    dv = DataArray([1:6], fill(false, 6))
 
     a = dropna(dv)
-    for v in each_failNA(dv); end
-    @test collect(each_failNA(dv)) == a
+    for v in each_failna(dv); end
+    @test collect(each_failna(dv)) == a
     @test collect(each_dropna(dv)) == a
-    @test collect(each_replaceNA(dv, 4)) == a
+    @test collect(each_replacena(dv, 4)) == a
 
-    dv[1] = NA
+    dv[[1, 2, end]] = NA
 
     a = dropna(dv)
-    @test_throws NAException for v in each_failNA(dv); end
+    @test_throws NAException for v in each_failna(dv); end
     @test collect(each_dropna(dv)) == a
-    @test collect(each_replaceNA(dv, 4)) == [4, a]
+    @test collect(each_replacena(dv, 4)) == [4, 4, a, 4]
 end
