@@ -60,4 +60,8 @@ for dv in (dv1, convert(DataVector{Number}, dv1), convert(PooledDataArray, dv1))
         end
     end
 end
+
+## sizehint
+sizehint(@data([1.0, 2.0]), 5)
+sizehint(@pdata([1.0, 2.0]), 5)
 end
