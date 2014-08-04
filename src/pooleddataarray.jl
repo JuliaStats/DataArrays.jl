@@ -318,6 +318,10 @@ function Base.unique{T}(pda::PooledDataArray{T})
             res.data[i] = val
         end
 
+        if firstna == nlevels + 1
+            res.na[nlevels + 1] = true
+        end
+
         return res
     else
         return DataArray(unique_values)
