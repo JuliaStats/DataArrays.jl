@@ -27,11 +27,20 @@ module TestPDA
     @assert levels(setlevels!(copy(p), [1 => 111])) == [111, 8, 9]
     @assert levels(setlevels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
 
-    x = @data [1, NA, -2, 1, NA, 4]
-    @assert isequal(unique(x), @data [1, NA, -2, 4])
-    @assert isequal(unique(reverse(x)), @data [4, NA, 1, -2])
-    @assert isequal(unique(dropna(x)), @data [1, -2, 4])
-    @assert isequal(unique(reverse(dropna(x))), @data [4, 1, -2])
+    y = @pdata [1, NA, -2, 1, NA, 4, NA]
+    @assert isequal(unique(y), @pdata [1, NA, -2, 4])
+    @assert isequal(unique(reverse(y)), @data [NA, 4, 1, -2])
+    @assert isequal(unique(dropna(y)), @data [1, -2, 4])
+    @assert isequal(unique(reverse(dropna(y))), @data [4, 1, -2])
+
+    z = @pdata ["frank", NA, "gertrude", "frank", NA, "herbert", NA]
+    @assert isequal(unique(z), @pdata ["frank", NA, "gertrude", "herbert"])
+    @assert isequal(unique(reverse(z)), @pdata [NA, "herbert", "frank", "gertrude"])
+    @assert isequal(unique(dropna(z)), @pdata ["frank", "gertrude", "herbert"])
+    @assert isequal(unique(reverse(dropna(z))), @pdata ["herbert", "frank", "gertrude"])
+
+    # check case where only NA occurs in final position
+    @assert isequal(unique(@pdata [1, 2, 1, NA]), @pdata [1, 2, NA])
 
     pp = PooledDataArray(Any[])
     @assert length(pp) == 0
