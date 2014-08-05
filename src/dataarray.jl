@@ -778,6 +778,10 @@ function Base.unique{T}(da::DataArray{T}) # -> DataVector{T}
             i += 1
         end
 
+        if firstna == n + 1
+            res.na[n + 1] = true
+        end
+
         return res
     else
         return DataArray(unique_values)

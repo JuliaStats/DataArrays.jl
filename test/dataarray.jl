@@ -49,6 +49,9 @@ module TestDataArray
     @assert isequal(levels(x), @data [1, -2, 4])
     @assert isequal(levels(reverse(x)), @data [4, 1, -2])
 
+    # check case where only NA occurs in final position
+    @assert isequal(unique(@data [1, 2, 1, NA]), @data [1, 2, NA])
+
     # Test vecbind
     # a = [1:4]
     # d = DataArray(a)
