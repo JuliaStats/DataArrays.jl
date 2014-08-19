@@ -37,6 +37,10 @@ module TestPDA
     @assert length(pp) == 0
     @assert length(levels(pp)) == 0
 
+    # test construction with unordered types
+    pim = @pdata [1 + im, 2 + im, 3 + im, 2 + im, 1 + im]
+    @assert levels(pim) == [1 + im, 2 + im, 3 + im]
+
     # Test explicitly setting refs type
     testarray = [1, 1, 2, 2, 0, 0, 3, 3]
     testdata = @data [1, 1, 2, 2, 0, 0, 3, 3]
