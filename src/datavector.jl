@@ -163,8 +163,9 @@ Base.deleteat!(pdv::PooledDataVector, inds) = (deleteat!(pdv.refs, inds); pdv)
 
 function Base.append!(da::AbstractDataVector, items::AbstractVector)
     oldn = length(da)
-    resize!(da, oldn+length(items))
-    da[oldn+1:end] = items
+    itn = length(items)
+    resize!(da, oldn+itn)
+    da[oldn+1:end] = items[1:itn]
     da
 end
 
