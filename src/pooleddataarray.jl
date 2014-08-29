@@ -299,7 +299,7 @@ function Base.unique{T}(pda::PooledDataArray{T})
             end
         elseif !in(pda.refs[i], seen)
             push!(seen, pda.refs[i])
-            push!(unique_values, pda.refs[i])
+            push!(unique_values, pda.pool[pda.refs[i]])
         else
             continue
         end
@@ -318,7 +318,11 @@ function Base.unique{T}(pda::PooledDataArray{T})
                 res.na[i] = true
                 i += 1
             end
-            res.data[i] = pda.pool[val]
+            res.data[i] = val
+        end
+
+        if firstna == nlevels + 1
+            res.na[nlevels + 1] = true
         end
 
         return res
