@@ -52,7 +52,8 @@ Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 #'
 #' a = [1, 2, 3]
 #' isna(a)
-isna(a::AbstractArray) = falses(size(a)) # -> BitArray
+isna{T}(a::AbstractArray{T}) =
+    NAtype <: T ? bitpack(map(x->isa(x, NAtype), a)) : falses(size(a)) # -> BitArray
 
 #' @description
 #'
@@ -69,7 +70,7 @@ isna(a::AbstractArray) = falses(size(a)) # -> BitArray
 #'
 #' a = [1, 2, 3]
 #' isna(a, 1)
-isna(a::AbstractArray, i::Real) = false # -> Bool
+isna{T}(a::AbstractArray{T}, i::Real) = NAtype <: T ? isa(a[i], NAtype) : false # -> Bool
 
 #' @description
 #'
