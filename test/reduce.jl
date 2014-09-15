@@ -1,6 +1,8 @@
 module TestReduce
 using DataArrays, Base.Test
 
+srand(1337)
+
 ## extended test of sum
 
 for skipna in (true, false)
