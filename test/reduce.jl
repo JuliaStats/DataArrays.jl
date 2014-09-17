@@ -1,5 +1,5 @@
 module TestReduce
-using DataArrays, Base.Test
+using DataArrays, Base.Test, StatsBase
 
 srand(1337)
 
@@ -132,4 +132,21 @@ end
 @test !reduce(&, @data([false, NA]))
 @test reduce(|, @data([true, NA]))
 @test isna(reduce(|, @data([false, NA])))
+
+# weighted mean
+da1 = DataArray(randn(128))
+da2 = DataArray(randn(128))
+@same_behavior mean(da1, weights(da2)) mean(da1.data, weights(da2.data))
+@same_behavior mean(da1, weights(da2.data)) mean(da1.data, weights(da2.data))
+@same_behavior mean(da1, weights(da2); skipna=true) mean(da1.data, weights(da2.data))
+@same_behavior mean(da1, weights(da2.data); skipna=true) mean(da1.data, weights(da2.data))
+
+da1[1:3:end] = NA
+@same_behavior mean(da1, weights(da2); skipna=true) mean(dropna(da1), weights(da2.data[!da1.na]))
+@same_behavior mean(da1, weights(da2.data); skipna=true) mean(dropna(da1), weights(da2.data[!da1.na]))
+
+da2[1:2:end] = NA
+keep = !da1.na & !da2.na
+@test isna(mean(da1, weights(da2)))
+@same_behavior mean(da1, weights(da2); skipna=true) mean(da1.data[keep], weights(da2.data[keep]))
 end
