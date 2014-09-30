@@ -4,7 +4,11 @@ module TestLiterals
 
     dv = @data []
     @test isequal(dv, DataArray([], Bool[]))
-    @test typeof(dv) == DataVector{None}
+    if VERSION >= v"0.4.0-dev+848"
+        @test typeof(dv) == DataVector{Any}
+    else
+        @test typeof(dv) == DataVector{None}
+    end
 
     dv = @data Float64[]
     @test isequal(dv, DataArray(Float64[], Bool[]))
@@ -32,6 +36,14 @@ module TestLiterals
                             [false true false]))
     @test typeof(dv) == DataMatrix{Float64}
 
+    dv = @data [NA, NA]
+    @test isequal(dv, DataArray(Any, 2))
+    @test typeof(dv) == DataVector{Any}
+
+    dv = @data [NA NA]
+    @test isequal(dv, DataArray(Any, 1, 2))
+    @test typeof(dv) == DataMatrix{Any}
+
     dv = @data {1, NA, 3}
     @test isequal(dv,
                   DataArray({1, 0, 3},
@@ -48,6 +60,10 @@ module TestLiterals
                             [false true; false false]))
     @test typeof(dm) == DataMatrix{Float64}
     
+    dm = @data [NA NA; NA NA]
+    @test isequal(dm, DataArray(Any, 2, 2))
+    @test typeof(dm) == DataMatrix{Any}
+
     dm = @data {1 NA; 3 4}
     @test isequal(dm,
                   DataArray({1 0; 3 4},

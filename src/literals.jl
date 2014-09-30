@@ -24,7 +24,7 @@ function findstub_vector(ex::Expr)
             return ex.args[i]
         end
     end
-    error("Type of literal data cannot be inferred")
+    return NA
 end
 
 # We assume that data has at least one "value" that isn't NA
@@ -41,7 +41,7 @@ function findstub_matrix(ex::Expr)
             end
         end
     end
-    error("Type of literal data cannot be inferred")
+    return NA
 end
 
 function parsevector(ex::Expr)
@@ -51,7 +51,15 @@ function parsevector(ex::Expr)
     else
         stub = findstub_vector(ex)
         data, na = fixargs(ex.args, stub)
-        return Expr(ex.head, data...), ex.head == :hcat ? na' : na
+        if ex.head == :hcat
+            na = na'
+        end
+
+        if isequal(stub, NA)
+            return Expr(ex.head == :hcat ? (:typed_hcat) : (:ref), Any, data...), na
+        else
+            return Expr(ex.head, data...), na
+        end
     end
 end
 
@@ -74,6 +82,8 @@ function parsematrix(ex::Expr)
     end
     if ex.head == :typed_vcat
         return Expr(:typed_vcat, ex.args[1], datarows...), Expr(:vcat, narows...)
+    elseif isequal(stub, NA)
+        return Expr(:typed_vcat, Any, datarows...), Expr(:vcat, narows...)
     else
         return Expr(:vcat, datarows...), Expr(:vcat, narows...)
     end
