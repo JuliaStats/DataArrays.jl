@@ -9,8 +9,8 @@ module TestPDA
     @assert dropna(setlevels(p, (@data ["a", "b", NA]))) == ["b", "a", "a"]
     @assert dropna(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "a", "b", "a", "a"]
     @assert levels(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "b"]
-    @assert levels(setlevels(p, [1 => 111])) == [111, 8, 9]
-    @assert levels(setlevels(p, [1 => 111, 8 => NA])) == [111, 9]
+    @assert levels(setlevels(p, Dict([(1, 111)]))) == [111, 8, 9]
+    @assert levels(setlevels(p, Dict([(1, 111), (8, NA)]))) == [111, 9]
     @assert levels(PooledDataArray(p, [9, 8, 1])) == [9, 8, 1]
     @assert levels(PooledDataArray(p, [9, 8])) == [9, 8]
     @assert dropna(PooledDataArray(p, [9, 8])) == [9, 9, 8]
@@ -24,8 +24,8 @@ module TestPDA
     @assert levels(setlevels!(copy(p), [1,8,1])) == [1, 8]
     @assert levels(setlevels!(copy(p), (@data [1, 8, NA]))) == [1, 8]
     @assert levels(setlevels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
-    @assert levels(setlevels!(copy(p), [1 => 111])) == [111, 8, 9]
-    @assert levels(setlevels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
+    @assert levels(setlevels!(copy(p), Dict([(1, 111)]))) == [111, 8, 9]
+    @assert levels(setlevels!(copy(p), Dict([(1, 111), (8, NA)]))) == [111, 9]
 
     y = @pdata [1, NA, -2, 1, NA, 4, NA]
     @assert isequal(unique(y), @pdata [1, NA, -2, 4])
