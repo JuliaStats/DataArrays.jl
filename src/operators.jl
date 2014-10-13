@@ -283,9 +283,9 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
         # XXX It would be really nice to make this work with arbitrary
         # types, but doing so results in a bunch of method ambiguity
         # warnings
-        {
+        Any[
             begin
-                fns = {
+                fns = Any[
                     :(function $(vectorfunc)(a::DataArray, b::$t)
                         data = a.data
                         res = similar(data, $outtype)
@@ -303,7 +303,7 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
                         end
                         res
                     end)
-                }
+                ]
                 if swappable
                     # For /, Array/Number is valid but not Number/Array
                     # All other operators should be swappable
@@ -312,7 +312,7 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
                 Expr(:block, fns...)
             end
             for t in (:String, :Number)
-        }...
+        ]...
     ))
 end
 
@@ -320,7 +320,7 @@ end
 macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
     esc(Expr(:block,
         # DataArray with other array
-        {
+        Any[
             quote
                 function $(vectorfunc)(a::$atype, b::$btype)
                     data1 = $(atype == :DataArray || atype == :(DataArray{Bool}) ? :(a.data) : :a)
@@ -341,10 +341,10 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                                            (:DataArray, :DataArray, :(a.na | b.na)),
                                            (:DataArray, :AbstractArray, :(copy(a.na))),
                                            (:AbstractArray, :DataArray, :(copy(b.na))))
-        }...,
+        ]...,
         # AbstractDataArray with other array
         # Definitinons with DataArray necessary to avoid ambiguity
-        {
+        Any[
             quote
                 function $(vectorfunc)(a::$atype, b::$btype)
                     res = similar($(asim ? :a : :b), $outtype, promote_shape(size(a), size(b)))
@@ -364,7 +364,7 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                                          (true, :AbstractDataArray, :AbstractDataArray),
                                          (true, :AbstractDataArray, :AbstractArray),
                                          (false, :AbstractArray, :AbstractDataArray))
-        }...,
+        ]...,
     ))
 end
 

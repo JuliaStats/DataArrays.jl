@@ -124,7 +124,7 @@ module TestLiterals
                   PooledDataArray([1 0; 3 4],
                                   [false true; false false]))
     pdm = @pdata {1 NA;
-                3 4}
+                  3 4}
     @test isequal(pdm,
                   PooledDataArray({1 0; 3 4},
                                   [false true; false false]))
@@ -148,9 +148,9 @@ module TestLiterals
     mixed1 = @data ["x", 1, 1.23, NA]
     mixed2 = @data [NA, "x", 1, 1.23, NA]
 
-    @test isequal(mixed1, DataArray({"x", 1, 1.23, 0},
+    @test isequal(mixed1, DataArray(Any["x", 1, 1.23, 0],
                                     [false, false, false, true]))
-    @test isequal(mixed2, DataArray({NA, "x", 1, 1.23, 0},
+    @test isequal(mixed2, DataArray(Any[NA, "x", 1, 1.23, 0],
                                     [true, false, false, false, true]))
 
     x = 5.1
@@ -249,7 +249,7 @@ module TestLiterals
                              false false]))
 
     @test isequal(DataArrays.fixargs(:([1, 2, NA, x]).args, -1),
-                  ({1, 2, -1, :x}, {false, false, true, false}))
+                  (Any[1, 2, -1, :x], Any[false, false, true, false]))
 
     @test isequal(DataArrays.findstub_vector(:([1, 2, NA, x])), 1)
     @test isequal(DataArrays.findstub_vector(:([NA, NA, NA, x])), :x)

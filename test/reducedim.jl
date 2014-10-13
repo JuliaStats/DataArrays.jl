@@ -119,12 +119,12 @@ myvar1m(x; skipna::Bool=false) = var(x; mean=1, skipna=skipna)
 for Areduc in (DataArray(rand(3, 4, 5, 6)),
                DataArray(rand(3, 4, 5, 6), rand(3, 4, 5, 6) .< 0.2))
     for skipna = (false, true)
-        for region in {
+        for region in Any[
             1, 2, 3, 4, 5, (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4),
-            (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)}
+            (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)]
             # println("region = $region, skipna = $skipna")
 
-            outputs = {DataArray(fill(NaN, Base.reduced_dims(size(Areduc), region)))}
+            outputs = Any[DataArray(fill(NaN, Base.reduced_dims(size(Areduc), region)))]
             has_na = anyna(Areduc)
             if has_na && !skipna
                 # Should throw an error reducing to non-DataArray

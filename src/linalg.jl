@@ -16,7 +16,7 @@ end
 
 # Should be done with a proper N-dimensional Int array.
 function findna(dm::DataMatrix)
-    indices = {}
+    indices = Any[]
     n, p = size(dm)
     for i = 1:n
         for j = 1:p
