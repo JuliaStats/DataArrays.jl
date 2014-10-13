@@ -239,7 +239,7 @@ macro da_broadcast_vararg(func)
     end
 
     va = func.args[1].args[end]
-    defs = {}
+    defs = Any[]
     for n = 1:4, aa = 0:n-1
         def = deepcopy(func)
         rep = Any[symbol("A_$(i)") for i = 1:n]

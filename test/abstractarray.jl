@@ -13,7 +13,7 @@ module TestAbstractArray
     # isna with AbstractArray
     a = [1, 2, 3]
     @test isna(a) == falses(3)
-    a = {1, 2, NA, 3}
+    a = Any[1, 2, NA, 3]
     @test isna(a) == [false, false, true, false]
     for i = 1:length(a)
 	    @test isna(a, i) == isna(a)[i]
