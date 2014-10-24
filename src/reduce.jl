@@ -1,4 +1,8 @@
-using Base: evaluate
+if VERSION < v"0.4.0-dev+1274"
+    import Base.evaluate
+else
+    evaluate(f, args...) = f(args...)
+end
 
 ## mapreduce implementation that skips NA
 
