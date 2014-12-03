@@ -52,19 +52,45 @@ module TestDataArray
     # check case where only NA occurs in final position
     @assert isequal(unique(@data [1, 2, 1, NA]), @data [1, 2, NA])
 
-    # Test vecbind
-    # a = [1:4]
-    # d = DataArray(a)
-    # @assert isequal(vecbind(a,a), [a,a])
-    # @assert isequal(vecbind(a,1.0 * a), 1.0 * [a,a])
-    # @assert isequal(vecbind(d,a), [d,d])
-    # @assert isequal(vecbind(a,d), [d,d])
-    # @assert isequal(vecbind(1.0 * a,d), 1.0 * [d,d])
-    # @assert isequal(vecbind(d,d), [d,d])
-    # @assert isequal(vecbind(a,IndexedVector(a)), [a,a])
-    # @assert isequal(vecbind(a,IndexedVector(d)), [d,d])
-    # @assert isequal(vecbind(PooledDataArray(a),IndexedVector(d)), [d,d])
-    # @assert isequal(vecbind(PooledDataArray(a),IndexedVector(a)), [a,a])
-    # @assert isequal(vecbind(a,RepeatedVector(a,2)), [a,a,a])
-    # @assert (vecbind(a,StackedVector({a,1.0*a})) == [a,a,a])
+    # Test copy!
+    function nonbits(dv)
+        ret = similar(dv, Integer)
+        for i = 1:length(dv)
+            if !isna(dv, i)
+                ret[i] = dv[i]
+            end
+        end
+        ret
+    end
+    set1 = Any[@data([1, NA, 3]), @data([NA, 5]), @data([1, 2, 3, 4, 5]),
+               @data([NA, 5, 3]), @data([1, 5, 3])]
+    set2 = map(nonbits, set1)
+
+    for (dest, src, bigsrc, res1, res2) in Any[set1, set2]
+        @test isequal(copy!(copy(dest), src), res1)
+        @test isequal(copy!(copy(dest), 1, src), res1)
+        @test isequal(copy!(copy(dest), 2, src, 2), res2)
+        @test isequal(copy!(copy(dest), 2, src, 2, 1), res2)
+
+        # likely forthcoming in 0.4
+        # @test isequal(copy!(copy(dest), 99, src, 99, 0), dest)
+
+        for idx in [0, 4]
+            @test_throws BoundsError copy!(dest, idx, src)
+            @test_throws BoundsError copy!(dest, idx, src, 1)
+            @test_throws BoundsError copy!(dest, idx, src, 1, 1)
+            @test_throws BoundsError copy!(dest, 1, src, idx)
+            @test_throws BoundsError copy!(dest, 1, src, idx, 1)
+        end
+
+        @test_throws BoundsError copy!(dest, 1, src, 1, -1)
+
+        @test_throws BoundsError copy!(dest, bigsrc)
+
+        @test_throws BoundsError copy!(dest, 3, src)
+        @test_throws BoundsError copy!(dest, 3, src, 1)
+        @test_throws BoundsError copy!(dest, 3, src, 1, 2)
+        @test_throws BoundsError copy!(dest, 1, src, 2, 2)
+    end
+
 end

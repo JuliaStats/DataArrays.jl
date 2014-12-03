@@ -140,7 +140,7 @@ function Base.copy!(dest::DataArray, src::DataArray) # -> DataArray{T}
         # only copy initialized elements
         dest_data = dest.data
         src_data = src.data
-        length(dest_data) >= length(src_data) || error(BoundsError())
+        length(dest_data) >= length(src_data) || throw(BoundsError())
         src_chunks = src.na.chunks
         for i = 1:length(src_data)
             @inbounds if !Base.unsafe_bitgetindex(src_chunks, i)
@@ -149,6 +149,46 @@ function Base.copy!(dest::DataArray, src::DataArray) # -> DataArray{T}
         end
     end
     copy!(dest.na, src.na)
+    dest
+end
+
+function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray) # -> DataArray{T}
+    copy!(dest, doffs, src, 1, length(src))
+end
+
+# redundant on Julia 0.4
+function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Integer) # -> DataArray{T}
+    soffs <= length(src) || throw(BoundsError())
+    copy!(dest, doffs, src, soffs, length(src)-soffs+1)
+end
+
+function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Integer, n::Integer) # -> DataArray{T}
+    if n == 0
+        return dest
+    elseif n < 0
+        throw(BoundsError())
+    end
+    if isbits(eltype(src))
+        copy!(dest.data, doffs, src.data, soffs, n)
+    else
+        # Elements of src_data are not necessarily initialized, so
+        # only copy initialized elements
+        dest_data = dest.data
+        src_data = src.data
+        if doffs < 1 || length(dest_data) - doffs + 1 < n ||
+           soffs < 1 || length(src_data) - soffs + 1 < n
+            throw(BoundsError())
+        end
+        src_chunks = src.na.chunks
+        for i = 0:(n-1)
+            di, si = doffs + i, soffs + i
+
+            @inbounds if !Base.unsafe_bitgetindex(src_chunks, si)
+                dest_data[di] = src_data[si]
+            end
+        end
+    end
+    copy!(dest.na, doffs, src.na, soffs, n)
     dest
 end
 
