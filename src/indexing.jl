@@ -51,7 +51,7 @@ unsafe_dasetindex!(a::AbstractArray, extr, val, idx::Real) = setindex!(a, val, i
 # Append newpool to pool. Return indices of newpool in pool.
 function combine_pools!(pool, newpool)
     seen = Dict{eltype(pool),Int}()
-    sizehint(seen, length(pool)+length(newpool))
+    sizehint!(seen, length(pool)+length(newpool))
 
     # Create mapping from pool elements to indices
     i = 0

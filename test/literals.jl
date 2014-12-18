@@ -46,7 +46,7 @@ module TestLiterals
 
     dv = @data {1, NA, 3}
     @test isequal(dv,
-                  DataArray({1, 0, 3},
+                  DataArray(Any[1, 0, 3],
                             [false, true, false]))
 
     dm = @data [1 NA; 3 4]
@@ -59,20 +59,20 @@ module TestLiterals
                   DataArray(Float64[1 0; 3 4],
                             [false true; false false]))
     @test typeof(dm) == DataMatrix{Float64}
-    
+
     dm = @data [NA NA; NA NA]
     @test isequal(dm, DataArray(Any, 2, 2))
     @test typeof(dm) == DataMatrix{Any}
 
     dm = @data {1 NA; 3 4}
     @test isequal(dm,
-                  DataArray({1 0; 3 4},
+                  DataArray(Any[1 0; 3 4],
                             [false true; false false]))
 
     dm = @data {1 NA;
                 3 4}
     @test isequal(dm,
-                  DataArray({1 0; 3 4},
+                  DataArray(Any[1 0; 3 4],
                             [false true; false false]))
 
     pdv = @pdata [1, NA, 3]
@@ -88,7 +88,7 @@ module TestLiterals
 
     pdv = @pdata {1, NA, 3}
     @test isequal(pdv,
-                  PooledDataArray({1, 0, 3},
+                  PooledDataArray(Any[1, 0, 3],
                                   [false, true, false]))
 
     pdv = @pdata [1 NA 3]
@@ -115,7 +115,7 @@ module TestLiterals
 
     pdm = @pdata {1 NA; 3 4}
     @test isequal(pdm,
-                  PooledDataArray({1 0; 3 4},
+                  PooledDataArray(Any[1 0; 3 4],
                                   [false true; false false]))
 
     pdm = @pdata [1 NA;
@@ -126,7 +126,7 @@ module TestLiterals
     pdm = @pdata {1 NA;
                   3 4}
     @test isequal(pdm,
-                  PooledDataArray({1 0; 3 4},
+                  PooledDataArray(Any[1 0; 3 4],
                                   [false true; false false]))
 
     dv1 = @data zeros(4)
