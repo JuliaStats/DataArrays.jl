@@ -62,11 +62,12 @@ module TestDataArray
         end
         ret
     end
-    set1 = Any[@data([1, NA, 3]), @data([NA, 5]), @data([1, 2, 3, 4, 5]),
+    set1 = Any[@data([1, NA, 3]),
+               @data([NA, 5]), @data([1, 2, 3, 4, 5]), data(Int[]),
                @data([NA, 5, 3]), @data([1, 5, 3])]
     set2 = map(nonbits, set1)
 
-    for (dest, src, bigsrc, res1, res2) in Any[set1, set2]
+    for (dest, src, bigsrc, emptysrc, res1, res2) in Any[set1, set2]
         @test isequal(copy!(copy(dest), src), res1)
         @test isequal(copy!(copy(dest), 1, src), res1)
         @test isequal(copy!(copy(dest), 2, src, 2), res2)
@@ -74,6 +75,9 @@ module TestDataArray
 
         # likely forthcoming in 0.4
         # @test isequal(copy!(copy(dest), 99, src, 99, 0), dest)
+
+        @test isequal(copy!(copy(dest), 1, emptysrc), dest)
+        @test_throws BoundsError copy!(dest, 1, emptysrc, 1)
 
         for idx in [0, 4]
             @test_throws BoundsError copy!(dest, idx, src)
