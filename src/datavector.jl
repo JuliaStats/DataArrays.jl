@@ -169,6 +169,17 @@ function Base.append!(da::AbstractDataVector, items::AbstractVector)
     da
 end
 
+m = VERSION < v"0.4.0-dev+2014" ? :Compat : :Base
+@eval begin
+    function $(m).sizehint!(da::DataVector, newsz::Integer)
+        sizehint!(da.data, newsz)
+        sizehint!(da.na, newsz)
+    end
+
+    $(m).sizehint!(pda::PooledDataVector, newsz::Integer) = sizehint!(pda.refs, newsz)
+end
+m == :Compat && export sizehint!
+
 function Base.sizehint(da::DataVector, newsz::Integer)
     sizehint(da.data, newsz)
     sizehint(da.na, newsz)

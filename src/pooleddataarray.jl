@@ -288,7 +288,7 @@ function Base.unique{T}(pda::PooledDataArray{T})
     n = length(pda)
     nlevels = length(pda.pool)
     unique_values = Array(T, 0)
-    sizehint(unique_values, nlevels)
+    sizehint!(unique_values, nlevels)
     seen = Set{eltype(pda.refs)}()
 
     firstna = 0

@@ -1,7 +1,7 @@
 using StatsBase
 
 module DataArrays
-    using StatsBase, Base.Cartesian
+    using StatsBase, Base.Cartesian, Compat
 
     const DEFAULT_POOLED_REF_TYPE = Uint32
 
