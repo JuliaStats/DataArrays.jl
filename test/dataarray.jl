@@ -66,18 +66,22 @@ module TestDataArray
                @data([NA, 5]), @data([1, 2, 3, 4, 5]), data(Int[]),
                @data([NA, 5, 3]), @data([1, 5, 3])]
     set2 = map(nonbits, set1)
+    set3 = map(pdata, set1)
 
-    for (dest, src, bigsrc, emptysrc, res1, res2) in Any[set1, set2]
+    for (dest, src, bigsrc, emptysrc, res1, res2) in Any[set1, set2, set3]
+        # Base.copy! was inconsistent until recently in 0.4-dev
+        da_or_04 = VERSION > v"0.4-" || !isa(dest, PooledDataArray)
+
         @test isequal(copy!(copy(dest), src), res1)
         @test isequal(copy!(copy(dest), 1, src), res1)
-        @test isequal(copy!(copy(dest), 2, src, 2), res2)
+
+        da_or_04 && @test isequal(copy!(copy(dest), 2, src, 2), res2)
         @test isequal(copy!(copy(dest), 2, src, 2, 1), res2)
 
-        # likely forthcoming in 0.4
-        # @test isequal(copy!(copy(dest), 99, src, 99, 0), dest)
+        @test isequal(copy!(copy(dest), 99, src, 99, 0), dest)
 
         @test isequal(copy!(copy(dest), 1, emptysrc), dest)
-        @test_throws BoundsError copy!(dest, 1, emptysrc, 1)
+        da_or_04 && @test_throws BoundsError copy!(dest, 1, emptysrc, 1)
 
         for idx in [0, 4]
             @test_throws BoundsError copy!(dest, idx, src)
@@ -87,7 +91,7 @@ module TestDataArray
             @test_throws BoundsError copy!(dest, 1, src, idx, 1)
         end
 
-        @test_throws BoundsError copy!(dest, 1, src, 1, -1)
+       da_or_04 && @test_throws BoundsError copy!(dest, 1, src, 1, -1)
 
         @test_throws BoundsError copy!(dest, bigsrc)
 
