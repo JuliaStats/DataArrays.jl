@@ -459,7 +459,7 @@ end
 ##
 ##############################################################################
 
-Base.find(pdv::PooledDataVector{Bool}) = find(array(pdv, false))
+Base.find(pdv::PooledDataVector{Bool}) = find(convert(Vector{Bool}, pdv, false))
 
 ##############################################################################
 ##
@@ -763,6 +763,13 @@ pdata(a::AbstractArray) = convert(PooledDataArray, a)
 
 # Turn a PooledDataArray into an Array. Fail on NA
 function array{T, R}(da::PooledDataArray{T, R})
+    Base.depwarn(
+        """
+        array(pda::PooledDataArray{T, R}) is deprecated.
+        Use convert(Array, pda) instead.
+        """,
+        :array
+    )
     n = length(da)
     res = Array(T, size(da))
     for i in 1:n
@@ -775,7 +782,41 @@ function array{T, R}(da::PooledDataArray{T, R})
     return res
 end
 
+function Base.convert{S, T, R, N}(
+    ::Type{Array{S, N}},
+    pda::PooledDataArray{T, R, N}
+)
+    res = Array(S, size(pda))
+    for i in 1:length(pda)
+        if pda.refs[i] == zero(R)
+            throw(NAException())
+        else
+            res[i] = pda.pool[pda.refs[i]]
+        end
+    end
+    return res
+end
+
+function Base.convert{T, R}(::Type{Vector}, pdv::PooledDataVector{T, R})
+    return convert(Array{T, 1}, pdv)
+end
+
+function Base.convert{T, R}(::Type{Matrix}, pdm::PooledDataMatrix{T, R})
+    return convert(Array{T, 2}, pdm)
+end
+
+function Base.convert{T, R, N}(::Type{Array}, pda::PooledDataArray{T, R, N})
+    return convert(Array{T, N}, pda)
+end
+
 function array{T, R}(da::PooledDataArray{T, R}, replacement::T)
+    Base.depwarn(
+        """
+        array(pda::PooledDataArray{T, R}, replacement::T) is deprecated.
+        Use convert(Array, pda, replacement) instead.
+        """,
+        :array
+    )
     n = length(da)
     res = Array(T, size(da))
     for i in 1:n
@@ -786,6 +827,35 @@ function array{T, R}(da::PooledDataArray{T, R}, replacement::T)
         end
     end
     return res
+end
+
+function Base.convert{S, T, R, N}(
+    ::Type{Array{S, N}},
+    pda::PooledDataArray{T, R, N},
+    replacement::Any
+)
+    res = Array(S, size(pda))
+    replacementS = convert(S, replacement)
+    for i in 1:length(pda)
+        if pda.refs[i] == zero(R)
+            res[i] = replacementS
+        else
+            res[i] = pda.pool[pda.refs[i]]
+        end
+    end
+    return res
+end
+
+function Base.convert{T, R}(::Type{Vector}, pdv::PooledDataVector{T, R}, replacement::Any)
+    return convert(Array{T, 1}, pdv, replacement)
+end
+
+function Base.convert{T, R}(::Type{Matrix}, pdm::PooledDataMatrix{T, R}, replacement::Any)
+    return convert(Array{T, 2}, pdm, replacement)
+end
+
+function Base.convert{T, R, N}(::Type{Array}, pda::PooledDataArray{T, R, N}, replacement::Any)
+    return convert(Array{T, N}, pda, replacement)
 end
 
 function dropna{T}(pdv::PooledDataVector{T})
