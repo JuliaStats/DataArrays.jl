@@ -65,7 +65,7 @@ cut(x::AbstractVector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] 
 
 function rep{T <: Integer}(x::AbstractVector, lengths::AbstractVector{T})
     if length(x) != length(lengths)
-        error("vector lengths must match")
+        throw(DimensionMismatch("vector lengths must match"))
     end
     res = similar(x, sum(lengths))
     i = 1

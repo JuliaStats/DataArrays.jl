@@ -82,7 +82,7 @@ end
 
 # Indexing with NA throws an error
 function Base.to_index(A::DataArray)
-    any(A.na) && error("cannot index an array with a DataArray containing NA values")
+    any(A.na) && throw(NAException("cannot index an array with a DataArray containing NA values"))
     Base.to_index(A.data)
 end
 
@@ -90,7 +90,7 @@ end
 Base.checkbounds(sz::Int, I::AbstractDataVector{Bool}) =
     length(I) == sz || throw(BoundsError())
 function Base.checkbounds{T<:Real}(sz::Int, I::AbstractDataArray{T})
-    anyna(I) && error("cannot index into an array with a DataArray containing NAs")
+    anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
     extr = daextract(I)
     for i = 1:length(I)
         @inbounds v = unsafe_getindex_notna(I, extr, i)
@@ -100,9 +100,9 @@ end
 
 # Fallbacks to avoid ambiguity
 setindex!(t::AbstractDataArray, x, i::Real) =
-    error("setindex! not defined for ",typeof(t))
+    throw(MethodError(setindex!, typeof(t), typeof(x), typeof(i)))
 getindex(t::AbstractDataArray, i::Real) =
-    error("indexing not defined for ", typeof(t))
+    throw(MethodError(getindex, typeof(t), typeof(i)))
 
 ## getindex: DataArray
 

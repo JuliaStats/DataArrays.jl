@@ -1,5 +1,5 @@
 module TestSort
-using DataArrays, Base.Test
+using DataArrays, Base.Test, Compat
 
 dv1 = @data([9, 1, 8, NA, 3, 3, 7, NA])
 dv2 = 1.0 * dv1
@@ -13,7 +13,7 @@ pdv1 = convert(PooledDataArray, dv1)
 
 for T in (Float64, BigFloat)
     n = 1000
-    na = randbool(n)
+    na = bitrand(n)
     nna = sum(na)
     a = Array(T, n)
     ra = randn(n-nna)

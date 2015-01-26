@@ -1,7 +1,7 @@
 ## Utility function
 
 # This is a substantially faster implementation of the "all" reduction
-# across dimensions for reducing a BitArray to an Array{Bool}. We use 
+# across dimensions for reducing a BitArray to an Array{Bool}. We use
 # this below for implementing MaxFun and MinFun with skipna=true.
 @ngenerate N typeof(R) function Base._mapreducedim!{N}(f, op::Base.AndFun, R::Array{Bool}, A::BitArray{N})
     lsiz = Base.check_reducdims(R, A)
@@ -134,7 +134,7 @@ end
         extr = daextract(R)
         for i = 1:nslices
             if _any(na, ibase+1, ibase+lsiz)
-                error("cannot reduce a DataArray containing NAs to an AbstractArray")
+                throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
             else
                 v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
                 @inbounds unsafe_dasetindex!(R, extr, v, i)
@@ -145,7 +145,7 @@ end
         @nextract N sizeR d->size(R,d)
 
         # If reducing to a non-DataArray, throw an error at the start on NA
-        any(isna(A)) && error("cannot reduce a DataArray containing NAs to an AbstractArray")
+        any(isna(A)) && throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
         @nloops N i data d->(j_d = sizeR_d==1 ? 1 : i_d) begin
             @inbounds x = (@nref N data i)
             v = evaluate(f, x)
@@ -172,7 +172,7 @@ _getdata(A::DataArray) = A.data
     na_chunks = na.chunks
     new_data = _getdata(R)
 
-    isa(C, Nothing) || size(R) == size(C) || error("R and C must have same size")
+    isa(C, Nothing) || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
     lsiz = Base.check_reducdims(new_data, data)
     isempty(data) && return R
 
@@ -217,10 +217,10 @@ _getdata(A::DataArray) = A.data
                 k += 1
         end)
     end
-    return R    
+    return R
 end
 
-_mapreducedim_skipna!(f, op, R::AbstractArray, A::DataArray) = 
+_mapreducedim_skipna!(f, op, R::AbstractArray, A::DataArray) =
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 
 # for MinFun/MaxFun, min or max is NA if all values along a dimension are NA
@@ -230,7 +230,7 @@ function _mapreducedim_skipna!(f, op::Union(Base.MinFun, Base.MaxFun), R::DataAr
 end
 function _mapreducedim_skipna!(f, op::Union(Base.MinFun, Base.MaxFun), R::AbstractArray, A::DataArray)
     if any(all!(fill(true, size(R)), A.na))
-        error("all values along specified dimension are NA for one element of reduced dimension; cannot reduce to non-DataArray")
+        throw(NAException("all values along specified dimension are NA for one element of reduced dimension; cannot reduce to non-DataArray"))
     end
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 end
@@ -282,34 +282,34 @@ Base.reducedim(op, A::DataArray, region; skipna::Bool=false) =
 
 ## usual reductions
 
-for (basfn, Op) in [(:sum, Base.AddFun), (:prod, Base.MulFun), 
-                    (:maximum, Base.MaxFun), (:minimum, Base.MinFun), 
+for (basfn, Op) in [(:sum, Base.AddFun), (:prod, Base.MulFun),
+                    (:maximum, Base.MaxFun), (:minimum, Base.MinFun),
                     (:all, Base.AndFun), (:any, Base.OrFun)]
     fname = Expr(:., :Base, Base.Meta.quot(basfn))
     fname! = Expr(:., :Base, Base.Meta.quot(symbol(string(basfn, '!'))))
     @eval begin
         $(fname!)(f::Union(Function,Base.Func{1}), r::AbstractArray, A::DataArray;
-                  init::Bool=true, skipna::Bool=false) = 
+                  init::Bool=true, skipna::Bool=false) =
             Base.mapreducedim!(f, $(Op)(), Base.initarray!(r, $(Op)(), init), A; skipna=skipna)
         $(fname!)(r::AbstractArray, A::DataArray; init::Bool=true, skipna::Bool=false) =
             $(fname!)(Base.IdFun(), r, A; init=init, skipna=skipna)
 
-        $(fname)(f::Union(Function,Base.Func{1}), A::DataArray, region; skipna::Bool=false) = 
+        $(fname)(f::Union(Function,Base.Func{1}), A::DataArray, region; skipna::Bool=false) =
             Base.mapreducedim(f, $(Op)(), A, region; skipna=skipna)
         $(fname)(A::DataArray, region; skipna::Bool=false) =
             $(fname)(Base.IdFun(), A, region; skipna=skipna)
     end
 end
 
-for (basfn, fbase, Fun) in [(:sumabs, :sum, Base.AbsFun), 
-                            (:sumabs2, :sum, Base.Abs2Fun), 
-                            (:maxabs, :maximum, Base.AbsFun), 
+for (basfn, fbase, Fun) in [(:sumabs, :sum, Base.AbsFun),
+                            (:sumabs2, :sum, Base.Abs2Fun),
+                            (:maxabs, :maximum, Base.AbsFun),
                             (:minabs, :minimum, Base.AbsFun)]
     fname = Expr(:., :Base, Base.Meta.quot(basfn))
     fname! = Expr(:., :Base, Base.Meta.quot(symbol(string(basfn, '!'))))
     fbase! = Expr(:., :Base, Base.Meta.quot(symbol(string(fbase, '!'))))
-    @eval begin 
-        $(fname!)(r::AbstractArray, A::DataArray; init::Bool=true, skipna::Bool=false) = 
+    @eval begin
+        $(fname!)(r::AbstractArray, A::DataArray; init::Bool=true, skipna::Bool=false) =
             $(fbase!)($(Fun)(), r, A; init=init, skipna=skipna)
         $(fname)(A::DataArray, region; skipna::Bool=false) =
             $(fbase)($(Fun)(), A, region; skipna=skipna)
@@ -358,7 +358,7 @@ end
     Sextr = daextract(S)
 
     lsiz = Base.check_reducdims(R, data)
-    size(R) == size(S) || error("R and S must have same size")
+    size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
     isempty(data) && return R
 
     if lsiz > 16
@@ -421,8 +421,8 @@ end
     Sextr = daextract(S)
 
     lsiz = Base.check_reducdims(new_data, data)
-    isa(C, Nothing) || size(R) == size(C) || error("R and C must have same size")
-    size(R) == size(S) || error("R and S must have same size")
+    isa(C, Nothing) || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
+    size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
     isempty(data) && return R
     @nextract N sizeR d->size(new_data,d)
     sizA1 = size(data, 1)
@@ -481,7 +481,7 @@ end
                 k += 1
         end)
     end
-    return R    
+    return R
 end
 
 immutable Abs2MinusFun end
@@ -569,6 +569,6 @@ function Base.var{T}(A::DataArray{T}, region::Union(Integer, AbstractArray, Tupl
     elseif isa(mean, AbstractArray)
         Base.varm(A, mean::AbstractArray, region; corrected=corrected, skipna=skipna)
     else
-        error("invalid value of mean")
+        throw(ErrorException("invalid value of mean"))
     end
 end
