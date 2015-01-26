@@ -27,7 +27,7 @@ type PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
                              p::Vector{T})
         # refs mustn't overflow pool
         if length(rs.a) > 0 && maximum(rs.a) > prod(size(p))
-            error("Reference array points beyond the end of the pool")
+            throw(ArgumentError("Reference array points beyond the end of the pool"))
         end
         new(rs.a,p)
     end
@@ -67,7 +67,7 @@ function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
                                          m::AbstractArray{Bool, N},
                                          r::Type{R} = DEFAULT_POOLED_REF_TYPE)
     if length(pool) > typemax(R)
-        error("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))")
+        throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))"))
     end
 
     newrefs = Array(R, size(d))
@@ -474,9 +474,11 @@ function getpoolidx{T,R<:Union(Uint8, Uint16, Int8, Int16)}(pda::PooledDataArray
         push!(pda.pool, val)
         pool_idx = length(pda.pool)
         if pool_idx > typemax(R)
-            error("You're using a PooledDataArray with ref type $R, which can only hold $(int(typemax(R))) values,\n",
-                  "and you just tried to add the $(typemax(R)+1)th reference.  Please change the ref type\n",
-                  "to a larger int type, or use the default ref type ($DEFAULT_POOLED_REF_TYPE).")
+            throw(ErrorException(
+                "You're using a PooledDataArray with ref type $R, which can only hold $(int(typemax(R))) values,\n",
+                "and you just tried to add the $(typemax(R)+1)th reference.  Please change the ref type\n",
+                "to a larger int type, or use the default ref type ($DEFAULT_POOLED_REF_TYPE)."
+            ))
         end
     end
     return pool_idx
@@ -529,7 +531,7 @@ end
 function replace!{S, T}(x::PooledDataArray{S}, fromval::T, toval::NAtype)
     fromidx = findfirst(x.pool, fromval)
     if fromidx == 0
-        error("can't replace a value not in the pool in a PooledDataVector!")
+        throw(ErrorException("can't replace a value not in the pool in a PooledDataVector!"))
     end
 
     x.refs[x.refs .== fromidx] = 0
@@ -553,7 +555,7 @@ function replace!{R, S, T}(x::PooledDataArray{R}, fromval::S, toval::T)
     # throw error if fromval isn't in the pool
     fromidx = findfirst(x.pool, fromval)
     if fromidx == 0
-        error("can't replace a value not in the pool in a PooledDataArray!")
+        throw(ErrorException("can't replace a value not in the pool in a PooledDataArray!"))
     end
 
     # if toval is in the pool too, use that and remove fromval from the pool
@@ -767,7 +769,7 @@ function array{T, R}(da::PooledDataArray{T, R})
     res = Array(T, size(da))
     for i in 1:n
         if da.refs[i] == zero(R)
-            error(NAException())
+            throw(NAException())
         else
             res[i] = da.pool[da.refs[i]]
         end

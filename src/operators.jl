@@ -227,9 +227,9 @@ end
 macro swappable(func, syms...)
     if (func.head != :function && func.head != :(=)) ||
        func.args[1].head != :call || length(func.args[1].args) != 3
-        error("@swappable may only be applied to functions of two arguments")
+        throw(ArgumentError("@swappable may only be applied to functions of two arguments"))
     end
-    
+
     func2 = deepcopy(func)
     fname = func2.args[1].args[1]
     if isa(fname, Expr) && fname.head == :curly
@@ -238,7 +238,7 @@ macro swappable(func, syms...)
 
     for s in unique([fname, syms...])
         if swapargs(func2, s) < 1
-            error("No argument swapped")
+            throw(ErrorException("No argument swapped"))
         end
     end
     esc(Expr(:block, func, func2))
@@ -796,7 +796,7 @@ end
 Base.(:/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
     DataArray(Array(T, size(b)), trues(size(b)))
 @dataarray_binary_scalar Base.(:/) Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?
-                                      promote_type(eltype(a), typeof(b)) : Float64 false                   
+                                      promote_type(eltype(a), typeof(b)) : Float64 false
 @swappable Base.(:./){T,N}(::NAtype, b::AbstractArray{T,N}) =
     DataArray(Array(T, size(b)), trues(size(b)))
 @dataarray_binary_scalar Base.(:./) Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?

@@ -1,5 +1,5 @@
 module TestReduce
-using DataArrays, Base.Test, StatsBase
+using DataArrays, Base.Test, StatsBase, Compat
 
 srand(1337)
 
@@ -118,7 +118,7 @@ end
 ## reduce and mapreduce drivers
 
 for fn in (+, *, |, &)
-    da = convert(DataArray, randbool(10))
+    da = convert(DataArray, bitrand(10))
 
     s = mapreduce(Base.IdFun(), fn, da.data)
     @test mapreduce(Base.IdFun(), fn, da) == s

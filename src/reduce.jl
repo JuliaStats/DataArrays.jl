@@ -23,7 +23,7 @@ function mapreduce_seq_impl_skipna(f, op, T, A::DataArray, ifirst::Int, ilast::I
     data = A.data
     na = A.na
     chunks = na.chunks
-    
+
     v, i = skipna_init(f, op, na, data, ifirst, ilast)
 
     while i < ilast
@@ -64,7 +64,7 @@ end
 
 mapreduce_impl_skipna{T}(f, op, A::DataArray{T}) =
     mapreduce_seq_impl_skipna(f, op, T, A, 1, length(A.data))
-mapreduce_impl_skipna(f, op::Base.AddFun, A::DataArray) = 
+mapreduce_impl_skipna(f, op::Base.AddFun, A::DataArray) =
     mapreduce_pairwise_impl_skipna(f, op, A, 1, length(A.na.chunks),
                                    length(A.na)-countnz(A.na),
                                    max(128, Base.sum_pairwise_blocksize(f)))
@@ -144,9 +144,9 @@ function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::
         nna == n && return convert(Base.momenttype(T), NaN)
         nna == n-1 && return convert(Base.momenttype(T),
                                      abs2(A.data[Base.findnextnot(na, 1)] - m)/(1 - int(corrected)))
-        
+
         /(nna == 0 ? Base.centralize_sumabs2(A.data, m, 1, n) :
-                     mapreduce_impl_skipna(Base.CentralizedAbs2Fun(m), Base.AddFun(), A), 
+                     mapreduce_impl_skipna(Base.CentralizedAbs2Fun(m), Base.AddFun(), A),
           n - nna - int(corrected))
     else
         any(A.na) && return NA
@@ -165,14 +165,15 @@ end
 function Base.var(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false)
     mean == 0 ? Base.varzm(A; corrected=corrected, skipna=skipna) :
     mean == nothing ? varm(A, Base.mean(A; skipna=skipna); corrected=corrected, skipna=skipna) :
-    isa(mean, Union(Number, NAtype)) ? varm(A, mean; corrected=corrected, skipna=skipna) :
-    error("Invalid value of mean.")
+    isa(mean, Union(Number, NAtype)) ?
+        varm(A, mean; corrected=corrected, skipna=skipna) :
+        throw(ErrorException("Invalid value of mean."))
 end
 
-Base.stdm(A::DataArray, m::Number; corrected::Bool=true, skipna::Bool=false) = 
+Base.stdm(A::DataArray, m::Number; corrected::Bool=true, skipna::Bool=false) =
     sqrt(varm(A, m; corrected=corrected, skipna=skipna))
 
-Base.std(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false) = 
+Base.std(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false) =
     sqrt(var(A; corrected=corrected, mean=mean, skipna=skipna))
 
 ## weighted mean

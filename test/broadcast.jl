@@ -43,7 +43,12 @@ for arr in (identity, as_dataarray, as_pda, as_dataarray_bigfloat, as_pda_bigflo
 
     A = arr(eye(2)); @test broadcast!(+, A, A, arr([1, 4])) == arr([2 1; 4 5])
     A = arr(eye(2)); @test broadcast!(+, A, A, arr([1  4])) == arr([2 4; 1 5])
-    A = arr([1  0]); @test_throws ErrorException broadcast!(+, A, A, arr([1, 4]))
+    A = arr([1  0]); try
+        broadcast!(+, A, A, arr([1, 4]))
+        throw(ArgumentError("'broadcast!(+, A, A, arr([1, 4]))' didn't throw an error"))
+    catch e
+        isa(e, DimensionMismatch) || isa(e, ErrorException) || rethrow(e)
+    end
     A = arr([1  0]); @test broadcast!(+, A, A, arr([1  4])) == arr([2 4])
     A = arr([1  0]); @test broadcast!(+, A, A, 2) == arr([3 2])
 
@@ -89,7 +94,7 @@ for arr in (identity, as_dataarray, as_pda, as_dataarray_bigfloat, as_pda_bigflo
         #bittest(f, ewf, arr(rand(rb, n1, n2, n3)), arr(rand(rb, n1, n2, n3)))
         #bittest(f, ewf, arr(rand(rb,  1, n2, n3)), arr(rand(rb, n1,  1, n3)))
         #bittest(f, ewf, arr(rand(rb,  1, n2,  1)), arr(rand(rb, n1,  1, n3)))
-        #bittest(f, ewf, arr(randbool(n1, n2, n3)), arr(randbool(n1, n2, n3)))
+        #bittest(f, ewf, arr(bitrand(n1, n2, n3)), arr(bitrand(n1, n2, n3)))
     end
 end
 
@@ -120,7 +125,7 @@ rt = Base.return_types(broadcast!, (Function, DataArray{Float64, 3}, Array{Float
 @test isequal(broadcast(|, @data([NA, false]), @data([NA true false])), @data([NA true NA; NA true false]))
 
 # Test map!
-@test_throws ErrorException map!(+, DataArray(Float64, 2, 2), @data([1, 2]), @data([1 2]))
+@test_throws DimensionMismatch map!(+, DataArray(Float64, 2, 2), @data([1, 2]), @data([1 2]))
 @test map!(+, DataArray(Float64, 2), @data([1, 2]), @data([1, 2])) == @data([2, 4])
 @test isequal(map!(+, DataArray(Float64, 3), @data([1, NA, 3]), @data([NA, 2, 3])), @data([NA, NA, 6]))
 @test map!(isequal, DataArray(Float64, 3), @data([1, NA, NA]), @data([1, NA, 3])) == @data([true, true, false])

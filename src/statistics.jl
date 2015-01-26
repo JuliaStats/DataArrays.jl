@@ -24,7 +24,7 @@ autocor{T}(dv::DataVector{T}) = autocor(dv, 1)
 # Generate levels - see the R documentation for gl
 function gl(n::Integer, k::Integer, l::Integer)
     nk = n * k
-    if l % nk != 0 error("length out must be a multiple of n * k") end
+    l % nk == 0 || throw(ArgumentError("length out must be a multiple of n * k"))
     aa = Array(Int, l)
     for j = 0:(l/nk - 1), i = 1:n
         aa[j * nk + (i - 1) * k + (1:k)] = i

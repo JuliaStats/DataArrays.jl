@@ -1,5 +1,5 @@
 module DataArraysBenchmark
-using DataArrays, Benchmark
+using DataArrays, Benchmark, Compat
 
 # seed rng for more consistent timings
 srand(1776)
@@ -26,7 +26,7 @@ function make_test_types(genfunc, sz)
     )
 end
 
-make_bools{N}(x::NTuple{N}) = convert(Array{Bool, N}, randbool(x...))
+make_bools{N}(x::NTuple{N}) = convert(Array{Bool, N}, bitrand(x...))
 make_bools(x::Integer...) = make_bools(x)
 
 macro perf(fn, replications, idx...)

@@ -1,9 +1,9 @@
 module TestReducedim
-using DataArrays, Base.Test
+using DataArrays, Base.Test, Compat
 
 # Test for fast unit stride BitArray functions
 function test_any()
-    bits = randbool(64*5)
+    bits = bitrand(64*5)
     for i = 1:length(bits), j = i:length(bits)
         v = false
         for k = i:j
@@ -15,7 +15,7 @@ end
 test_any()
 
 function test_count()
-    bits = randbool(64*5)
+    bits = bitrand(64*5)
     for i = 1:length(bits), j = i:length(bits)
         v = 0
         for k = i:j
@@ -88,9 +88,13 @@ function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
             try
                 R[ridx...] = f(reshape(A[idx...], Asliceshape); skipna=skipna)
             catch e
-                if isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed."
+                if (isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed.") ||
+                   (isa(e, ArgumentError) && e.msg == "reducing over an empty collection is not allowed")
+
                     R[ridx...] = NA
                 else
+                    println(typeof(e))
+                    println(e.msg)
                     rethrow(e)
                 end
             end
@@ -128,7 +132,7 @@ for Areduc in (DataArray(rand(3, 4, 5, 6)),
             has_na = anyna(Areduc)
             if has_na && !skipna
                 # Should throw an error reducing to non-DataArray
-                @test_throws ErrorException sum!(outputs[1].data, Areduc; skipna=skipna)
+                @test_throws NAException sum!(outputs[1].data, Areduc; skipna=skipna)
             else
                 # Should be able to reduce to non-DataArray
                 push!(outputs, outputs[1].data)
@@ -173,5 +177,5 @@ a = @data([NA NA; 3 4])
 # Maximum should give an NA in the output if all values along dimension are NA
 @test isequal(maximum(a, 2; skipna=true), @data([NA 4])')
 # Maximum should refuse to reduce to a non-DataArray
-@test_throws ErrorException maximum!(zeros(2, 1), a; skipna=true)
+@test_throws NAException maximum!(zeros(2, 1), a; skipna=true)
 end

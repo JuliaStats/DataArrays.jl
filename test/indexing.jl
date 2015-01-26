@@ -1,9 +1,9 @@
 module IndexingTests
-using DataArrays, Base.Test
+using DataArrays, Base.Test, Compat
 
 function run_tests(datype)
     data = rand(10, 10)
-    na = randbool(10, 10)
+    na = bitrand(10, 10)
     A = datype(data, na)
 
     # Scalar getindex
@@ -53,7 +53,7 @@ function run_tests(datype)
     end
 
     # getindex with AbstractVector{Bool}
-    b = randbool(10, 10)
+    b = bitrand(10, 10)
     rg = find(b)
     v = A[b]
     for i = 1:length(rg)
@@ -65,7 +65,7 @@ function run_tests(datype)
     end
 
     # getindex with DataVectors with missingness throws
-    @test_throws ErrorException A[@data([1, 2, 3, NA])]
+    @test_throws NAException A[@data([1, 2, 3, NA])]
 
     # setindex! with scalar indices
     data = rand(10, 10)
@@ -80,7 +80,7 @@ function run_tests(datype)
     end
     @test A == data
 
-    na = randbool(10, 10)
+    na = bitrand(10, 10)
     for i = 1:100
         na[i] && (A[i] = NA)
     end
@@ -113,7 +113,7 @@ function run_tests(datype)
     for datype2 in (DataArray, PooledDataArray)
         newdata = rand(3, 3)
         newdata[1:2:9] = data[1:2:9]
-        newna = randbool(3, 3)
+        newna = bitrand(3, 3)
         rg1, rg2 = 1:3, 5:7
         data[rg1, rg2] = newdata
         na[rg1, rg2] = newna

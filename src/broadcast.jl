@@ -9,13 +9,13 @@ function check_broadcast_shape(shape::Dims, As::Union(AbstractArray,Number)...)
     samesize = true
     for A in As
         if ndims(A) > length(shape)
-            error("cannot broadcast array to have fewer dimensions")
+            throw(DimensionMismatch("cannot broadcast array to have fewer dimensions"))
         end
         for k in 1:length(shape)
             n, nA = shape[k], size(A, k)
             samesize &= (n == nA)
             if n != nA != 1
-                error("array could not be broadcast to match destination")
+                throw(DimensionMismatch("array could not be broadcast to match destination"))
             end
         end
     end
@@ -183,9 +183,9 @@ for bsig in (DataArray, PooledDataArray), asig in (Union(Array,BitArray,Number),
     @eval let cache = Dict{Function,Dict{Uint64,Dict{Int,Function}}}()
         function Base.map!(f::Base.Callable, B::$bsig, As::$asig...)
             nd = ndims(B)
-            length(As) <= 8 || error("too many arguments")
+            length(As) <= 8 || throw(ArgumentError("too many arguments"))
             samesize = check_broadcast_shape(size(B), As...)
-            samesize || error("dimensions must match")
+            samesize || throw(DimensionMismatch("Argument dimensions must match"))
             arrtype = datype_int(As...)
 
             cache_f    = @get! cache      f        Dict{Uint64,Dict{Int,Function}}()
@@ -200,7 +200,7 @@ for bsig in (DataArray, PooledDataArray), asig in (Union(Array,BitArray,Number),
             invoke(Base.map!, (Base.Callable, $bsig, $asig), f, B, r)
         function Base.broadcast!(f::Function, B::$bsig, As::$asig...)
             nd = ndims(B)
-            length(As) <= 8 || error("too many arguments")
+            length(As) <= 8 || throw(ArgumentError("too many arguments"))
             samesize = check_broadcast_shape(size(B), As...)
             arrtype = datype_int(As...)
 
@@ -235,7 +235,7 @@ macro da_broadcast_vararg(func)
     if (func.head != :function && func.head != :(=)) ||
        func.args[1].head != :call || !isa(func.args[1].args[end], Expr) ||
        func.args[1].args[end].head != :...
-        error("@da_broadcast_vararg may only be applied to vararg functions")
+        throw(ArgumentError("@da_broadcast_vararg may only be applied to vararg functions"))
     end
 
     va = func.args[1].args[end]
@@ -261,8 +261,9 @@ end
 
 macro da_broadcast_binary(func)
     if (func.head != :function && func.head != :(=)) ||
-       func.args[1].head != :call || length(func.args[1].args) != 3
-        error("@da_broadcast_binary may only be applied to two-argument functions")
+       func.args[1].head != :call ||
+       length(func.args[1].args) != 3
+        throw(ArgumentError("@da_broadcast_binary may only be applied to two-argument functions"))
     end
     (f, A, B) = func.args[1].args
     body = func.args[2]
@@ -276,7 +277,7 @@ end
 # Broadcasting DataArrays returns a DataArray
 @da_broadcast_vararg Base.broadcast(f::Function, As...) = databroadcast(f, As...)
 
-# Definitions for operators, 
+# Definitions for operators,
 Base.(:(.*))(A::BitArray, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(*, A, B)
 Base.(:(.*))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::BitArray) = databroadcast(*, A, B)
 @da_broadcast_vararg Base.(:(.*))(As...) = databroadcast(*, As...)
