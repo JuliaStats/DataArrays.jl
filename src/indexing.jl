@@ -107,6 +107,13 @@ getindex(t::AbstractDataArray, i::Real) =
 ## getindex: DataArray
 
 # Scalar case
+function getindex(da::DataArray, I::Real)
+    if getindex(da.na, I)
+        return NA
+    else
+        return getindex(da.data, I)
+    end
+end
 @nsplat N function getindex(da::DataArray, I::NTuple{N,Real}...)
     if getindex(da.na, I...)
         return NA
@@ -159,6 +166,13 @@ end
 ## getindex: PooledDataArray
 
 # Scalar case
+function getindex(pda::PooledDataArray, I::Real)
+    if getindex(pda.refs, I) == 0
+        return NA
+    else
+        return pda.pool[getindex(pda.refs, I)]
+    end
+end
 @nsplat N function getindex(pda::PooledDataArray, I::NTuple{N,Real}...)
     if getindex(pda.refs, I...) == 0
         return NA
