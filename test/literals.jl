@@ -44,6 +44,9 @@ module TestLiterals
     @test isequal(dv, DataArray(Any, 1, 2))
     @test typeof(dv) == DataMatrix{Any}
 
+    if VERSION >= v"0.4.0-"
+      println("Testing parsing 0.3 cell literal syntax, (4) warnings expected")
+    end
     dv = @data {1, NA, 3}
     @test isequal(dv,
                   DataArray(Any[1, 0, 3],

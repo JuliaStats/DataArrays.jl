@@ -42,9 +42,9 @@ function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
         return map(f,A)
     end
 
-    dimsA = [size(A)...]
+    dimsA = collect(size(A))
     ndimsA = ndims(A)
-    alldims = [1:ndimsA]
+    alldims = collect(1:ndimsA)
 
     otherdims = setdiff(alldims, dims)
 

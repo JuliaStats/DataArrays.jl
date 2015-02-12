@@ -101,12 +101,12 @@ end
 r1 = 1:1
 r2 = 1:5
 ratio = @data [1,1/2,1/3,1/4,1/5]
-@test r1.*r2 == [1:5]
+@test r1.*r2 == collect(1:5)
 @test r1./r2 == ratio
-m = @data [1:2]'
+m = @data [1,2]'
 @test m.*r2 == DataArray([1:5 2:2:10])
 @test_approx_eq m./r2 [ratio 2ratio]
-@test_approx_eq m./[r2] [ratio 2ratio]
+@test_approx_eq m./collect(r2) [ratio 2ratio]
 
 @test @inferred([0,1.2].+reshape([0,-2],1,1,2)) == reshape([0 -2; 1.2 -0.8],2,1,2)
 rt = Base.return_types(.+, (DataArray{Float64, 3}, DataArray{Int, 1}))

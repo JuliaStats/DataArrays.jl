@@ -101,7 +101,7 @@ function parsedata(ex::Expr)
 end
 
 macro data(ex)
-    if !(ex.head in (:vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
+    if !(ex.head in (:vect, :vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
             tmp = $(esc(ex))
             DataArray(tmp, bitbroadcast(x->isequal(x, NA), tmp))
@@ -112,7 +112,7 @@ macro data(ex)
 end
 
 macro pdata(ex)
-    if !(ex.head in (:vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
+    if !(ex.head in (:vect, :vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
             tmp = $(esc(ex))
             PooledDataArray(tmp, bitbroadcast(x->isequal(x, NA), tmp))
