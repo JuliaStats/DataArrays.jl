@@ -584,7 +584,7 @@ function Base.sortperm(pda::PooledDataArray; alg::Base.Sort.Algorithm=Base.Sort.
 
     # TODO handle custom ordering efficiently
     if !isa(order, Base.Order.ForwardOrdering) && !isa(order, Base.Order.ReverseOrdering)
-        return sort!([1:length(pda)], alg, Base.Order.Perm(order,pda))
+        return sort!(collect(1:length(pda)), alg, Base.Order.Perm(order,pda))
     end
 
     # TODO handle non-sorted keys without copying

@@ -15,7 +15,7 @@ module TestPDA
     @assert levels(PooledDataArray(p, [9, 8])) == [9, 8]
     @assert dropna(PooledDataArray(p, [9, 8])) == [9, 9, 8]
     @assert levels(PooledDataArray(p, levels(p)[[3,2,1]])) == [9,8,1]
-    v = [1:6]
+    v = collect(1:6)
     @assert isequal(p, reorder(p))
     # @assert levels(reorder(p, v)) == [9,8,1]
     @assert isequal(p, pcopy)

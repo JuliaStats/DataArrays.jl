@@ -13,7 +13,7 @@ module TestData
 
     #test_group("DataVector creation")
     dvint = @data [1, 2, NA, 4]
-    dvint2 = DataArray([5:8])
+    dvint2 = DataArray(collect(5:8))
     dvint3 = convert(DataArray, 5:8)
     dvflt = @data [1.0, 2, NA, 4]
     dvstr = @data ["one", "two", NA, "four"]
@@ -99,8 +99,8 @@ module TestData
     asciithree = convert(ASCIIString, "three")
     @assert all(array(dvstr, utf8three) .== ["one", "two", "three", "four"])
     @assert all(array(dvstr, asciithree) .== ["one", "two", "three", "four"])
-    @assert all(convert(Vector{Int}, dvint2) .== [5:8])
-    @assert all([i + 1 for i in dvint2] .== [6:9])
+    @assert all(convert(Vector{Int}, dvint2) .== 5:8)
+    @assert all([i + 1 for i in dvint2] .== 6:9)
     @assert all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
     @assert repr(dvint) == "[1,2,NA,4]"
 

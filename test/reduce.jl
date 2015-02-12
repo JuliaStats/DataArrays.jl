@@ -42,7 +42,7 @@ bfz = convert(DataArray{BigFloat}, z)
 @test sum(bfz; skipna=true) == 130
 
 bs = Base.sum_pairwise_blocksize(Base.IdFun())
-for n in [bs-64, bs-1, bs, bs+1, bs+2, 2*bs-2:2*bs+3, 4*bs-2:4*bs+3]
+for n in [bs-64, bs-1, bs, bs+1, bs+2, 2*bs-2:2*bs+3..., 4*bs-2:4*bs+3...]
     da = DataArray(randn(n))
     s = sum(da.data)
     @test_approx_eq sum(da) s
