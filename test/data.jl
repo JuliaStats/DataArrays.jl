@@ -24,7 +24,7 @@ module TestData
     @assert isa(dvint3, DataVector{Int})
     @assert isa(dvflt, DataVector{Float64})
     @assert isa(dvstr, DataVector{ASCIIString})
-    # @test throws_exception(DataArray([5:8], falses(2)), Exception) 
+    # @test throws_exception(DataArray([5:8], falses(2)), Exception)
 
     #test_group("PooledDataVector creation")
     pdvstr = @pdata ["one", "one", "two", "two", NA, "one", "one"]
@@ -97,8 +97,8 @@ module TestData
     @assert all(array(dvint, 0) .== [1, 2, 0, 4])
     utf8three = convert(UTF8String, "three")
     asciithree = convert(ASCIIString, "three")
-    @assert all(array(dvstr, utf8three) .== ["one", "two", "three", "four"])
-    @assert all(array(dvstr, asciithree) .== ["one", "two", "three", "four"])
+    @assert all(convert(dvstr, utf8three) .== ["one", "two", "three", "four"])
+    @assert all(convert(dvstr, asciithree) .== ["one", "two", "three", "four"])
     @assert all(convert(Vector{Int}, dvint2) .== 5:8)
     @assert all([i + 1 for i in dvint2] .== 6:9)
     @assert all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
@@ -157,7 +157,7 @@ module TestData
     ret = (pdvstr2[[true, false, true, false]] = "three")
     @assert ret == "three"
     @assert pdvstr2[1] == "three"
-    ret = (pdvstr2[[false, true, false, true]] = ["four", "five"]) 
+    ret = (pdvstr2[[false, true, false, true]] = ["four", "five"])
     @assert isequal(ret, ["four", "five"])
     @assert isequal(pdvstr2[3:4], (@data ["three", "five"]))
     pdvstr2 = @pdata ["one", "one", "two", "two"]
