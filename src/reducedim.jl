@@ -1,10 +1,14 @@
 ## Utility function
 
+check_reducedims = VERSION < v"0.4-" ?
+    Base.check_reducdims :
+    Base.check_reducedims
+
 # This is a substantially faster implementation of the "all" reduction
 # across dimensions for reducing a BitArray to an Array{Bool}. We use
 # this below for implementing MaxFun and MinFun with skipna=true.
 @ngenerate N typeof(R) function Base._mapreducedim!{N}(f, op::Base.AndFun, R::Array{Bool}, A::BitArray{N})
-    lsiz = Base.check_reducdims(R, A)
+    lsiz = check_reducedims(R, A)
     isempty(A) && return R
     @nextract N sizeR d->size(R, d)
     @nexprs 1 d->(state_0 = state_{N} = 1)
@@ -63,7 +67,7 @@ end
     data = A.data
     na = A.na
 
-    lsiz = Base.check_reducdims(R, data)
+    lsiz = check_reducedims(R, data)
     isempty(data) && return R
 
     if lsiz > 16
@@ -124,7 +128,7 @@ end
     data = A.data
     na = A.na
 
-    lsiz = Base.check_reducdims(R, data)
+    lsiz = check_reducedims(R, data)
     isempty(data) && return R
 
     if lsiz > 16
@@ -173,7 +177,7 @@ _getdata(A::DataArray) = A.data
     new_data = _getdata(R)
 
     isa(C, Nothing) || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
-    lsiz = Base.check_reducdims(new_data, data)
+    lsiz = check_reducedims(new_data, data)
     isempty(data) && return R
 
     if lsiz > 16
@@ -357,7 +361,7 @@ end
     na = A.na
     Sextr = daextract(S)
 
-    lsiz = Base.check_reducdims(R, data)
+    lsiz = check_reducedims(R, data)
     size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
     isempty(data) && return R
 
@@ -420,7 +424,7 @@ end
     new_data = _getdata(R)
     Sextr = daextract(S)
 
-    lsiz = Base.check_reducdims(new_data, data)
+    lsiz = check_reducedims(new_data, data)
     isa(C, Nothing) || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
     size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
     isempty(data) && return R
@@ -515,7 +519,7 @@ function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected:
             _mapreducedim_2arg!(Abs2MinusFun(), Base.AddFun(), R, A, m)
 
             # Divide by number of values
-            broadcast!(/, R, R, div(length(A), length(R)) - int(corrected))
+            broadcast!(/, R, R, div(length(A), length(R)) - @compat(Int(corrected)))
         end
     end
 end
@@ -537,7 +541,7 @@ function Base.varzm!(R::AbstractArray, A::DataArray; corrected::Bool=true,
             broadcast!(/, R, R, C)
         else
             Base.sumabs2!(R, A; init=true)
-            broadcast!(/, R, R, div(length(A), length(R)) - int(corrected))
+            broadcast!(/, R, R, div(length(A), length(R)) - @compat(Int(corrected)))
         end
     end
 end

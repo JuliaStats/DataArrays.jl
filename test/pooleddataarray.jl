@@ -1,6 +1,7 @@
 module TestPDA
     using Base.Test
     using DataArrays
+    using Compat
 
     p = @pdata [9, 9, 8, NA, 1, 1]
     pcopy = copy(p)
@@ -54,7 +55,7 @@ module TestPDA
     testarray = [1, 1, 2, 2, 0, 0, 3, 3]
     testdata = @data [1, 1, 2, 2, 0, 0, 3, 3]
     for t in Any[testarray, testdata]
-        for R in [Uint8, Uint16, Uint32, Uint64]
+        for R in [UInt8, UInt16, UInt32, UInt64]
             @assert eltype(PooledDataArray(t, R).refs) == R
             @assert eltype(PooledDataArray(t, [1,2,3], R).refs) == R
             @assert eltype(PooledDataArray(t, [1,2,3], t .== 0, R).refs) == R
@@ -74,17 +75,17 @@ module TestPDA
 
     # convert methods
     for from in (@pdata(ones(5, 5)), @data(ones(5, 5)), ones(5, 5))
-        for (to, totype) in ((PooledDataArray{Float32,Uint16,2}, PooledDataArray{Float32,Uint16,2}),
-                             (PooledDataArray{Float32,Uint32,2}, PooledDataArray{Float32,Uint32,2}),
-                             (PooledDataArray{Float64,Uint16,2}, PooledDataArray{Float64,Uint16,2}),
-                             (PooledDataArray{Float64,Uint32,2}, PooledDataArray{Float64,Uint32,2}),
-                             (PooledDataArray{Float32,Uint16}, PooledDataArray{Float32,Uint16,2}),
-                             (PooledDataArray{Float32,Uint32}, PooledDataArray{Float32,Uint32,2}),
-                             (PooledDataArray{Float64,Uint16}, PooledDataArray{Float64,Uint16,2}),
-                             (PooledDataArray{Float64,Uint32}, PooledDataArray{Float64,Uint32,2}),
-                             (PooledDataArray{Float32}, PooledDataArray{Float32,Uint32,2}),
-                             (PooledDataArray{Float64}, PooledDataArray{Float64,Uint32,2}),
-                             (PooledDataArray, PooledDataArray{Float64,Uint32,2}))
+        for (to, totype) in ((PooledDataArray{Float32,UInt16,2}, PooledDataArray{Float32,UInt16,2}),
+                             (PooledDataArray{Float32,UInt32,2}, PooledDataArray{Float32,UInt32,2}),
+                             (PooledDataArray{Float64,UInt16,2}, PooledDataArray{Float64,UInt16,2}),
+                             (PooledDataArray{Float64,UInt32,2}, PooledDataArray{Float64,UInt32,2}),
+                             (PooledDataArray{Float32,UInt16}, PooledDataArray{Float32,UInt16,2}),
+                             (PooledDataArray{Float32,UInt32}, PooledDataArray{Float32,UInt32,2}),
+                             (PooledDataArray{Float64,UInt16}, PooledDataArray{Float64,UInt16,2}),
+                             (PooledDataArray{Float64,UInt32}, PooledDataArray{Float64,UInt32,2}),
+                             (PooledDataArray{Float32}, PooledDataArray{Float32,UInt32,2}),
+                             (PooledDataArray{Float64}, PooledDataArray{Float64,UInt32,2}),
+                             (PooledDataArray, PooledDataArray{Float64,UInt32,2}))
             rettype = typeof(convert(to, from))
             if rettype != totype
                 error("convert($to, ::$(typeof(from))) returned $rettype (expected $totype)")

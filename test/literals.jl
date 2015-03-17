@@ -1,6 +1,7 @@
 module TestLiterals
     using Base.Test
     using DataArrays
+    using Compat
 
     dv = @data []
     @test isequal(dv, DataArray([], Bool[]))
@@ -87,7 +88,7 @@ module TestLiterals
     @test isequal(pdv,
                   PooledDataArray(Float64[1, 0, 3],
                                   [false, true, false]))
-    @test typeof(pdv) == PooledDataArray{Float64,Uint32,1}
+    @test typeof(pdv) == PooledDataArray{Float64,UInt32,1}
 
     pdv = @pdata {1, NA, 3}
     @test isequal(pdv,
@@ -103,7 +104,7 @@ module TestLiterals
     @test isequal(pdv,
                   PooledDataArray(Float64[1 0 3],
                                   [false true false]))
-    @test typeof(pdv) == PooledDataArray{Float64,Uint32,2}
+    @test typeof(pdv) == PooledDataArray{Float64,UInt32,2}
 
     pdm = @pdata [1 NA; 3 4]
     @test isequal(pdm,
@@ -114,7 +115,7 @@ module TestLiterals
     @test isequal(pdm,
                   PooledDataArray(Float64[1 0; 3 4],
                                   [false true; false false]))
-    @test typeof(pdm) == PooledDataArray{Float64,Uint32,2}
+    @test typeof(pdm) == PooledDataArray{Float64,UInt32,2}
 
     pdm = @pdata {1 NA; 3 4}
     @test isequal(pdm,

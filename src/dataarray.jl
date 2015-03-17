@@ -663,7 +663,7 @@ end
 #'
 #' @param da::DataArray{T} DataArray whose hash is desired.
 #'
-#' @returns h::Uint An unsigned integer hash value for `da`.
+#' @returns h::UInt An unsigned integer hash value for `da`.
 #'
 #' @examples
 #'
@@ -671,12 +671,12 @@ end
 #' k = hash(dv)
 #
 # TODO: Make sure this agrees with is_equals()
-function Base.hash(a::AbstractDataArray) # -> Uint
+function Base.hash(a::AbstractDataArray) # -> UInt
     h = hash(size(a)) + 1
     for i in 1:length(a)
-        h = hash(int(hash(a[i])), h)
+        h = hash(@compat(Int(hash(a[i]))), h)
     end
-    return uint(h)
+    return @compat UInt(h)
 end
 
 #' @internal
