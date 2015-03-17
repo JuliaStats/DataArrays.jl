@@ -5,7 +5,7 @@
 ## An AbstractDataArray with efficient storage when values are repeated. A
 ## PDA wraps an array of unsigned integers, which are used to index into a
 ## compressed pool of values. NA's are 0's in the refs array.  The unsigned
-## integer type used for the refs array defaults to Uint32.  The `compact`
+## integer type used for the refs array defaults to UInt32.  The `compact`
 ## function converts to a smallest integer size that will index the entire pool.
 ##
 ## TODO: Allow ordering of factor levels
@@ -112,9 +112,9 @@ PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Array
 
 # Convert a BitArray to an Array{Bool} (m = missingness)
 # For some reason an additional method is needed but even that doesn't work
-# For a BitArray a refs type of Uint8 will always be sufficient as the size of the pool is 0, 1 or 2
-PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(bitunpack(d), falses(size(d)), Uint8)
-PooledDataArray{N}(d::BitArray{N}, m::AbstractArray{Bool, N}) = PooledDataArray(bitunpack(d), m, Uint8)
+# For a BitArray a refs type of UInt8 will always be sufficient as the size of the pool is 0, 1 or 2
+PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(bitunpack(d), falses(size(d)), UInt8)
+PooledDataArray{N}(d::BitArray{N}, m::AbstractArray{Bool, N}) = PooledDataArray(bitunpack(d), m, UInt8)
 
 # Convert a DataArray to a PooledDataArray
 PooledDataArray{T,R<:Integer}(da::DataArray{T},
@@ -254,10 +254,10 @@ end
 function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
     sz = length(d.pool)
 
-    REFTYPE = sz <= typemax(Uint8)  ? Uint8 :
-              sz <= typemax(Uint16) ? Uint16 :
-              sz <= typemax(Uint32) ? Uint32 :
-                                      Uint64
+    REFTYPE = sz <= typemax(UInt8)  ? UInt8 :
+              sz <= typemax(UInt16) ? UInt16 :
+              sz <= typemax(UInt32) ? UInt32 :
+                                      UInt64
 
     if REFTYPE == R
         return d
@@ -467,7 +467,7 @@ Base.find(pdv::PooledDataVector{Bool}) = find(array(pdv, false))
 ##
 ##############################################################################
 
-function getpoolidx{T,R<:Union(Uint8, Uint16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::Any)
+function getpoolidx{T,R<:Union(UInt8, UInt16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::Any)
     val::T = convert(T,val)
     pool_idx = findfirst(pda.pool, val)
     if pool_idx <= 0
@@ -494,7 +494,7 @@ function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
     return pool_idx
 end
 
-getpoolidx{T,R<:Union(Uint8, Uint16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::NAtype) = zero(R)
+getpoolidx{T,R<:Union(UInt8, UInt16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::NAtype) = zero(R)
 getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::NAtype) = zero(R)
 
 ##############################################################################
@@ -618,10 +618,10 @@ function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
     pool = sort(unique([v1.pool, v2.pool]))
     sz = length(pool)
 
-    REFTYPE = sz <= typemax(Uint8)  ? Uint8 :
-              sz <= typemax(Uint16) ? Uint16 :
-              sz <= typemax(Uint32) ? Uint32 :
-                                      Uint64
+    REFTYPE = sz <= typemax(UInt8)  ? UInt8 :
+              sz <= typemax(UInt16) ? UInt16 :
+              sz <= typemax(UInt32) ? UInt32 :
+                                      UInt64
 
     tidx1 = convert(Vector{REFTYPE}, findat(pool, v1.pool))
     tidx2 = convert(Vector{REFTYPE}, findat(pool, v2.pool))

@@ -174,13 +174,13 @@ datype(A_1::DataArray, As...) = tuple(DataArray, datype(As...)...)
 datype(A_1, As...) = tuple(AbstractArray, datype(As...)...)
 datype() = ()
 
-datype_int(A_1::PooledDataArray, As...) = (uint64(2) | (datype_int(As...) << 2))
-datype_int(A_1::DataArray, As...) = (uint64(1) | (datype_int(As...) << 2))
+datype_int(A_1::PooledDataArray, As...) = (@compat(UInt64(2)) | (datype_int(As...) << 2))
+datype_int(A_1::DataArray, As...) = (@compat(UInt64(1)) | (datype_int(As...) << 2))
 datype_int(A_1, As...) = (datype_int(As...) << 2)
-datype_int() = uint64(0)
+datype_int() = @compat UInt64(0)
 
 for bsig in (DataArray, PooledDataArray), asig in (Union(Array,BitArray,Number), Any)
-    @eval let cache = Dict{Function,Dict{Uint64,Dict{Int,Function}}}()
+    @eval let cache = Dict{Function,Dict{UInt64,Dict{Int,Function}}}()
         function Base.map!(f::Base.Callable, B::$bsig, As::$asig...)
             nd = ndims(B)
             length(As) <= 8 || throw(ArgumentError("too many arguments"))
@@ -188,7 +188,7 @@ for bsig in (DataArray, PooledDataArray), asig in (Union(Array,BitArray,Number),
             samesize || throw(DimensionMismatch("Argument dimensions must match"))
             arrtype = datype_int(As...)
 
-            cache_f    = @get! cache      f        Dict{Uint64,Dict{Int,Function}}()
+            cache_f    = @get! cache      f        Dict{UInt64,Dict{Int,Function}}()
             cache_f_na = @get! cache_f    arrtype  Dict{Int,Function}()
             func       = @get! cache_f_na nd       gen_broadcast_dataarray(nd, datype(As...), $bsig, f)
 
@@ -204,7 +204,7 @@ for bsig in (DataArray, PooledDataArray), asig in (Union(Array,BitArray,Number),
             samesize = check_broadcast_shape(size(B), As...)
             arrtype = datype_int(As...)
 
-            cache_f    = @get! cache      f        Dict{Uint64,Dict{Int,Function}}()
+            cache_f    = @get! cache      f        Dict{UInt64,Dict{Int,Function}}()
             cache_f_na = @get! cache_f    arrtype  Dict{Int,Function}()
             func       = @get! cache_f_na nd       gen_broadcast_dataarray(nd, datype(As...), $bsig, f)
 

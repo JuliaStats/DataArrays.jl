@@ -10,7 +10,7 @@ for skipna in (true, false)
     @test sum(@data(Int[]); skipna=skipna) === 0
     @test sum(@data(Float64[]); skipna=skipna) === 0.0
 
-    @test sum(@data([int8(3)]); skipna=skipna) === 3
+    @test sum(@data([@compat(Int8(3))]); skipna=skipna) === 3
     @test sum(@data([3]); skipna=skipna) === 3
     @test sum(@data([3.0]); skipna=skipna) === 3.0
 

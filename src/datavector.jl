@@ -27,7 +27,7 @@ function Base.pop!(dv::DataVector)
 end
 
 function Base.unshift!{T}(dv::DataVector{T}, v::NAtype)
-    ccall(:jl_array_grow_beg, Void, (Any, Uint), dv.data, 1)
+    ccall(:jl_array_grow_beg, Void, (Any, UInt), dv.data, 1)
     unshift!(dv.na, true)
     return v
 end

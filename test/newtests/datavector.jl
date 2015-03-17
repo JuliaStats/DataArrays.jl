@@ -46,7 +46,7 @@ module TestDataVectors
     pop!(pda)
 
     # Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
-    unshift!(pda)
+    unshift!(pda, NA)
 
     # Base.unshift!{S,R,T}(pdv::PooledDataVector{S,R}, v::T)
     unshift!(pda, 6)

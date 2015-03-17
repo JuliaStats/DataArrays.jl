@@ -21,16 +21,16 @@ unsafe_getindex_notna(a, extr, idx::Real) = Base.unsafe_getindex(a, idx)
 
 if VERSION < v"0.4.0-dev+2456"
     eval(quote
-         unsafe_bitsettrue!(chunks::Vector{Uint64}, idx::Real) =
-             chunks[Base.@_div64(int(idx)-1)+1] |= (uint64(1) << Base.@_mod64(int(idx)-1))
-         unsafe_bitsetfalse!(chunks::Vector{Uint64}, idx::Real) =
-             chunks[Base.@_div64(int(idx)-1)+1] &= ~(uint64(1) << Base.@_mod64(int(idx)-1))
+         unsafe_bitsettrue!(chunks::Vector{UInt64}, idx::Real) =
+             chunks[Base.@_div64(@compat(Int(idx))-1)+1] |= (@compat(UInt64(1)) << Base.@_mod64(@compat(Int(idx))-1))
+         unsafe_bitsetfalse!(chunks::Vector{UInt64}, idx::Real) =
+             chunks[Base.@_div64(@compat(Int(idx))-1)+1] &= ~(@compat(UInt64(1)) << Base.@_mod64(@compat(Int(idx))-1))
          end)
 else
-    unsafe_bitsettrue!(chunks::Vector{Uint64}, idx::Real) =
-        chunks[Base._div64(int(idx)-1)+1] |= (uint64(1) << Base._mod64(int(idx)-1))
-    unsafe_bitsetfalse!(chunks::Vector{Uint64}, idx::Real) =
-        chunks[Base._div64(int(idx)-1)+1] &= ~(uint64(1) << Base._mod64(int(idx)-1))
+    unsafe_bitsettrue!(chunks::Vector{UInt64}, idx::Real) =
+        chunks[Base._div64(@compat(Int(idx))-1)+1] |= (@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
+    unsafe_bitsetfalse!(chunks::Vector{UInt64}, idx::Real) =
+        chunks[Base._div64(@compat(Int(idx))-1)+1] &= ~(@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
 end
 
 unsafe_setna!(da::DataArray, extr, idx::Real) = unsafe_bitsettrue!(extr[2], idx)
@@ -45,9 +45,9 @@ unsafe_setnotna!(da::PooledDataArray, extr, idx::Real) = nothing
 #
 # - For DataArrays, da.na should be falses
 # - For PooledDataArrays, pda.refs should be zeros
-unsafe_dasetindex!(data::Array, na_chunks::Vector{Uint64}, val::NAtype, idx::Real) =
+unsafe_dasetindex!(data::Array, na_chunks::Vector{UInt64}, val::NAtype, idx::Real) =
     unsafe_bitsettrue!(na_chunks, idx)
-unsafe_dasetindex!(data::Array, na_chunks::Vector{Uint64}, val, idx::Real) =
+unsafe_dasetindex!(data::Array, na_chunks::Vector{UInt64}, val, idx::Real) =
     setindex!(data, val, idx)
 unsafe_dasetindex!(da::DataArray, extr, val::NAtype, idx::Real) =
     unsafe_setna!(da, extr, idx)

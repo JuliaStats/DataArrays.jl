@@ -2,7 +2,7 @@ module DataArrays
     using Base.Cartesian, Compat, Reexport
     @reexport using StatsBase
 
-    const DEFAULT_POOLED_REF_TYPE = Uint32
+    const DEFAULT_POOLED_REF_TYPE = UInt32
 
     export @data,
            @pdata,

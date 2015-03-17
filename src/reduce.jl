@@ -143,11 +143,11 @@ function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::
         nna = countnz(na)
         nna == n && return convert(Base.momenttype(T), NaN)
         nna == n-1 && return convert(Base.momenttype(T),
-                                     abs2(A.data[Base.findnextnot(na, 1)] - m)/(1 - int(corrected)))
+                                     abs2(A.data[Base.findnextnot(na, 1)] - m)/(1 - @compat(Int(corrected))))
 
         /(nna == 0 ? Base.centralize_sumabs2(A.data, m, 1, n) :
                      mapreduce_impl_skipna(Base.CentralizedAbs2Fun(m), Base.AddFun(), A),
-          n - nna - int(corrected))
+          n - nna - @compat(Int(corrected)))
     else
         any(A.na) && return NA
         Base.varm(A.data, m; corrected=corrected)
@@ -159,7 +159,7 @@ function Base.varzm{T}(A::DataArray{T}; corrected::Bool=true, skipna::Bool=false
     n = length(A)
     nna = skipna ? countnz(A.na) : 0
     (n == 0 || n == nna) && return convert(Base.momenttype(T), NaN)
-    return Base.sumabs2(A; skipna=skipna) / (n - nna - int(corrected))
+    return Base.sumabs2(A; skipna=skipna) / (n - nna - @compat(Int(corrected)))
 end
 
 function Base.var(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false)
