@@ -1,23 +1,15 @@
-language: cpp
-compiler:
-    - gcc
+language: julia
+os:
+  - linux
+julia:
+  - release
+  - nightly
 notifications:
-    email: false
-env:
-  matrix:
-    - JULIAVERSION="juliareleases"
-    - JULIAVERSION="julianightlies"
-before_install:
-    - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-    - sudo add-apt-repository ppa:staticfloat/${JULIAVERSION} -y
-    - sudo apt-get update -qq -y
-    - sudo apt-get install git libpcre3-dev julia -y
-    - git config --global user.name "Travis User"
-    - git config --global user.email "travis@example.net"
-    - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  email: false
 script:
-    - julia -e 'versioninfo(); Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir("DataArrays"))`); Pkg.pin("DataArrays"); Pkg.resolve()'
-    - if [ $JULIAVERSION = "julianightlies" ]; then julia --code-coverage test/runtests.jl; fi
-    - if [ $JULIAVERSION = "juliareleases" ]; then julia test/runtests.jl; fi
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("DataArrays");'
+  - if [ $TRAVIS_JULIA_VERSION = "nightly" ]; then julia -e 'Pkg.test("DataArrays", coverage=true)'; fi
+  - if [ $TRAVIS_JULIA_VERSION = "release" ]; then julia -e 'Pkg.test("DataArrays")'; fi
 after_success:
-    - if [ $JULIAVERSION = "julianightlies" ]; then julia -e 'cd(Pkg.dir("DataArrays")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi
+  - if [ $TRAVIS_JULIA_VERSION = "nightly" ]; julia -e 'cd(Pkg.dir("DataArrays")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi
