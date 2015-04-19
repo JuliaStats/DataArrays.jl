@@ -132,8 +132,8 @@ module TestOperators
 
     @test_da_pda dv begin
         for i in 1:length(dv)
-            @assert isna(/(dv, NA)[i])
-            @assert /(dv, 1)[i] == /(dv[i], 1)
+            @assert isna((dv / NA)[i])
+            @assert (dv / 1)[i] == dv[i] / 1
         end
     end
 
