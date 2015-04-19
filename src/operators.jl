@@ -335,9 +335,8 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                     DataArray(res, resna)
                 end
             end
-            for (atype, btype, narule) in ((:(DataArray{Bool}), :(DataArray{Bool}), :(a.na | b.na)),
-                                           (:(DataArray{Bool}), :(AbstractArray{Bool}), :(copy(a.na))),
-                                           (:(AbstractArray{Bool}), :(DataArray{Bool}), :(copy(b.na))),
+            for (atype, btype, narule) in ((:(DataArray), :(Range), :(copy(a.na))),
+                                           (:(Range), :(DataArray), :(copy(b.na))),
                                            (:DataArray, :DataArray, :(a.na | b.na)),
                                            (:DataArray, :AbstractArray, :(copy(a.na))),
                                            (:AbstractArray, :DataArray, :(copy(b.na))))
@@ -354,11 +353,8 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                     res
                 end
             end
-            for (asim, atype, btype) in ((true, :(DataArray{Bool}), :(AbstractDataArray{Bool})),
-                                         (false, :(AbstractDataArray{Bool}), :(DataArray{Bool})),
-                                         (true, :(AbstractDataArray{Bool}), :(AbstractDataArray{Bool})),
-                                         (true, :(AbstractDataArray{Bool}), :(AbstractArray{Bool})),
-                                         (false, :(AbstractArray{Bool}), :(AbstractDataArray{Bool})),
+            for (asim, atype, btype) in ((true, :AbstractDataArray, :Range),
+                                         (false, :Range, :AbstractDataArray),
                                          (true, :DataArray, :AbstractDataArray),
                                          (false, :AbstractDataArray, :DataArray),
                                          (true, :AbstractDataArray, :AbstractDataArray),
@@ -542,7 +538,7 @@ Base.(:$)(a::DataArray{Bool}, b::DataArray{Bool}) =
 
 # DataArray with non-DataArray
 # Need explicit definition for BitArray to avoid ambiguity
-for t in (:(BitArray), :(Union(AbstractArray{Bool}, Bool)))
+for t in (:(BitArray), :(Range{Bool}), :(Union(AbstractArray{Bool}, Bool)))
     @eval begin
         @swappable Base.(:&)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data & b), a.na & b)
         @swappable Base.(:|)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data | b), a.na & !b)
