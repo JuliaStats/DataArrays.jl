@@ -74,7 +74,7 @@ end
 #
 # TODO: Fall back on faster implementation for same-sized inputs when
 # it is safe to do so.
-function gen_broadcast_dataarray(nd::Int, arrtype::(DataType...), outtype, f::Function)
+function gen_broadcast_dataarray(nd::Int, arrtype::@compat(Tuple{Vararg{DataType}}), outtype, f::Function)
     F = Expr(:quote, f)
     narrays = length(arrtype)
     As = [symbol("A_$(i)") for i = 1:narrays]

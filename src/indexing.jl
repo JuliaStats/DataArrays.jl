@@ -143,7 +143,7 @@ end
     dest
 end
 
-function _getindex{T}(A::DataArray{T}, I::(Union(Int,AbstractVector)...))
+function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union(Int,AbstractVector)}})
     shape = Base.index_shape(I...)
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
