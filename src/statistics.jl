@@ -35,27 +35,43 @@ end
 
 gl(n::Integer, k::Integer) = gl(n, k, n*k)
 
-# A cross-tabulation type. Currently just a one-way table
-type xtab{T}
+#' @description
+#'
+#' A cross-tabulation type. Currently, this is just a one-way table.
+#'
+#' @field vals::Array{T} The values of the original data
+#' @field counts::Vector{Int} The counts corresponding to the values
+type Xtab{T}
     vals::Array{T}
     counts::Vector{Int}
 end
 
+#' @description
+#'
+#' Create a new cross-tabulation from the array `x`
+#' This is currently just for one-way tables.
+#'
+#' @param x::AbstractDataArray The AbstractDataArray with the data
+#'
+#' @returns out::Xtab The `Xtab` corresponding to `x`
 function xtab{T}(x::AbstractArray{T})
-    d = Dict{T, Int}()
-    for el in x
-        d[el] = get(d, el, 0) + 1
-    end
-    kk = sort(keys(d))
+    d = xtabs(x)
+    kk = sort(collect(keys(d)))
     cc = Array(Int, length(kk))
     for i in 1:length(kk)
         cc[i] = d[kk[i]]
     end
-    return xtab(kk, cc)
+    return Xtab(kk, cc)
 end
 
-# Another cross-tabulation function, this one leaves the result as a Dict
-# Again, this is currently just for one-way tables.
+#' @description
+#'
+#' A cross-tabulation function that returns the results as a Dict
+#' This is currently just for one-way tables.
+#'
+#' @param x::AbstractDataArray The AbstractDataArray with the data
+#'
+#' @returns out::Dict The values and their counts
 function xtabs{T}(x::AbstractArray{T})
     d = Dict{T, Int}()
     for el in x
