@@ -131,7 +131,7 @@ PooledDataArray{T,R<:Integer}(d::Array{T},
                               r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(d, pool, falses(size(d)), r)
 
 # Explicitly convert Ranges into a PooledDataVector
-PooledDataArray{R<:Integer}(rs::Ranges,
+PooledDataArray{R<:Integer}(rs::Range,
                             r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray([rs], falses(length(rs)), r)
 
 # Initialized constructors with 0's, 1's
