@@ -328,40 +328,6 @@ end
 
 #' @description
 #'
-#' Turn a DataArray into an Array. Raises an error if NA's are encountered.
-#'
-#' @param da::DataArray{T} DataArray that will be converted to an Array.
-#'
-#' @returns a::Array{T} Array containing values of `da`.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, 3, 4]
-#' v = convert(Vector, dv)
-#'
-#' dm = @data [1 2; 3 4]
-#' m = convert(Matrix, dm)
-function array{T}(da::DataArray{T}) # -> Array{T}
-    Base.depwarn(
-        """
-        array(da::DataArray{T}) is deprecated.
-        Use convert(Array, da).
-        """,
-        :array
-    )
-    res = Array(T, size(da))
-    for i in 1:length(da)
-        if da.na[i]
-            throw(NAException())
-        else
-            res[i] = da.data[i]
-        end
-    end
-    return res
-end
-
-#' @description
-#'
 #' Convert a DataArray{T} to an Array{S}. Throws an `NAException`
 #' if the input contains `NA` values that prohibit conversion.
 #'
@@ -401,43 +367,6 @@ end
 
 function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N})
     return convert(Array{T, N}, da)
-end
-
-#' @description
-#'
-#' Turn a DataArray into an Array. Replace any NA's with the value
-#' of second argument, `replacement`.
-#'
-#' @param da::DataArray{T} DataArray that will be converted to an Array.
-#' @param replacement::T Value that will replace NA's in `da`.
-#'
-#' @returns a::Array{T} Array containing values of `da` plus replacements.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' v = convert(Vector, dv, 3)
-#'
-#' dm = @data [1 2; NA 4]
-#' m = convert(Matrix, dm, 3)
-function array{T}(da::DataArray{T}, replacement::Any) # -> Array{T}
-    Base.depwarn(
-        """
-        array(da::DataArray{T}, replacement::Any) is deprecated.
-        Use convert(Array, da, replacement) instead.
-        """,
-        :array
-    )
-    res = Array(T, size(da))
-    replacementT = convert(T, replacement)
-    for i in 1:length(da)
-        if da.na[i]
-            res[i] = replacementT
-        else
-            res[i] = da.data[i]
-        end
-    end
-    return res
 end
 
 function Base.convert{S, T, N}(

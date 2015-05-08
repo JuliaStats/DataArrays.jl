@@ -763,27 +763,6 @@ Base.convert{T,R<:Integer,N}(::Type{DataArray}, pda::PooledDataArray{T,R,N}) =
 
 pdata(a::AbstractArray) = convert(PooledDataArray, a)
 
-# Turn a PooledDataArray into an Array. Fail on NA
-function array{T, R}(da::PooledDataArray{T, R})
-    Base.depwarn(
-        """
-        array(pda::PooledDataArray{T, R}) is deprecated.
-        Use convert(Array, pda) instead.
-        """,
-        :array
-    )
-    n = length(da)
-    res = Array(T, size(da))
-    for i in 1:n
-        if da.refs[i] == zero(R)
-            throw(NAException())
-        else
-            res[i] = da.pool[da.refs[i]]
-        end
-    end
-    return res
-end
-
 function Base.convert{S, T, R, N}(
     ::Type{Array{S, N}},
     pda::PooledDataArray{T, R, N}
@@ -809,26 +788,6 @@ end
 
 function Base.convert{T, R, N}(::Type{Array}, pda::PooledDataArray{T, R, N})
     return convert(Array{T, N}, pda)
-end
-
-function array{T, R}(da::PooledDataArray{T, R}, replacement::T)
-    Base.depwarn(
-        """
-        array(pda::PooledDataArray{T, R}, replacement::T) is deprecated.
-        Use convert(Array, pda, replacement) instead.
-        """,
-        :array
-    )
-    n = length(da)
-    res = Array(T, size(da))
-    for i in 1:n
-        if da.refs[i] == zero(R)
-            res[i] = replacement
-        else
-            res[i] = da.pool[da.refs[i]]
-        end
-    end
-    return res
 end
 
 function Base.convert{S, T, R, N}(
