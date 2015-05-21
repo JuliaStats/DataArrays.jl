@@ -18,6 +18,7 @@ module TestData
     dvflt = @data [1.0, 2, NA, 4]
     dvstr = @data ["one", "two", NA, "four"]
     dvdict = DataArray(Dict, 4) # for issue #199
+    dvany = convert(DataArray{Any, 1}, dvint)
 
     @assert isa(dvint, DataVector{Int})
     @assert isa(dvint2, DataVector{Int})
@@ -95,6 +96,7 @@ module TestData
     #test_group("DataVector to something else")
     @assert all(dropna(dvint) .== [1, 2, 4])
     @assert all(convert(Vector, dvint, 0) .== [1, 2, 0, 4])
+    @assert all(convert(Vector, dvany, 0) .== [1, 2, 0, 4])
     utf8three = convert(UTF8String, "three")
     asciithree = convert(ASCIIString, "three")
     @assert all(convert(Vector, dvstr, utf8three) .== ["one", "two", "three", "four"])
