@@ -328,24 +328,57 @@ end
 
 #' @description
 #'
-#' Turn a DataArray into an Array. Raises an error if NA's are encountered.
+#' Convert a DataArray{T} to an Array{S}. Throws an `NAException`
+#' if the input contains `NA` values that prohibit conversion.
 #'
-#' @param da::DataArray{T} DataArray that will be converted to an Array.
+#' @param da::DataArray{T} The DataArray that will be converted.
 #'
-#' @returns a::Array{T} Array containing values of `da`.
+#' @returns a::Array{S} The (possibly type-converted) elements of
+#'         `da` if none were `NA`.
 #'
 #' @examples
 #'
-#' dv = @data [1, 2, 3, 4]
-#' v = array(dv)
+#' da = @data [1 2; 3 NA]
+#' a = convert(Array{Float64}, da)
 #'
-#' dm = @data [1 2; 3 4]
-#' m = array(dm)
-function array{T}(da::DataArray{T}) # -> Array{T}
-    res = Array(T, size(da))
+#' da = @data [1 2; 3 4]
+#' a = convert(Array{Float64}, da)
+function Base.convert{S, T, N}(::Type{Array{S, N}},
+                               x::DataArray{T, N}) # -> Array{S, N}
+    if anyna(x)
+        err = "Cannot convert DataArray with NA's to desired type"
+        throw(NAException(err))
+    else
+        return convert(Array{S, N}, x.data)
+    end
+end
+
+function Base.convert{S, T, N}(::Type{Array{S}}, da::DataArray{T, N})
+    return convert(Array{S, N}, da)
+end
+
+function Base.convert{T}(::Type{Vector}, dv::DataVector{T})
+    return convert(Array{T, 1}, dv)
+end
+
+function Base.convert{T}(::Type{Matrix}, dm::DataMatrix{T})
+    return convert(Array{T, 2}, dm)
+end
+
+function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N})
+    return convert(Array{T, N}, da)
+end
+
+function Base.convert{S, T, N}(
+    ::Type{Array{S, N}},
+    da::DataArray{T, N},
+    replacement::Any
+) # -> Array{S, N}
+    replacementS = convert(S, replacement)
+    res = Array(S, size(da))
     for i in 1:length(da)
         if da.na[i]
-            throw(NAException())
+            res[i] = replacementS
         else
             res[i] = da.data[i]
         end
@@ -353,55 +386,16 @@ function array{T}(da::DataArray{T}) # -> Array{T}
     return res
 end
 
-#' @description
-#'
-#' Turn a DataArray into an Array. Replace any NA's with the value
-#' of second argument, `replacement`.
-#'
-#' @param da::DataArray{T} DataArray that will be converted to an Array.
-#' @param replacement::T Value that will replace NA's in `da`.
-#'
-#' @returns a::Array{T} Array containing values of `da` plus replacements.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' v = array(dv, 3)
-#'
-#' dm = @data [1 2; NA 4]
-#' m = array(dm, 3)
-function array{T}(da::DataArray{T}, replacement::T) # -> Array{T}
-    res = Array(T, size(da))
-    for i in 1:length(da)
-        if da.na[i]
-            res[i] = replacement
-        else
-            res[i] = da.data[i]
-        end
-    end
-    return res
+function Base.convert{T}(::Type{Vector}, dv::DataVector{T}, replacement::Any)
+    return convert(Array{T, 1}, dv, replacement)
 end
 
-#' @description
-#'
-#' Turn a DataArray into an Array. Replace any NA's with the value
-#' of second argument, `replacement`.
-#'
-#' @param da::DataArray{T} DataArray that will be converted to an Array.
-#' @param replacement::Any Value that will replace NA's in `da`.
-#'        Converted to the `eltype`, `T`, of `da`.
-#'
-#' @returns a::Array{T} Array containing values of `da` plus replacements.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' v = array(dv, 3)
-#'
-#' dm = @data [1 2; NA 4]
-#' m = array(dm, 3)
-function array{T}(da::DataArray{T}, replacement::Any) # -> Array{T}
-    return array(da, convert(T, replacement))
+function Base.convert{T}(::Type{Matrix}, dm::DataMatrix{T}, replacement::Any)
+    return convert(Array{T, 2}, dm, replacement)
+end
+
+function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any)
+    return convert(Array{T, N}, da, replacement)
 end
 
 #' @description
@@ -536,37 +530,6 @@ end
 # promote_rule{S, T}(::Type{AbstractDataArray{S}},
 #                    ::Type{T}) = promote_rule(S, T)
 # promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
-
-#' @description
-#'
-#' Convert a DataArray{T} to an Array{S}. Throws an `NAException`
-#' if the input contains `NA` values that prohibit conversion.
-#'
-#' @param da::DataArray{T} The DataArray that will be converted.
-#'
-#' @returns a::Array{S} The (possibly type-converted) elements of
-#'         `da` if none were `NA`.
-#'
-#' @examples
-#'
-#' da = @data [1 2; 3 NA]
-#' a = convert(Array{Float64}, da)
-#'
-#' da = @data [1 2; 3 4]
-#' a = convert(Array{Float64}, da)
-function Base.convert{S, T, N}(::Type{Array{S, N}},
-                               x::DataArray{T, N}) # -> Array{S, N}
-    if anyna(x)
-        err = "Cannot convert DataArray with NA's to desired type"
-        throw(NAException(err))
-    else
-        return convert(Array{S, N}, x.data)
-    end
-end
-Base.convert{S,T,N}(::Type{Array{S}}, x::DataArray{T,N}) =
-    convert(Array{S,N}, x)
-Base.convert{T,N}(::Type{Array}, x::DataArray{T,N}) =
-    convert(Array{T,N}, x)
 
 #' @description
 #'
