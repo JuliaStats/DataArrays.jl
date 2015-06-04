@@ -87,15 +87,16 @@ function Base.to_index(A::DataArray)
 end
 
 # Fast implementation of checkbounds for DataArray input
-Base.checkbounds(sz::Int, I::AbstractDataVector{Bool}) =
-    length(I) == sz || throw(BoundsError())
-function Base.checkbounds{T<:Real}(sz::Int, I::AbstractDataArray{T})
+Base._checkbounds(sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
+function Base._checkbounds{T<:Real}(sz::Int, I::AbstractDataArray{T})
     anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
     extr = daextract(I)
+    b = true
     for i = 1:length(I)
         @inbounds v = unsafe_getindex_notna(I, extr, i)
-        checkbounds(sz, v)
+        b &= Base._checkbounds(sz, v)
     end
+    b
 end
 
 # Fallbacks to avoid ambiguity
