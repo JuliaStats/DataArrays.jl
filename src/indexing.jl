@@ -144,7 +144,7 @@ end
 end
 
 function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union(Int,AbstractVector)}})
-    shape = Base.index_shape(I...)
+    shape = Base.index_shape(A, I...)
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
 
@@ -245,7 +245,8 @@ end
         end
     else
         X = x
-        @ncall N Base.setindex_shape_check X I
+        idxlens = @ncall N Base.index_lengths A I
+        @ncall N Base.setindex_shape_check X (d->idxlens[d])
         k = 1
         if isa(A, PooledDataArray) && isa(X, PooledDataArray)
             # When putting one PDA into another, first unify the pools
@@ -253,13 +254,13 @@ end
             poolmap = combine_pools!(A.pool, X.pool)
             Arefs = A.refs
             Xrefs = X.refs
-            @nloops N i d->(1:length(I_d)) d->(@inbounds offset_{d-1} = offset_d + (Base.unsafe_getindex(I_d, i_d)-1)*stride_d) begin
+            @nloops N i d->(1:idxlens[d]) d->(@inbounds offset_{d-1} = offset_d + (Base.unsafe_getindex(I_d, i_d)-1)*stride_d) begin
                 @inbounds Arefs[offset_0] = Xrefs[k] == 0 ? 0 : poolmap[Xrefs[k]]
                 k += 1
             end
         else
             Xextr = daextract(X)
-            @nloops N i d->(1:length(I_d)) d->(@inbounds offset_{d-1} = offset_d + (Base.unsafe_getindex(I_d, i_d)-1)*stride_d) begin
+            @nloops N i d->(1:idxlens[d]) d->(@inbounds offset_{d-1} = offset_d + (Base.unsafe_getindex(I_d, i_d)-1)*stride_d) begin
                 @inbounds if isa(X, AbstractDataArray) && unsafe_isna(X, Xextr, k)
                     unsafe_setna!(A, Aextr, offset_0)
                 else
