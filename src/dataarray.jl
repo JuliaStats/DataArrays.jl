@@ -634,10 +634,14 @@ end
 #' k = hash(dv)
 #
 # TODO: Make sure this agrees with is_equals()
-function Base.hash(a::AbstractDataArray) # -> UInt
-    h = hash(size(a)) + 1
-    for i in 1:length(a)
-        h = hash(@compat(Int(hash(a[i]))), h)
+function Base.hash(a::DataArray) # -> UInt
+    # hash NA pattern
+    h = hash(a.na)
+    # hash non-NA elements
+    i = findfirst(a.na, false)
+    while i > 0
+      h = hash(a.data[i], h)
+      i = findnext(a.na, false, i+1)
     end
     return @compat UInt(h)
 end
