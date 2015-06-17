@@ -35,4 +35,18 @@ module TestExtras
                            "(35,60]", "(25,35]", "(60,100]",
                            "(35,60]", "(35,60]", "(25,35]"])
     @assert isequal(cats, pdv)
+
+    ##########
+    ## repeat
+    ##########
+
+    @test isequal(repeat(@data [3.0, 2.0, NA]; inner = [2], outer = [1]),
+                  @data [3.0, 3.0, 2.0, 2.0, NA, NA])
+    @test isequal(repeat(@pdata ["a", "b", NA]; inner = [2], outer = [1]),
+                  @pdata ["a", "a", "b", "b", NA, NA])
+    @test isequal(repeat(@data [1 2; 3 NA]; inner = [1, 2], outer = [2, 1]),
+                  @data [1 1 2 2; 3 3 NA NA; 1 1 2 2; 3 3 NA NA])
+    @test isequal(repeat(@pdata [:a :b NA]; inner = [2,1], outer = [1,3]),
+                  @pdata [:a :b NA :a :b NA :a :b NA;
+                          :a :b NA :a :b NA :a :b NA])
 end
