@@ -48,4 +48,18 @@ module TestExtras
     @assert isequal(rep((@data [NA,3,4]), 2), (@data [NA,3,4,NA,3,4]))
     @assert isequal(rep((@data [NA,3,4]), [2,1,2]), (@data [NA,NA,3,4,4]))
     @assert isequal(rep((@data [NA,3,4]), [2,1,0]), (@data [NA,NA,3]))
+
+    ##########
+    ## repeat
+    ##########
+
+    @test isequal(repeat(@data [3.0, 2.0, NA]; inner = [2], outer = [1] ),
+                  @data [3.0, 3.0, 2.0, 2.0, NA, NA])
+    @test isequal(repeat( PooledDataArray( @data ["a", "b", NA ] ); inner = [2], outer = [1] ),
+                  PooledDataArray( @data ["a", "a", "b", "b", NA, NA] ))
+    @test isequal(repeat(@data [1 2; 3 NA]; inner = [1, 2], outer = [2, 1] ),
+                  @data [1 1 2 2; 3 3 NA NA; 1 1 2 2; 3 3 NA NA])
+    @test isequal(repeat( PooledDataArray( @data [:a :b NA ] ); inner = [2,1], outer = [1,3] ),
+                  PooledDataArray( @data [:a :b NA :a :b NA :a :b NA;
+                                          :a :b NA :a :b NA :a :b NA] ))
 end
