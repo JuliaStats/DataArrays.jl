@@ -8,7 +8,7 @@ as_pda(x) = convert(PooledDataArray, x)
 as_pda_bigfloat(x) = convert(PooledDataArray{BigFloat}, x)
 
 bittest(f::Function, ewf::Function, a...) = (@test ewf(a...) ==
-        invoke(broadcast, tuple(Function, ntuple(length(a), x->AbstractArray)...), f, a...))
+        invoke(broadcast, tuple(Function, ntuple(x->AbstractArray, length(a))...), f, a...))
 n1 = 21
 n2 = 32
 n3 = 17

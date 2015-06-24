@@ -101,8 +101,8 @@ module TestData
     asciithree = convert(ASCIIString, "three")
     @assert all(convert(Vector, dvstr, utf8three) .== ["one", "two", "three", "four"])
     @assert all(convert(Vector, dvstr, asciithree) .== ["one", "two", "three", "four"])
-    @assert all(convert(Vector{Int}, dvint2) .== [5:8])
-    @assert all([i + 1 for i in dvint2] .== [6:9])
+    @assert all(convert(Vector{Int}, dvint2) .== [5:8;])
+    @assert all([i + 1 for i in dvint2] .== [6:9;])
     @assert all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
     @assert repr(dvint) == "[1,2,NA,4]"
 
