@@ -82,8 +82,7 @@ function gen_broadcast_dataarray(nd::Int, arrtype::@compat(Tuple{Vararg{DataType
     abstractdataarrays = find([arrtype...] .!= AbstractArray)
     have_fastpath = outtype == DataArray && all(x->!(x <: PooledDataArray), arrtype)
 
-    @eval begin
-        local _F_
+    @eval let
         function _F_(B::$(outtype), $(As...))
             @assert ndims(B) == $nd
 
