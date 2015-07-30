@@ -150,22 +150,22 @@ else
 end
 
 # Fallbacks to avoid ambiguity
-setindex!(t::AbstractDataArray, x, i::Real) =
+Base.setindex!(t::AbstractDataArray, x, i::Real) =
     throw(MethodError(setindex!, typeof(t), typeof(x), typeof(i)))
-getindex(t::AbstractDataArray, i::Real) =
+Base.getindex(t::AbstractDataArray, i::Real) =
     throw(MethodError(getindex, typeof(t), typeof(i)))
 
 ## getindex: DataArray
 
 # Scalar case
-function getindex(da::DataArray, I::Real)
+function Base.getindex(da::DataArray, I::Real)
     if getindex(da.na, I)
         return NA
     else
         return getindex(da.data, I)
     end
 end
-@nsplat N function getindex(da::DataArray, I::NTuple{N,Real}...)
+@nsplat N function Base.getindex(da::DataArray, I::NTuple{N,Real}...)
     if getindex(da.na, I...)
         return NA
     else
@@ -224,14 +224,14 @@ end
 ## getindex: PooledDataArray
 
 # Scalar case
-function getindex(pda::PooledDataArray, I::Real)
+function Base.getindex(pda::PooledDataArray, I::Real)
     if getindex(pda.refs, I) == 0
         return NA
     else
         return pda.pool[getindex(pda.refs, I)]
     end
 end
-@nsplat N function getindex(pda::PooledDataArray, I::NTuple{N,Real}...)
+@nsplat N function Base.getindex(pda::PooledDataArray, I::NTuple{N,Real}...)
     if getindex(pda.refs, I...) == 0
         return NA
     else
