@@ -199,9 +199,16 @@ function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union(Int,Abstrac
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
 
-@nsplat N function Base.getindex(A::DataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
-    checkbounds(A, I...)
-    _getindex(A, Base.to_index(I...))
+if VERSION >= v"0.4.0-dev+5578"
+    @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
+        checkbounds(A, I...)
+        _getindex(A, Base.to_indexes(I...))
+    end
+else
+    @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
+        checkbounds(A, I...)
+        _getindex(A, Base.to_index(I...))
+    end
 end
 
 # Dispatch our implementation for these cases instead of Base
