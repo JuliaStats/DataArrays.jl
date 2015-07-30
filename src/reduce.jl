@@ -103,6 +103,10 @@ function Base.mapreduce(f, op::Function, A::DataArray; skipna::Bool=false)
     skipna ? _mapreduce_skipna(f, op, A) : Base._mapreduce(f, op, A)
 end
 
+# To silence deprecations, but could be more efficient
+Base.mapreduce(f, op::Union(Base.OrFun, Base.AndFun), A::DataArray; skipna::Bool=false) =
+    skipna ? _mapreduce_skipna(f, op, A) : Base._mapreduce(f, op, A)
+
 Base.mapreduce(f, op, A::DataArray; skipna::Bool=false) =
     skipna ? _mapreduce_skipna(f, op, A) : Base._mapreduce(f, op, A)
 
