@@ -1,4 +1,6 @@
 module DataArrays
+    import Base: ==, +, -, /, getindex, setindex!
+    
     using Base.Cartesian, Compat, Reexport
     @reexport using StatsBase
 
