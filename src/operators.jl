@@ -572,13 +572,13 @@ function Base.isequal(a::DataArray, b::DataArray)
 end
 
 # ambiguity
-@swappable ==(a::DataArray{Bool}, b::BitArray) =
+@swappable Base.(:(==))(a::DataArray{Bool}, b::BitArray) =
     invoke(==, (DataArray, AbstractArray), a, b)
-@swappable ==(a::DataArray, b::BitArray) =
+@swappable Base.(:(==))(a::DataArray, b::BitArray) =
     invoke(==, (DataArray, AbstractArray), a, b)
-@swappable ==(a::AbstractDataArray{Bool}, b::BitArray) =
+@swappable Base.(:(==))(a::AbstractDataArray{Bool}, b::BitArray) =
     invoke(==, (DataArray, AbstractArray), a, b)
-@swappable ==(a::AbstractDataArray, b::BitArray) =
+@swappable Base.(:(==))(a::AbstractDataArray, b::BitArray) =
     invoke(==, (DataArray, AbstractArray), a, b)
 
 function Base.(:(==))(a::DataArray, b::DataArray)
@@ -598,7 +598,7 @@ function Base.(:(==))(a::DataArray, b::DataArray)
 end
 
 # ambiguity
-@swappable ==(a::DataArray, b::AbstractDataArray) =
+@swappable Base.(:(==))(a::DataArray, b::AbstractDataArray) =
     invoke(==, (AbstractDataArray, AbstractDataArray), a, b)
 
 @swappable function Base.(:(==))(a::DataArray, b::AbstractArray)
@@ -642,7 +642,7 @@ end
 end
 
 # ambiguity
-@swappable ==(::NAtype, ::WeakRef) = NA
+@swappable Base.(:(==))(::NAtype, ::WeakRef) = NA
 
 for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
@@ -683,7 +683,7 @@ end
 # warnings...
 if isdefined(Base, :UniformScaling)
 
-function +{TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
+function Base.(:+){TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
     n = Base.LinAlg.chksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
@@ -694,9 +694,9 @@ function +{TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
     end
     B
 end
-+{TA}(J::UniformScaling,A::DataArray{TA,2}) = A + J
+Base.(:+){TA}(J::UniformScaling,A::DataArray{TA,2}) = A + J
 
-function -{TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
+function Base.(:-){TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
     n = Base.LinAlg.chksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
@@ -707,7 +707,7 @@ function -{TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
     end
     B
 end
-function -{TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
+function Base.(:-){TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
     n = Base.LinAlg.chksquare(A)
     B = -A
     @inbounds for i = 1:n
@@ -718,31 +718,31 @@ function -{TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
     B
 end
 
-+(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
+Base.(:+)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
     invoke(+, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
-+(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
+Base.(:+)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
     invoke(+, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
--(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
+Base.(:-)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
     invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
--(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
+Base.(:-)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
     invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
 
-+{TA,TJ}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
+Base.(:+){TA,TJ}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
     invoke(+, (AbstractArray{TA,2}, UniformScaling{TJ}), A, J)
-+{TA}(J::UniformScaling,A::AbstractDataArray{TA,2}) =
+Base.(:+){TA}(J::UniformScaling,A::AbstractDataArray{TA,2}) =
     invoke(+, (UniformScaling, AbstractArray{TA,2}), J, A)
--{TA,TJ<:Number}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
+Base.(:-){TA,TJ<:Number}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
     invoke(-, (AbstractArray{TA,2}, UniformScaling{TJ}), A, J)
--{TA,TJ<:Number}(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) =
+Base.(:-){TA,TJ<:Number}(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) =
     invoke(-, (UniformScaling{TJ}, AbstractArray{TA,2}), J, A)
 
-+(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
+Base.(:+)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
     invoke(+, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
-+(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
+Base.(:+)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
     invoke(+, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
--(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
+Base.(:-)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
     invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
--(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
+Base.(:-)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
     invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
 
 end # if isdefined(Base, :UniformScaling)
