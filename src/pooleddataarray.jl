@@ -443,6 +443,16 @@ reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
 Base.reverse(x::PooledDataArray) = PooledDataArray(RefArray(reverse(x.refs)), x.pool)
 
+function Base.permute!!{T<:Integer}(x::PooledDataArray, p::AbstractVector{T})
+    Base.permute!!(x.refs, p)
+    x
+end
+
+function Base.ipermute!!{T<:Integer}(x::PooledDataArray, p::AbstractVector{T})
+    Base.ipermute!!(x.refs, p)
+    x
+end
+
 ##############################################################################
 ##
 ## similar()
