@@ -102,4 +102,9 @@ module TestPDA
     da = convert(DataArray{Float32,2}, @pdata(ones(5, 5)))
     @assert isequal(da, @data(ones(Float32, 5, 5)))
     @assert typeof(da) == DataArray{Float32,2}
+
+    # permute
+    pda = @pdata([NA, "A", "B", "C", "A", "B"])
+    @test isequal(Base.permute!!(copy(pda), [2, 5, 3, 6, 4, 1]), @pdata(["A", "A", "B", "B", "C", NA]))
+    @test isequal(Base.ipermute!!(copy(pda), [6, 1, 3, 5, 2, 4]), @pdata(["A", "A", "B", "B", "C", NA]))
 end

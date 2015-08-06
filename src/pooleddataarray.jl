@@ -443,6 +443,16 @@ reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
 Base.reverse(x::PooledDataArray) = PooledDataArray(RefArray(reverse(x.refs)), x.pool)
 
+function Base.permute!!{T<:Integer}(x::PooledDataArray, p::AbstractVector{T})
+    Base.permute!!(x.refs, p)
+    x
+end
+
+function Base.ipermute!!{T<:Integer}(x::PooledDataArray, p::AbstractVector{T})
+    Base.ipermute!!(x.refs, p)
+    x
+end
+
 ##############################################################################
 ##
 ## similar()
@@ -467,7 +477,7 @@ Base.find(pdv::PooledDataVector{Bool}) = find(convert(Vector{Bool}, pdv, false))
 ##
 ##############################################################################
 
-function getpoolidx{T,R<:Union(UInt8, UInt16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::Any)
+function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
     val::T = convert(T,val)
     pool_idx = findfirst(pda.pool, val)
     if pool_idx <= 0
@@ -484,17 +494,6 @@ function getpoolidx{T,R<:Union(UInt8, UInt16, Int8, Int16)}(pda::PooledDataArray
     return pool_idx
 end
 
-function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
-    val::T = convert(T,val)
-    pool_idx = findfirst(pda.pool, val)
-    if pool_idx <= 0
-        push!(pda.pool, val)
-        pool_idx = length(pda.pool)
-    end
-    return pool_idx
-end
-
-getpoolidx{T,R<:Union(UInt8, UInt16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::NAtype) = zero(R)
 getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::NAtype) = zero(R)
 
 ##############################################################################
