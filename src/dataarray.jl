@@ -447,6 +447,8 @@ isna(da::DataArray) = copy(da.na) # -> BitArray
 #' a = @data([1, 2, 3])
 #' isna(a, 1)
 #' isna(a, 1:2)
+isna(da::DataArray, I::Any) = getindex(da.na, I)
+
 @nsplat N function isna(da::DataArray, I::NTuple{N,Any}...)
     getindex(da.na, I...)
 end
