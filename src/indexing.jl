@@ -87,7 +87,8 @@ function Base.to_index(A::DataArray)
 end
 
 # Fast implementation of checkbounds for DataArray input
-# This overrides an internal API that changed after #10525
+# This overrides an internal API that changed after JuliaLang/julia#10525,
+# and which was finally stabilized and documented with JuliaLang/julia#11895.
 if VERSION < v"0.4-dev+5194"
     Base.checkbounds(sz::Int, I::AbstractDataVector{Bool}) =
         length(I) == sz || throw(BoundsError())
@@ -99,7 +100,7 @@ if VERSION < v"0.4-dev+5194"
             checkbounds(sz, v)
         end
     end
-else
+elseif VERSION < v"0.4-dev+6993"
     Base._checkbounds(sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
     function Base._checkbounds{T<:Real}(sz::Int, I::AbstractDataArray{T})
         anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
@@ -108,6 +109,18 @@ else
         for i = 1:length(I)
             @inbounds v = unsafe_getindex_notna(I, extr, i)
             b &= Base._checkbounds(sz, v)
+        end
+        b
+    end
+else
+    Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
+    function Base.checkbounds{T<:Real}(::Type{Bool}, sz::Int, I::AbstractDataArray{T})
+        anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
+        extr = daextract(I)
+        b = true
+        for i = 1:length(I)
+            @inbounds v = unsafe_getindex_notna(I, extr, i)
+            b &= Base.checkbounds(Bool, sz, v)
         end
         b
     end
