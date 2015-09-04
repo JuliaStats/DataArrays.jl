@@ -20,6 +20,7 @@ end
 const NA = NAtype()
 
 Base.show(io::IO, x::NAtype) = print(io, "NA")
+Base.symbol(x::NAtype) = :NA
 
 type NAException <: Exception
     msg::String
