@@ -262,6 +262,11 @@ macro dataarray_unary(f, intype, outtype, N...)
             end
             DataArray(res, copy(d.na))
         end
+        ## For pooled data, we only need to operate on .pool
+        function $(f){T<:$(intype),U}(pda::$(isempty(N) ? :(PooledDataArray{T,U}) : :(PooledDataArray{T,U,$(N[1])})))
+            PooledDataArray(RefArray(pda.refs), ($f)(pda.pool))
+        end
+        ## catchall:
         function $(f){T<:$(intype)}(adv::$(isempty(N) ? :(AbstractDataArray{T}) : :(AbstractDataArray{T,$(N[1])})))
             res = similar(adv, $(outtype))
             for i = 1:length(adv)
@@ -295,6 +300,11 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
                             end
                         end
                         DataArray(res, copy(a.na))
+                    end),
+                    ## for PooledDataArrays, we only need to operate on .pool
+                    :(function $(vectorfunc)(a::PooledDataArray, b::$t)
+                        ## strange that I cannot say $(vectorfunc)(a.pool, b)
+                        PooledDataArray(RefArray(a.refs), [$(scalarfunc)(x, b) for x in a.pool])
                     end),
                     :(function $(vectorfunc)(a::AbstractDataArray, b::$t)
                         res = similar(a, $outtype)
@@ -666,6 +676,7 @@ end
 
 # Necessary to avoid ambiguity warnings
 Base.(:.^)(::MathConst{:e}, B::DataArray) = exp(B)
+Base.(:.^)(::MathConst{:e}, B::PooledDataArray) = exp(B)
 Base.(:.^)(::MathConst{:e}, B::AbstractDataArray) = exp(B)
 
 for f in (:(Base.(:+)), :(Base.(:.+)), :(Base.(:-)), :(Base.(:.-)),
