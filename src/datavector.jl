@@ -47,14 +47,14 @@ function Base.shift!{T}(dv::DataVector{T})
     end
 end
 
-function Base.splice!(dv::DataVector, inds::Union(Integer, UnitRange{Int}))
+function Base.splice!(dv::DataVector, inds::(@compat Union{Integer, UnitRange{Int}}))
     v = dv[inds]
     deleteat!(dv.data, inds)
     deleteat!(dv.na, inds)
     v
 end
 
-function Base.splice!(dv::DataVector, inds::Union(Integer, UnitRange{Int}), ins::AbstractVector)
+function Base.splice!(dv::DataVector, inds::(@compat Union{Integer, UnitRange{Int}}), ins::AbstractVector)
     # We cannot merely use the implementation in Base because this
     # needs to handle NA in the replacement vector
     v = dv[inds]
@@ -147,13 +147,13 @@ Base.shift!(pdv::PooledDataVector) = pdv.pool[shift!(pdv.refs)]
 
 Base.reverse(x::AbstractDataVector) = x[end:-1:1]
 
-function Base.splice!(pdv::PooledDataVector, inds::Union(Integer, UnitRange{Int}))
+function Base.splice!(pdv::PooledDataVector, inds::(@compat Union{Integer, UnitRange{Int}}))
     v = pdv[inds]
     deleteat!(pdv.refs, inds)
     v
 end
 
-function Base.splice!(pdv::PooledDataVector, inds::Union(Integer, UnitRange{Int}), ins::AbstractVector)
+function Base.splice!(pdv::PooledDataVector, inds::(@compat Union{Integer, UnitRange{Int}}), ins::AbstractVector)
     v = pdv[inds]
     splice!(pdv.refs, inds, [getpoolidx(pdv, v) for v in ins])
     v

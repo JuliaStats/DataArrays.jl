@@ -199,7 +199,7 @@ const boolean_operators = [:(Base.any),
 
 # Swap arguments to fname() anywhere in AST. Returns the number of
 # arguments swapped
-function swapargs(ast::Expr, fname::Union(Expr, Symbol))
+function swapargs(ast::Expr, fname::(@compat Union{Expr, Symbol}))
     if ast.head == :call &&
        (ast.args[1] == fname ||
         (isa(ast.args[1], Expr) && ast.args[1].head == :curly &&
@@ -216,7 +216,7 @@ function swapargs(ast::Expr, fname::Union(Expr, Symbol))
         n
     end
 end
-function swapargs(ast, fname::Union(Expr, Symbol))
+function swapargs(ast, fname::(@compat Union{Expr, Symbol}))
     ast
     0
 end
@@ -311,7 +311,7 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
                 end
                 Expr(:block, fns...)
             end
-            for t in (:String, :Number)
+            for t in (:AbstractString, :Number)
         ]...
     ))
 end
@@ -377,7 +377,7 @@ end
 # Treat ctranspose and * in a special way
 for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
     @eval begin
-        function $(f){T}(d::Union(DataVector{T}, DataMatrix{T}))
+        function $(f){T}(d::(@compat Union{DataVector{T}, DataMatrix{T}}))
             # (c)transpose in Base uses a cache-friendly algorithm for
             # numeric arrays, which is faster than our naive algorithm,
             # but chokes on undefined values in the data array.
@@ -407,8 +407,8 @@ end
 # But we're getting 10x R while maintaining NA's
 for (adata, bdata) in ((true, false), (false, true), (true, true))
     @eval begin
-        function Base.(:*)(a::$(adata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))),
-                           b::$(bdata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))))
+        function Base.(:*)(a::$(adata ? :((@compat Union{DataVector, DataMatrix})) : :((@compat Union{Vector, Matrix}))),
+                           b::$(bdata ? :((@compat Union{DataVector, DataMatrix})) : :(@compat Union{Vector, Matrix})))
             c = $(adata ? :(a.data) : :a) * $(bdata ? :(b.data) : :b)
             res = DataArray(c, falses(size(c)))
             # Propagation can be made more efficient by storing record of corrupt
@@ -475,7 +475,7 @@ for f in (:(Base.acos), :(Base.acosh), :(Base.asin), :(Base.asinh), :(Base.atan)
           :(Base.digamma), :(Base.erf), :(Base.erfc))
     @eval begin
         ($f)(::NAtype) = NA
-        @dataarray_unary $(f) FloatingPoint T
+        @dataarray_unary $(f) AbstractFloat T
         @dataarray_unary $(f) Real Float64
     end
 end
@@ -538,7 +538,7 @@ Base.(:$)(a::DataArray{Bool}, b::DataArray{Bool}) =
 
 # DataArray with non-DataArray
 # Need explicit definition for BitArray to avoid ambiguity
-for t in (:(BitArray), :(Range{Bool}), :(Union(AbstractArray{Bool}, Bool)))
+for t in (:(BitArray), :(Range{Bool}), :((@compat Union{AbstractArray{Bool}, Bool})))
     @eval begin
         @swappable Base.(:&)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data & b), a.na & b)
         @swappable Base.(:|)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data | b), a.na & !b)
@@ -665,8 +665,8 @@ end
 #
 
 # Necessary to avoid ambiguity warnings
-Base.(:.^)(::MathConst{:e}, B::DataArray) = exp(B)
-Base.(:.^)(::MathConst{:e}, B::AbstractDataArray) = exp(B)
+Base.(:.^)(::Irrational{:e}, B::DataArray) = exp(B)
+Base.(:.^)(::Irrational{:e}, B::AbstractDataArray) = exp(B)
 
 for f in (:(Base.(:+)), :(Base.(:.+)), :(Base.(:-)), :(Base.(:.-)),
           :(Base.(:*)), :(Base.(:.*)), :(Base.(:.^)), :(Base.div),
@@ -791,11 +791,11 @@ end
 
 Base.(:/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
     DataArray(Array(T, size(b)), trues(size(b)))
-@dataarray_binary_scalar Base.(:/) Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?
+@dataarray_binary_scalar Base.(:/) Base.(:/) eltype(a) <: AbstractFloat || typeof(b) <: AbstractFloat ?
                                       promote_type(eltype(a), typeof(b)) : Float64 false
 @swappable Base.(:./){T,N}(::NAtype, b::AbstractArray{T,N}) =
     DataArray(Array(T, size(b)), trues(size(b)))
-@dataarray_binary_scalar Base.(:./) Base.(:/) eltype(a) <: FloatingPoint || typeof(b) <: FloatingPoint ?
+@dataarray_binary_scalar Base.(:./) Base.(:/) eltype(a) <: AbstractFloat || typeof(b) <: AbstractFloat ?
                                       promote_type(eltype(a), typeof(b)) : Float64 true
 
 for f in biscalar_operators

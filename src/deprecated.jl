@@ -2,7 +2,7 @@
 #       when the deprecation is removed
 import Base.@deprecate
 import Base.Operators: /
-@deprecate (/)(x::Union(NAtype,Number),A::AbstractDataArray)    x ./ A
+@deprecate (/)(x::(@compat Union{NAtype,Number}),A::AbstractDataArray)    x ./ A
 
 #' @description
 #'

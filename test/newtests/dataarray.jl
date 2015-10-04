@@ -2,7 +2,7 @@
 # TODO: Pull in existing tests into this file
 # TODO: Rename to TestDataArray
 module TestDataArrays
-    using DataArrays, Base.Test
+    using DataArrays, Base.Test, Compat
 
     # DataArray{T, N}(d::Array{T, N}, m::BitArray{N} = falses(size(d)))
     DataArray([1, 2], falses(2))
@@ -148,8 +148,8 @@ module TestDataArrays
     da = @data([1, 2, NA, 4])
     da[1]
     da[3]
-    da[1.0]
-    da[3.0]
+    # da[1.0] deprecated
+    # da[3.0] deprecated
 
     # Base.getindex(d::DataArray, inds::AbstractDataVector{Bool})
     da = @data([1, 2, NA, 4])
@@ -223,11 +223,11 @@ module TestDataArrays
     da = @data([1, 2])
     da[[1, 2]] = [3, 4]
 
-    # Base.setindex!{T}(da::AbstractDataArray{T}, val::Union(Number, String, T), inds::AbstractVector{Bool})
+    # Base.setindex!{T}(da::AbstractDataArray{T}, val::Union(Number, AbstractString, T), inds::AbstractVector{Bool})
     da = @data([1, 2])
     da[[true, false]] = 5
 
-    # Base.setindex!{T}(da::AbstractDataArray{T}, val::Union(Number, String, T), inds::AbstractVector)
+    # Base.setindex!{T}(da::AbstractDataArray{T}, val::Union(Number, AbstractString, T), inds::AbstractVector)
     da = @data([1, 2])
     da[[1, 2]] = 5
 
@@ -311,20 +311,20 @@ module TestDataArrays
     convert(DataArray, DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
     convert(DataArray, DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
-    # int(da::DataArray)
-    int(DataArray([1, 2], falses(2)))
-    int(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    int(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
+    # round(Int, da::DataArray)
+    round(Int, DataArray([1, 2], falses(2)))
+    round(Int, DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    round(Int, DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # float(da::DataArray)
     float(DataArray([1, 2], falses(2)))
     float(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
     float(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
-    # bool(da::DataArray)
-    bool(DataArray([1, 0], falses(2)))
-    bool(DataArray(repeat([1, 0], outer = [1, 2]), falses(2, 2)))
-    bool(DataArray(repeat([1, 0], outer = [1, 2, 2]), falses(2, 2, 2)))
+    # map(Bool, da::DataArray)
+    @compat map(Bool, DataArray([1, 0], falses(2)))
+    @compat map(Bool, DataArray(repeat([1, 0], outer = [1, 2]), falses(2, 2)))
+    @compat map(Bool, DataArray(repeat([1, 0], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # Base.hash(a::AbstractDataArray)
     hash(DataArray([1, 2], falses(2)))
