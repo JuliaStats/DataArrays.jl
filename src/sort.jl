@@ -15,7 +15,7 @@ end
 datachunks(o::Base.Order.Perm, v::AbstractVector{Int}) = (v, o.data.na.chunks)
 datachunks(o::Base.Order.DirectOrdering, v::DataVector) = (v.data, v.na.chunks)
 
-function nas2left!(v::Union(AbstractVector{Int}, DataVector), o::Base.Order.Ordering, lo::Int=1, hi::Int=length(v))
+function nas2left!(v::(@compat Union{AbstractVector{Int}, DataVector}), o::Base.Order.Ordering, lo::Int=1, hi::Int=length(v))
     data, chunks = datachunks(o, v)
 
     i = lo
@@ -37,7 +37,7 @@ function nas2left!(v::Union(AbstractVector{Int}, DataVector), o::Base.Order.Orde
     return i, hi
 end
 
-function nas2right!(v::Union(AbstractVector{Int}, DataVector), o::Base.Order.Ordering, lo::Int=1, hi::Int=length(v))
+function nas2right!(v::(@compat Union{AbstractVector{Int}, DataVector}), o::Base.Order.Ordering, lo::Int=1, hi::Int=length(v))
     data, chunks = datachunks(o, v)
 
     i = hi

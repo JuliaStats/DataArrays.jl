@@ -126,7 +126,7 @@ else
     end
 end
 
-# Indexing uses undocumented APIs to determine the resulting shape. These APIs 
+# Indexing uses undocumented APIs to determine the resulting shape. These APIs
 # changed to support indices like `:`, which need the array to know the shape
 if VERSION < v"0.4-dev+5194" # Merge commit of Julialang/julia#10525
     index_shape(A, I...) = Base.index_shape(I...)
@@ -188,7 +188,7 @@ end
 
 # Vector case
 @ngenerate N typeof(dest) function _getindex!(dest::DataArray, src::DataArray,
-                                              I::NTuple{N,Union(Int,AbstractVector)}...)
+                                              I::NTuple{N,(@compat Union{Int,AbstractVector})}...)
     Base.checksize(dest, I...)
     stride_1 = 1
     @nexprs N d->(stride_{d+1} = stride_d*size(src,d))
@@ -207,18 +207,18 @@ end
     dest
 end
 
-function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union(Int,AbstractVector)}})
+function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,AbstractVector}}})
     shape = index_shape(A, I...)
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
 
 if VERSION >= v"0.4.0-dev+5578"
-    @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
+    @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
         checkbounds(A, I...)
         _getindex(A, Base.to_indexes(I...))
     end
 else
-    @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
+    @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
         checkbounds(A, I...)
         _getindex(A, Base.to_index(I...))
     end
@@ -253,7 +253,7 @@ end
 end
 
 # Vector case
-@nsplat N function Base.getindex(A::PooledDataArray, I::NTuple{N,Union(Real,AbstractVector)}...)
+@nsplat N function Base.getindex(A::PooledDataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
     PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
 end
 
@@ -291,7 +291,7 @@ end
 ## setindex!: both DataArray and PooledDataArray
 
 @ngenerate N typeof(A) function Base.setindex!(A::AbstractDataArray, x,
-                                               J::NTuple{N,Union(Real,AbstractArray)}...)
+                                               J::NTuple{N,(@compat Union{Real,AbstractArray})}...)
     if !isa(x, AbstractArray) && isa(A, PooledDataArray)
         # Only perform one pool lookup when assigning a scalar value in
         # a PooledDataArray

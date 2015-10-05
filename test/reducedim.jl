@@ -78,6 +78,7 @@ function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
     R[ridx...] = r1
 
     first = true
+
     Base.cartesianmap(itershape) do idxs...
         if first
             first = false

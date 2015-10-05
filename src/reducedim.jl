@@ -169,14 +169,14 @@ _getdata(A::DataArray) = A.data
 # mapreduce across a dimension. If specified, C contains the number of
 # non-NA values reduced into each element of R.
 @ngenerate N typeof(R) function _mapreducedim_skipna_impl!{T,N}(f, op, R::AbstractArray,
-                                                                C::Union(Array{Int}, Nothing),
+                                                                C::(@compat Union{Array{Int}, Void}),
                                                                 A::DataArray{T,N})
     data = A.data
     na = A.na
     na_chunks = na.chunks
     new_data = _getdata(R)
 
-    isa(C, Nothing) || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
+    C === nothing || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
     lsiz = check_reducedims(new_data, data)
     isempty(data) && return R
 
@@ -187,7 +187,7 @@ _getdata(A::DataArray) = A.data
         for i = 1:nslices
             # TODO: use pairwise impl for sum
             @inbounds v = new_data[i]
-            @inbounds !isa(C, Nothing) && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
+            @inbounds C !== nothing && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
             for k = ibase+1:ibase+lsiz
                 @inbounds Base.unsafe_bitgetindex(na_chunks, k) && continue
                 @inbounds x = data[k]
@@ -202,13 +202,13 @@ _getdata(A::DataArray) = A.data
         @nexprs 1 d->(state_0 = state_{N} = 1)
         @nexprs N d->(skip_d = sizeR_d == 1)
         k = 1
-        !isa(C, Nothing) && fill!(C, div(length(A), length(R)))
+        C !== nothing && fill!(C, div(length(A), length(R)))
         @nloops(N, i, A,
             d->(state_{d-1} = state_d),
             d->(skip_d || (state_d = state_0)), begin
                 @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k)
                 if xna
-                    !isa(C, Nothing) && @inbounds C[state_0] -= 1
+                    C !== nothing && @inbounds C[state_0] -= 1
                 else
                     @inbounds x = data[k]
                     v = evaluate(f, x)
@@ -228,11 +228,11 @@ _mapreducedim_skipna!(f, op, R::AbstractArray, A::DataArray) =
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 
 # for MinFun/MaxFun, min or max is NA if all values along a dimension are NA
-function _mapreducedim_skipna!(f, op::Union(Base.MinFun, Base.MaxFun), R::DataArray, A::DataArray)
+function _mapreducedim_skipna!(f, op::(@compat Union{Base.MinFun, Base.MaxFun}), R::DataArray, A::DataArray)
     R.na = bitpack(all!(fill(true, size(R)), A.na))
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 end
-function _mapreducedim_skipna!(f, op::Union(Base.MinFun, Base.MaxFun), R::AbstractArray, A::DataArray)
+function _mapreducedim_skipna!(f, op::(@compat Union{Base.MinFun, Base.MaxFun}), R::AbstractArray, A::DataArray)
     if any(all!(fill(true, size(R)), A.na))
         throw(NAException("all values along specified dimension are NA for one element of reduced dimension; cannot reduce to non-DataArray"))
     end
@@ -292,13 +292,13 @@ for (basfn, Op) in [(:sum, Base.AddFun), (:prod, Base.MulFun),
     fname = Expr(:., :Base, Base.Meta.quot(basfn))
     fname! = Expr(:., :Base, Base.Meta.quot(symbol(string(basfn, '!'))))
     @eval begin
-        $(fname!)(f::Union(Function,Base.Func{1}), r::AbstractArray, A::DataArray;
+        $(fname!)(f::(@compat Union{Function,Base.Func{1}}), r::AbstractArray, A::DataArray;
                   init::Bool=true, skipna::Bool=false) =
             Base.mapreducedim!(f, $(Op)(), Base.initarray!(r, $(Op)(), init), A; skipna=skipna)
         $(fname!)(r::AbstractArray, A::DataArray; init::Bool=true, skipna::Bool=false) =
             $(fname!)(Base.IdFun(), r, A; init=init, skipna=skipna)
 
-        $(fname)(f::Union(Function,Base.Func{1}), A::DataArray, region; skipna::Bool=false) =
+        $(fname)(f::(@compat Union{Function,Base.Func{1}}), A::DataArray, region; skipna::Bool=false) =
             Base.mapreducedim(f, $(Op)(), A, region; skipna=skipna)
         $(fname)(A::DataArray, region; skipna::Bool=false) =
             $(fname)(Base.IdFun(), A, region; skipna=skipna)
@@ -416,7 +416,7 @@ end
 # A version of _mapreducedim_skipna! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
 @ngenerate N typeof(R) function _mapreducedim_skipna_2arg!{T,N}(f, op, R::AbstractArray,
-                                                                C::Union(Array{Int}, Nothing),
+                                                                C::(@compat Union{Array{Int}, Void}),
                                                                 A::DataArray{T,N}, S::AbstractArray)
     data = A.data
     na = A.na
@@ -425,7 +425,7 @@ end
     Sextr = daextract(S)
 
     lsiz = check_reducedims(new_data, data)
-    isa(C, Nothing) || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
+    C === nothing || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
     size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
     isempty(data) && return R
     @nextract N sizeR d->size(new_data,d)
@@ -442,7 +442,7 @@ end
         ibase = 0
         for i = 1:nslices
             @inbounds v = new_data[i]
-            !isa(C, Nothing) && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
+            !isa(C, Void) && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
 
             # If S[i] is NA, skip this iteration
             @inbounds sna = unsafe_isna(S, Sextr, i)
@@ -465,13 +465,13 @@ end
         @nexprs 1 d->(state_0 = state_{N} = 1)
         @nexprs N d->(skip_d = sizeR_d == 1)
         k = 1
-        !isa(C, Nothing) && fill!(C, div(length(A), length(R)))
+        !isa(C, Void) && fill!(C, div(length(A), length(R)))
         @nloops(N, i, A,
             d->(state_{d-1} = state_d),
             d->(skip_d || (state_d = state_0)), begin
                 @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k) | unsafe_isna(S, Sextr, state_0)
                 if xna
-                    !isa(C, Nothing) && @inbounds C[state_0] -= 1
+                    !isa(C, Void) && @inbounds C[state_0] -= 1
                 else
                     @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
                     @inbounds x = data[k]
@@ -551,12 +551,12 @@ Base.varm{T}(A::DataArray{T}, m::AbstractArray, region; corrected::Bool=true,
     Base.varm!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A, m;
                corrected=corrected, skipna=skipna, init=false)
 
-Base.varzm{T}(A::DataArray{T}, region::Union(Integer, AbstractArray, Tuple);
+Base.varzm{T}(A::DataArray{T}, region::(@compat Union{Integer, AbstractArray, Tuple});
               corrected::Bool=true, skipna::Bool=false) =
     Base.varzm!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A;
                corrected=corrected, skipna=skipna, init=false)
 
-function Base.var{T}(A::DataArray{T}, region::Union(Integer, AbstractArray, Tuple);
+function Base.var{T}(A::DataArray{T}, region::(@compat Union{Integer, AbstractArray, Tuple});
                      corrected::Bool=true, mean=nothing, skipna::Bool=false)
     if mean == 0
         Base.varzm(A, region; corrected=corrected, skipna=skipna)

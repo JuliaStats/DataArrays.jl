@@ -46,7 +46,7 @@ module TestLiterals
     @test typeof(dv) == DataMatrix{Any}
 
     if VERSION >= v"0.4.0-"
-      println("Testing parsing 0.3 cell literal syntax, (4) warnings expected")
+      println("Testing parsing 0.3 cell literal syntax, (6) warnings expected")
     end
     dv = @data {1, NA, 3}
     @test isequal(dv,
@@ -73,8 +73,7 @@ module TestLiterals
                   DataArray(Any[1 0; 3 4],
                             [false true; false false]))
 
-    dm = @data {1 NA;
-                3 4}
+    dm = @data {1 NA; 3 4}
     @test isequal(dm,
                   DataArray(Any[1 0; 3 4],
                             [false true; false false]))
@@ -127,8 +126,7 @@ module TestLiterals
     @test isequal(pdm,
                   PooledDataArray([1 0; 3 4],
                                   [false true; false false]))
-    pdm = @pdata {1 NA;
-                  3 4}
+    pdm = @pdata {1 NA; 3 4}
     @test isequal(pdm,
                   PooledDataArray(Any[1 0; 3 4],
                                   [false true; false false]))

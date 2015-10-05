@@ -2,6 +2,7 @@ module TestExtras
     using Base.Test
     using DataArrays
     using StatsBase
+    using Compat
 
     ##########
     ## countmap
@@ -9,8 +10,8 @@ module TestExtras
 
     d = @data [NA,3,3]
     w = weights([1.1,2.2,3.3])
-    cm = Dict{Union(Int, NAtype), Int}([(NA, 1), (3, 2)])
-    cmw = Dict{Union(Int, NAtype), Real}([(NA, 1.1), (3, 5.5)])
+    cm = Dict{(@compat Union{Int, NAtype}), Int}([(NA, 1), (3, 2)])
+    cmw = Dict{(@compat Union{Int, NAtype}), Real}([(NA, 1.1), (3, 5.5)])
     @assert isequal(countmap(d), cm)
     @assert isequal(countmap(d, w), cmw)
 

@@ -87,9 +87,9 @@ end
 # NA, it returns NA. Otherwise we will fall back to the implementation
 # in Base, which is slow because it's type-unstable, but guarantees the
 # correct semantics
-typealias SafeMapFuns Union(Base.IdFun, Base.AbsFun, Base.Abs2Fun,
-                            Base.ExpFun, Base.LogFun, Base.CentralizedAbs2Fun)
-typealias SafeReduceFuns Union(Base.AddFun, Base.MulFun, Base.MaxFun, Base.MinFun)
+typealias SafeMapFuns @compat Union{Base.IdFun, Base.AbsFun, Base.Abs2Fun,
+                            Base.ExpFun, Base.LogFun, Base.CentralizedAbs2Fun}
+typealias SafeReduceFuns @compat Union{Base.AddFun, Base.MulFun, Base.MaxFun, Base.MinFun}
 function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
     any(A.na) && return NA
     Base._mapreduce(f, op, A.data)
@@ -104,7 +104,7 @@ function Base.mapreduce(f, op::Function, A::DataArray; skipna::Bool=false)
 end
 
 # To silence deprecations, but could be more efficient
-Base.mapreduce(f, op::Union(Base.OrFun, Base.AndFun), A::DataArray; skipna::Bool=false) =
+Base.mapreduce(f, op::(@compat Union{Base.OrFun, Base.AndFun}), A::DataArray; skipna::Bool=false) =
     skipna ? _mapreduce_skipna(f, op, A) : Base._mapreduce(f, op, A)
 
 Base.mapreduce(f, op, A::DataArray; skipna::Bool=false) =
@@ -120,7 +120,7 @@ for (fn, op) in ((:(Base.sum), Base.AddFun()),
                  (:(Base.minimum), Base.MinFun()),
                  (:(Base.maximum), Base.MaxFun()))
     @eval begin
-        $fn(f::Union(Function,Base.Func{1}), a::DataArray; skipna::Bool=false) =
+        $fn(f::(@compat Union{Function,Base.Func{1}}), a::DataArray; skipna::Bool=false) =
             mapreduce(f, $op, a; skipna=skipna)
         $fn(a::DataArray; skipna::Bool=false) =
             mapreduce(Base.IdFun(), $op, a; skipna=skipna)
@@ -169,7 +169,7 @@ end
 function Base.var(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false)
     mean == 0 ? Base.varzm(A; corrected=corrected, skipna=skipna) :
     mean == nothing ? varm(A, Base.mean(A; skipna=skipna); corrected=corrected, skipna=skipna) :
-    isa(mean, Union(Number, NAtype)) ?
+    isa(mean, (@compat Union{Number, NAtype})) ?
         varm(A, mean; corrected=corrected, skipna=skipna) :
         throw(ErrorException("Invalid value of mean."))
 end

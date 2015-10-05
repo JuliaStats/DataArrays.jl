@@ -5,7 +5,7 @@ using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache,
 
 # Check that all arguments are broadcast compatible with shape
 # Differs from Base in that we check for exact matches
-function check_broadcast_shape(shape::Dims, As::Union(AbstractArray,Number)...)
+function check_broadcast_shape(shape::Dims, As::(@compat Union{AbstractArray,Number})...)
     samesize = true
     for A in As
         if ndims(A) > length(shape)
@@ -178,7 +178,7 @@ datype_int(A_1::DataArray, As...) = (@compat(UInt64(1)) | (datype_int(As...) << 
 datype_int(A_1, As...) = (datype_int(As...) << 2)
 datype_int() = @compat UInt64(0)
 
-for bsig in (DataArray, PooledDataArray), asig in (Union(Array,BitArray,Number), Any)
+for bsig in (DataArray, PooledDataArray), asig in ((@compat Union{Array,BitArray,Number}), Any)
     @eval let cache = Dict{Function,Dict{UInt64,Dict{Int,Function}}}()
         function Base.map!(f::Base.Callable, B::$bsig, As::$asig...)
             nd = ndims(B)
@@ -249,7 +249,7 @@ macro da_broadcast_vararg(func)
             rep[i] = Expr(:(::), symbol("A_$i"), AbstractArray)
         end
         for i = aa+1:n
-            rep[i] = Expr(:(::), symbol("A_$i"), Union(DataArray, PooledDataArray))
+            rep[i] = Expr(:(::), symbol("A_$i"), (@compat Union{DataArray, PooledDataArray}))
         end
         rep[end] = Expr(:..., Expr(:(::), va.args[1], AbstractArray))
         exreplace!(def.args[1], va, rep)
@@ -267,9 +267,9 @@ macro da_broadcast_binary(func)
     (f, A, B) = func.args[1].args
     body = func.args[2]
     quote
-        $f($A::Union(DataArray, PooledDataArray), $B::Union(DataArray, PooledDataArray)) = $(body)
-        $f($A::Union(DataArray, PooledDataArray), $B::AbstractArray) = $(body)
-        $f($A::AbstractArray, $B::Union(DataArray, PooledDataArray)) = $(body)
+        $f($A::(@compat Union{DataArray, PooledDataArray}), $B::(@compat Union{DataArray, PooledDataArray})) = $(body)
+        $f($A::(@compat Union{DataArray, PooledDataArray}), $B::AbstractArray) = $(body)
+        $f($A::AbstractArray, $B::(@compat Union{DataArray, PooledDataArray})) = $(body)
     end
 end
 
@@ -277,19 +277,19 @@ end
 @da_broadcast_vararg Base.broadcast(f::Function, As...) = databroadcast(f, As...)
 
 # Definitions for operators,
-Base.(:(.*))(A::BitArray, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(*, A, B)
-Base.(:(.*))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::BitArray) = databroadcast(*, A, B)
+Base.(:(.*))(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(*, A, B)
+Base.(:(.*))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(*, A, B)
 @da_broadcast_vararg Base.(:(.*))(As...) = databroadcast(*, As...)
 @da_broadcast_binary Base.(:(.%))(A, B) = databroadcast(%, A, B)
 @da_broadcast_vararg Base.(:(.+))(As...) = broadcast!(+, DataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
 @da_broadcast_binary Base.(:(.-))(A, B) = broadcast!(-, DataArray(type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
 @da_broadcast_binary Base.(:(./))(A, B) = broadcast!(/, DataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 @da_broadcast_binary Base.(:(.\))(A, B) = broadcast!(\, DataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(>=, A, B)
-Base.(:(.^))(A::BitArray, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(>=, A, B)
-Base.(:(.^))(A::AbstractArray{Bool}, B::Union(DataArray{Bool}, PooledDataArray{Bool})) = databroadcast(>=, A, B)
-Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::BitArray) = databroadcast(>=, A, B)
-Base.(:(.^))(A::Union(DataArray{Bool}, PooledDataArray{Bool}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
+Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
+Base.(:(.^))(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
+Base.(:(.^))(A::AbstractArray{Bool}, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
+Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(>=, A, B)
+Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
 @da_broadcast_binary Base.(:(.^))(A, B) = broadcast!(^, DataArray(type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 
 # XXX is a PDA the right return type for these?
@@ -310,11 +310,11 @@ Base.(:(.^))(A::PooledDataArray, B::PooledDataArray) =
 for (sf, vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
         # ambiguity
-        $(vf)(A::Union(PooledDataArray{Bool},DataArray{Bool}), B::Union(PooledDataArray{Bool},DataArray{Bool})) =
+        $(vf)(A::(@compat Union{PooledDataArray{Bool},DataArray{Bool}}), B::(@compat Union{PooledDataArray{Bool},DataArray{Bool}})) =
             broadcast!($sf, DataArray(Bool, broadcast_shape(A, B)), A, B)
-        $(vf)(A::Union(PooledDataArray{Bool},DataArray{Bool}), B::AbstractArray{Bool}) =
+        $(vf)(A::(@compat Union{PooledDataArray{Bool},DataArray{Bool}}), B::AbstractArray{Bool}) =
             broadcast!($sf, DataArray(Bool, broadcast_shape(A, B)), A, B)
-        $(vf)(A::AbstractArray{Bool}, B::Union(PooledDataArray{Bool},DataArray{Bool})) =
+        $(vf)(A::AbstractArray{Bool}, B::(@compat Union{PooledDataArray{Bool},DataArray{Bool}})) =
             broadcast!($sf, DataArray(Bool, broadcast_shape(A, B)), A, B)
 
         @da_broadcast_binary $(vf)(A, B) = broadcast!($sf, DataArray(Bool, broadcast_shape(A, B)), A, B)
