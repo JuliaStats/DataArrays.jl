@@ -1,9 +1,10 @@
 language: julia
+julia:
+  - nightly
+  - 0.4
+  - 0.3
 os:
   - linux
-julia:
-  - release
-  - nightly
 notifications:
   email: false
 script:
