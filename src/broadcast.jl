@@ -1,7 +1,20 @@
 using DataArrays, Base.@get!
 using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache,
-                      promote_eltype, broadcast_shape, eltype_plus, type_minus, type_div,
-                      type_pow
+                      promote_eltype, broadcast_shape, eltype_plus
+
+if isdefined(Base.Broadcast, :type_minus)
+    using Base.Broadcast: type_minus, type_div, type_pow
+    const _type_minus = type_minus
+    const _type_rdiv = type_div
+    const _type_ldiv = type_div
+    const _type_pow = type_pow
+else
+    using Base.Broadcast: promote_op
+    _type_minus(T, S) = promote_op(Base.SubFun(), T, S)
+    _type_rdiv(T, S) = promote_op(Base.RDivFun(), T, S)
+    _type_ldiv(T, S) = promote_op(Base.LDivFun(), T, S)
+    _type_pow(T, S) = promote_op(Base.PowFun(), T, S)
+end
 
 # Check that all arguments are broadcast compatible with shape
 # Differs from Base in that we check for exact matches
@@ -282,15 +295,15 @@ Base.(:(.*))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitA
 @da_broadcast_vararg Base.(:(.*))(As...) = databroadcast(*, As...)
 @da_broadcast_binary Base.(:(.%))(A, B) = databroadcast(%, A, B)
 @da_broadcast_vararg Base.(:(.+))(As...) = broadcast!(+, DataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
-@da_broadcast_binary Base.(:(.-))(A, B) = broadcast!(-, DataArray(type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
-@da_broadcast_binary Base.(:(./))(A, B) = broadcast!(/, DataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-@da_broadcast_binary Base.(:(.\))(A, B) = broadcast!(\, DataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+@da_broadcast_binary Base.(:(.-))(A, B) = broadcast!(-, DataArray(_type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
+@da_broadcast_binary Base.(:(./))(A, B) = broadcast!(/, DataArray(_type_rdiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+@da_broadcast_binary Base.(:(.\))(A, B) = broadcast!(\, DataArray(_type_ldiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
 Base.(:(.^))(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
 Base.(:(.^))(A::AbstractArray{Bool}, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
 Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(>=, A, B)
 Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
-@da_broadcast_binary Base.(:(.^))(A, B) = broadcast!(^, DataArray(type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+@da_broadcast_binary Base.(:(.^))(A, B) = broadcast!(^, DataArray(_type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 
 # XXX is a PDA the right return type for these?
 Base.broadcast(f::Function, As::PooledDataArray...) = pdabroadcast(f, As...)
@@ -298,14 +311,14 @@ Base.(:(.*))(As::PooledDataArray...) = pdabroadcast(*, As...)
 Base.(:(.%))(A::PooledDataArray, B::PooledDataArray) = pdabroadcast(%, A, B)
 Base.(:(.+))(As::PooledDataArray...) = broadcast!(+, PooledDataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
 Base.(:(.-))(A::PooledDataArray, B::PooledDataArray) =
-    broadcast!(-, PooledDataArray(type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
+    broadcast!(-, PooledDataArray(_type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
 Base.(:(./))(A::PooledDataArray, B::PooledDataArray) =
-    broadcast!(/, PooledDataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+    broadcast!(/, PooledDataArray(_type_rdiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 Base.(:(.\))(A::PooledDataArray, B::PooledDataArray) =
-    broadcast!(\, PooledDataArray(type_div(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+    broadcast!(\, PooledDataArray(_type_ldiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 Base.(:(.^))(A::PooledDataArray{Bool}, B::PooledDataArray{Bool}) = databroadcast(>=, A, B)
 Base.(:(.^))(A::PooledDataArray, B::PooledDataArray) =
-    broadcast!(^, PooledDataArray(type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+    broadcast!(^, PooledDataArray(_type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 
 for (sf, vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
