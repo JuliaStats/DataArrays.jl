@@ -99,3 +99,17 @@ function rep(x::AbstractVector; times::Integer = 1, each::Integer = 1)
 end
 
 rep(x::Any, times::Integer) = fill(x, times)
+
+function Base.repeat{T,N}(A::DataArray{T,N};
+                          inner::Array{Int} = ones(Int, ndims(A)),
+                          outer::Array{Int} = ones(Int, ndims(A)))
+    DataArray{T,N}( repeat( A.data; inner=inner, outer=outer ),
+                    bitpack( repeat( bitunpack(A.na); inner=inner, outer=outer ) ) )
+end
+
+function Base.repeat{T,R,N}(A::PooledDataArray{T,R,N};
+                            inner::Array{Int} = ones(Int, ndims(A)),
+                            outer::Array{Int} = ones(Int, ndims(A)))
+    PooledDataArray( RefArray{R,N}( repeat( A.refs; inner=inner, outer=outer ) ),
+                     A.pool )
+end
