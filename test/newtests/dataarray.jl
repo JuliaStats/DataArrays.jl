@@ -330,4 +330,7 @@ module TestDataArrays
     hash(DataArray([1, 2], falses(2)))
     hash(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
     hash(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
+    hash(@data [1, NA])
+    hash(@data repeat( [1, 2, NA], outer = [1, 2]))
+    hash(@data repeat( [NA, NA, NA], outer = [1, 2, 2]), falses(2, 2, 2))
 end
