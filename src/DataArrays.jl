@@ -25,6 +25,7 @@ module DataArrays
            each_failna,
            each_dropna,
            each_replacena,
+           each_replacenawithfunctionresult,
            EachFailNA,
            EachDropNA,
            EachReplaceNA,

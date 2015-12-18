@@ -168,3 +168,19 @@ function Base.next(itr::EachReplaceNA, ind::Integer)
     item = isna(itr.da, ind) ? itr.replacement : itr.da[ind]
     (item, ind + 1)
 end
+
+type EachReplaceNAWithFunctionResult{T}
+    da::AbstractDataArray{T}
+    f::Function
+    withData::Bool
+end
+function each_replacenawithfunctionresult(da::AbstractDataArray, f::Function, withData::Bool)
+  EachReplaceNAWithFunctionResult(da, f, withData)
+end
+
+Base.start(itr::EachReplaceNAWithFunctionResult) = 1
+Base.done(itr::EachReplaceNAWithFunctionResult, ind::Int) = ind > length(itr.da)
+function Base.next(itr::EachReplaceNAWithFunctionResult, ind::Integer)
+  item = isna(itr.da, ind) ? (itr.withData ? itr.f(itr.da) : itr.f()) : itr.da[ind]
+  (item, ind + 1)
+end
