@@ -67,5 +67,5 @@ module TestNAs
     dv = DataArray(Array(1:6), push!(fill(false, 3),fill(true, 3)...))
     a = dropna(dv)
     f = x -> round(Int, mean(dropna(x)))
-    @test collect(each_replacenawithfunctionresult(dv, f, true)) == [1, 2, 3, 2, 2, 2]
+    @test collect(each_replacena(dv, f)) == [1, 2, 3, 2, 2, 2]
 end

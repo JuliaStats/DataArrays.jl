@@ -157,8 +157,13 @@ type EachReplaceNA{S, T}
     replacement::T
 end
 function each_replacena(da::AbstractDataArray, replacement::Any)
+  if isa(replacement, Function)
+    EachReplaceNAWithFunctionResult(da, replacement)
+  else
     EachReplaceNA(da, convert(eltype(da), replacement))
+  end
 end
+
 function each_replacena(replacement::Any)
     x -> each_replacena(x, replacement)
 end
@@ -172,15 +177,11 @@ end
 type EachReplaceNAWithFunctionResult{T}
     da::AbstractDataArray{T}
     f::Function
-    withData::Bool
-end
-function each_replacenawithfunctionresult(da::AbstractDataArray, f::Function, withData::Bool)
-  EachReplaceNAWithFunctionResult(da, f, withData)
 end
 
 Base.start(itr::EachReplaceNAWithFunctionResult) = 1
 Base.done(itr::EachReplaceNAWithFunctionResult, ind::Int) = ind > length(itr.da)
 function Base.next(itr::EachReplaceNAWithFunctionResult, ind::Integer)
-  item = isna(itr.da, ind) ? (itr.withData ? itr.f(itr.da) : itr.f()) : itr.da[ind]
+  item = isna(itr.da, ind) ? itr.f(itr.da) : itr.da[ind]
   (item, ind + 1)
 end
