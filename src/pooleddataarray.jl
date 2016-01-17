@@ -478,7 +478,6 @@ end
 reorder!{T,R<:Integer,N}(pda::PooledDataArray{T,R,N}, newpool::Vector{T}) = begin
     #pre-condition    
     if !issubset(newpool, pda.pool)
-        println("is not subset newpool:$newpool")
         throw(ArgumentError("A new pool must be a subset of the current one."))
     end   
 
