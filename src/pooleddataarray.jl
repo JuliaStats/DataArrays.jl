@@ -443,7 +443,7 @@ end
 reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
 """
-    `tmp_reorder(pda,newpool)` reorders the current pool and references related to that pool. A new pool must be a subset of the 
+    `reorder(pda,newpool)` reorders the current pool and references related to that pool. A new pool must be a subset of the 
     old one. If you want to change pool identifiers, use `setlevels` first, before using `reorder`.
 
     Pre-Condition:
@@ -462,7 +462,7 @@ reorder{T,R<:Integer,N}(pda::PooledDataArray{T,R,N}, newpool::Vector{T}) = begin
 end
 
 """
-    `tmp_reorder!(pda,newpool)` reorders the current pool and references related to that pool. A new pool must be a subset of the 
+    `reorder!(pda,newpool)` reorders the current pool and references related to that pool. A new pool must be a subset of the 
     old one. If you want to change pool identifiers, use `setlevels` first, before using `reorder!`.
 
     Pre-Condition:
