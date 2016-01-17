@@ -433,9 +433,86 @@ function setlevels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this version
     setlevels!(x, newpool)
 end
 
+##############################################################################
+##
+## reorder()
+##
+##############################################################################
+
+
 reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
-reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
+"""
+    `tmp_reorder(pda,newpool)` reorders the current pool and references related to that pool. A new pool must be a subset of the 
+    old one. If you want to change pool identifiers, use `setlevels` first, before using `reorder`.
+
+    Pre-Condition:
+    - `newpoll` ⊆ pda.pool
+
+    Input:
+    - `pda` reference object to be used to contruct a new one
+    - `newpool` to replace the current one
+
+    Output:
+    A new PooledDataObject object
+"""
+reorder{T,R<:Integer,N}(pda::PooledDataArray{T,R,N}, newpool::Vector{T}) = begin
+    newpda = copy(pda)
+    reorder!(newpda, newpool)
+end
+
+"""
+    `tmp_reorder!(pda,newpool)` reorders the current pool and references related to that pool. A new pool must be a subset of the 
+    old one. If you want to change pool identifiers, use `setlevels` first, before using `reorder!`.
+
+    Pre-Condition:
+    - `newpoll` ⊆ pda.pool
+
+    Input:
+    - `pda` PooledDataArray to be changed
+    - `newpool` to replace the current one
+
+    Output:
+    Current `pda` object
+"""
+reorder!{T,R<:Integer,N}(pda::PooledDataArray{T,R,N}, newpool::Vector{T}) = begin
+    #pre-condition    
+    if !issubset(newpool, pda.pool)
+        println("is not subset newpool:$newpool")
+        throw(ArgumentError("A new pool must be a subset of the current one."))
+    end   
+
+    # rebuild old poolref
+    oldpoolref = Dict{T, R}()
+   
+    # loop through oldpool to fill the oldpoolref dict
+    for i = 1:length(pda.pool)
+        oldpoolref[pda.pool[i]] = i
+    end
+
+    newpoolref = Dict{T, R}()
+    for i=1:length(newpool)
+      newpoolref[newpool[i]] = i
+    end
+
+    # map old to new refs for the pre-condition: new pool ⊆ old pool
+    refmap = Dict{R,R}()
+    for oldref in keys(oldpoolref)
+        refmap[oldpoolref[oldref]] = get(newpoolref, oldref, 0)
+    end
+    
+    # fill-in newrefs
+    for i = 1:length(pda.refs)
+        pda.refs[i] = get(refmap, pda.refs[i], 0)       
+    end
+
+    pda.pool = newpool  
+
+    return pda
+end
+
+# commented due to #167 issue 
+#reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
 ### FIXME: this can't work because we don't know about DataFrames
 # reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =

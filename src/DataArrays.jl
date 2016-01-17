@@ -46,6 +46,7 @@ module DataArrays
            PooledDataVector,
            reldiff,
            reorder,
+           reorder!,
            rep,
            replace!,
            setlevels!,

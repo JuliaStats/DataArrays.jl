@@ -51,6 +51,7 @@ module TestPDA
     pim = @pdata [1 + im, 2 + im, 3 + im, 2 + im, 1 + im]
     @assert levels(pim) == [1 + im, 2 + im, 3 + im]
 
+
     # Test explicitly setting refs type
     testarray = [1, 1, 2, 2, 0, 0, 3, 3]
     testdata = @data [1, 1, 2, 2, 0, 0, 3, 3]
@@ -107,4 +108,23 @@ module TestPDA
     pda = @pdata([NA, "A", "B", "C", "A", "B"])
     @test isequal(Base.permute!!(copy(pda), [2, 5, 3, 6, 4, 1]), @pdata(["A", "A", "B", "B", "C", NA]))
     @test isequal(Base.ipermute!!(copy(pda), [6, 1, 3, 5, 2, 4]), @pdata(["A", "A", "B", "B", "C", NA]))
+
+    #1. reordering levels 
+    pda = @pdata(["high" , "medium" , "low" , "high" , NA, "medium"])
+    #1.1 positive scenarios    
+    @test isequal(pda.pool, Vector{eltype(pda.pool)}(["high", "low", "medium"])) #alphabetically
+    @test isequal(pda.refs, Vector{eltype(pda.refs)}([1,3,2,1,0,3])) #high is 1, medium is 3, low is 1 according to alphabetical order
+    
+    reorder!(pda, ["low","medium","high"]) #reorder according to e.g. visual plot needs
+    @test isequal(pda.pool, Vector{eltype(pda.pool)}(["low", "medium", "high"])) #semantic order
+    @test isequal(pda.refs, Vector{eltype(pda.refs)}([3,2,1,3,0,2]))
+    
+    reorder!(pda, ["low","medium"]) 
+    @test isequal(pda.pool, Vector{eltype(pda.pool)}(["low", "medium"])) #semantic order
+    @test isequal(pda.refs, Vector{eltype(pda.refs)}([0,2,1,0,0,2]))
+    
+    newpda = reorder(pda, ["low"])
+    @test newpda !== pda 
+    #1.2 negative scenarios
+    @test_throws ArgumentError reorder!(pda, ["very low","very high"]) #new levels must be a subset of the original one   
 end
