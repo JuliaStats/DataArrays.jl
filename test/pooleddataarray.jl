@@ -126,5 +126,8 @@ module TestPDA
     newpda = reorder(pda, ["low"])
     @test newpda !== pda 
     #1.2 negative scenarios
-    @test_throws ArgumentError reorder!(pda, ["very low","very high"]) #new levels must be a subset of the original one   
+    pda = @pdata(["high" , "medium" , "low" , "high" , NA, "medium"])
+    @test_throws ArgumentError reorder(pda, ["very low","very high"]) #new levels must be a subset of the original one   
+    reorder!(pda, ["new low","new medium"], false) #don't check inclusion and change level names
+    @test isequal(pda.refs, Vector{eltype(pda.refs)}([0,0,0,0,0,0])) #we have a mess, it's not reordering
 end
