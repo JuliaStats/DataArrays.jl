@@ -483,7 +483,7 @@ end
 """
 reorder!{T,R<:Integer,N}(pda::PooledDataArray{T,R,N}, newpool::Vector{T}, inclusioncheck=true) = begin
     inclusioncheck && !issubset(newpool, pda.pool) && throw(ArgumentError("A new pool must be a subset of the current one."))
-    
+
     tidx::Array{R} = findat(newpool, pda.pool)
     oldrefs = pda.refs
     for i in 1:length(oldrefs)
