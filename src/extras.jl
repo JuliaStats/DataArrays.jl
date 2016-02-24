@@ -61,7 +61,7 @@ function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})
     PooledDataArray(RefArray(refs), pool)
 end
 
-cut(x::AbstractVector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
+cut(x::AbstractVector, ngroups::Integer) = cut(x, quantile(x, collect(1 : ngroups - 1) / ngroups))
 
 function rep{T <: Integer}(x::AbstractVector, lengths::AbstractVector{T})
     if length(x) != length(lengths)
