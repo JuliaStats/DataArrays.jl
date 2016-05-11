@@ -47,7 +47,7 @@ module TestNAs
     pda[:] = NA
     @test allna(pda)
 
-    dv = DataArray([1, 2, 3], bitpack([false, false, false]))
+    dv = DataArray([1, 2, 3], BitArray([false, false, false]))
 
     dv = DataArray(collect(1:6), fill(false, 6))
 

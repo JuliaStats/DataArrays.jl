@@ -56,7 +56,7 @@ function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
         idx[d] = 1:size(A,d)
     end
 
-    r1 = f(reshape(A[idx...], Asliceshape); skipna=skipna)
+    r1 = f(copy(reshape(A[idx...], Asliceshape)); skipna=skipna)
 
     # determine result size and allocate
     Rsize = copy(dimsA)
@@ -111,14 +111,13 @@ function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
                 idx[otherdims] = ia
                 ridx[otherdims] = ia
                 try
-                    R[ridx...] = f(reshape(A[idx...], Asliceshape); skipna=skipna)
+                    R[ridx...] = f(copy(reshape(A[idx...], Asliceshape)); skipna=skipna)
                 catch e
                     if (isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed.") || (isa(e, ArgumentError) && e.msg == "reducing over an empty collection is not allowed")
 
                         R[ridx...] = NA
                     else
                         println(typeof(e))
-                        println(e.msg)
                         rethrow(e)
                     end
                 end

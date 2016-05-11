@@ -1,12 +1,8 @@
-const unary_operators = [:(Base.(:+)),
-                         :(Base.(:-)),
-                         :(Base.(:!)),
-                         :(Base.(:*))]
+const unary_operators = [:+, :-, :!, :*]
 
-const numeric_unary_operators = [:(Base.(:+)),
-                                 :(Base.(:-))]
+const numeric_unary_operators = [:+, :-]
 
-const logical_unary_operators = [:(Base.(:!))]
+const logical_unary_operators = [:!]
 
 const elementary_functions = [:(Base.abs),
                               :(Base.abs2),
@@ -50,102 +46,44 @@ const two_argument_elementary_functions = [:(Base.round),
 
 const special_comparison_operators = [:(Base.isless)]
 
-const comparison_operators = [:(Base.(:(==))),
-                              :(Base.(:(.==))),
-                              :(Base.(:(!=))),
-                              :(Base.(:(.!=))),
-                              :(Base.(:(>))),
-                              :(Base.(:(.>))),
-                              :(Base.(:(>=))),
-                              :(Base.(:(.>=))),
-                              :(Base.(:(<))),
-                              :(Base.(:(.<))),
-                              :(Base.(:(<=))),
-                              :(Base.(:(.<=)))]
+const comparison_operators = [:(==),:(.==),:(!=),:(.!=),:(>),:(.>),:(>=),:(.>=),:(<),:(.<),:(<=),:(.<=)]
 
-const scalar_comparison_operators = [:(Base.(:(==))),
-                                     :(Base.(:(!=))),
-                                     :(Base.(:(>))),
-                                     :(Base.(:(>=))),
-                                     :(Base.(:(<))),
-                                     :(Base.(:(<=)))]
+const scalar_comparison_operators = [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
 
-const array_comparison_operators = [:(Base.(:(.==))),
-                                    :(Base.(:(.!=))),
-                                    :(Base.(:(.>))),
-                                    :(Base.(:(.>=))),
-                                    :(Base.(:(.<))),
-                                    :(Base.(:(.<=)))]
+const array_comparison_operators = [:(.==),:(.!=),:(.>),:(.>=),:(.<),:(.<=)]
 
-const vectorized_comparison_operators = [:(Base.(:(.==))),
-                                         :(Base.(:(==))),
-                                         :(Base.(:(.!=))),
-                                         :(Base.(:(!=))),
-                                         :(Base.(:(.>))),
-                                         :(Base.(:(>))),
-                                         :(Base.(:(.>=))),
-                                         :(Base.(:(>=))),
-                                         :(Base.(:(.<))),
-                                         :(Base.(:(<))),
-                                         :(Base.(:(.<=))),
-                                         :(Base.(:(<=)))]
+const vectorized_comparison_operators = [:(.==),:(==),:(.!=),:(!=),:(.>),:(>),:(.>=),:(>=),:(.<),:(<),:(.<=),:(<=)]
 
-const binary_operators = [:(Base.(:+)),
-                          :(Base.(:.+)),
-                          :(Base.(:-)),
-                          :(Base.(:.-)),
-                          :(Base.(:*)),
-                          :(Base.(:.*)),
-                          :(Base.(:/)),
-                          :(Base.(:./)),
-                          :(Base.(:.^)),
+const binary_operators = [:(+),:(.+),:(-),:(.-),:(*),:(.*),:(/),:(./),:(.^),
                           :(Base.div),
                           :(Base.mod),
                           :(Base.fld),
                           :(Base.rem)]
 
-const induced_binary_operators = [:(Base.(:^))]
+const induced_binary_operators = [(:^)]
 
-const arithmetic_operators = [:(Base.(:+)),
-                              :(Base.(:.+)),
-                              :(Base.(:-)),
-                              :(Base.(:.-)),
-                              :(Base.(:*)),
-                              :(Base.(:.*)),
-                              :(Base.(:/)),
-                              :(Base.(:./)),
-                              :(Base.(:.^)),
+const arithmetic_operators = [:(+),:(.+),:(-),:(.-),:(*),:(.*),:(/),:(./),:(.^),
                               :(Base.div),
                               :(Base.mod),
                               :(Base.fld),
                               :(Base.rem)]
 
-const induced_arithmetic_operators = [:(Base.(:^))]
+const induced_arithmetic_operators = [:(^)]
 
 const biscalar_operators = [:(Base.maximum),
                             :(Base.minimum)]
 
-const scalar_arithmetic_operators = [:(Base.(:+)),
-                                     :(Base.(:-)),
-                                     :(Base.(:*)),
-                                     :(Base.(:/)),
+const scalar_arithmetic_operators = [:(+),:(-),:(*),:(/),
                                      :(Base.div),
                                      :(Base.mod),
                                      :(Base.fld),
                                      :(Base.rem)]
 
-const induced_scalar_arithmetic_operators = [:(Base.(:^))]
+const induced_scalar_arithmetic_operators = [:(^)]
 
-const array_arithmetic_operators = [:(Base.(:+)),
-                                    :(Base.(:.+)),
-                                    :(Base.(:-)),
-                                    :(Base.(:.-)),
-                                    :(Base.(:.*)),
-                                    :(Base.(:.^))]
+const array_arithmetic_operators = [:(+),:(.+),:(-),:(.-),:(.*),:(.^)]
 
-const bit_operators = [:(Base.(:&)),
-                       :(Base.(:|)),
-                       :(Base.(:$))]
+const bit_operators = [:(&),:(|),:($)]
 
 const unary_vector_operators = [:(Base.median),
                                 :(StatsBase.mad),
@@ -307,7 +245,7 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
                 if swappable
                     # For /, Array/Number is valid but not Number/Array
                     # All other operators should be swappable
-                    map!(x->Expr(:macrocall, symbol("@swappable"), x, scalarfunc), fns)
+                    map!(x->Expr(:macrocall, Symbol("@swappable"), x, scalarfunc), fns)
                 end
                 Expr(:block, fns...)
             end
@@ -370,9 +308,9 @@ for f in unary_operators
 end
 
 # Unary operators, DataArrays.
-@dataarray_unary Base.(:(-)) Bool Int
-@dataarray_unary Base.(:(-)) Any T
-@dataarray_unary Base.(:(!)) Bool T
+@dataarray_unary(-, Bool, Int)
+@dataarray_unary(-, Any, T)
+@dataarray_unary(!, Bool, T)
 
 # Treat ctranspose and * in a special way
 for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
@@ -407,7 +345,7 @@ end
 # But we're getting 10x R while maintaining NA's
 for (adata, bdata) in ((true, false), (false, true), (true, true))
     @eval begin
-        function Base.(:*)(a::$(adata ? :((@compat Union{DataVector, DataMatrix})) : :((@compat Union{Vector, Matrix}))),
+        function (*)(a::$(adata ? :((@compat Union{DataVector, DataMatrix})) : :((@compat Union{Vector, Matrix}))),
                            b::$(bdata ? :((@compat Union{DataVector, DataMatrix})) : :(@compat Union{Vector, Matrix})))
             c = $(adata ? :(a.data) : :a) * $(bdata ? :(b.data) : :b)
             res = DataArray(c, falses(size(c)))
@@ -513,14 +451,14 @@ end
 # Bit operators
 #
 
-@swappable Base.(:&)(a::NAtype, b::Bool) = b ? NA : false
-@swappable Base.(:|)(a::NAtype, b::Bool) = b ? true : NA
-@swappable Base.(:$)(a::NAtype, b::Bool) = NA
+@swappable (&)(a::NAtype, b::Bool) = b ? NA : false
+@swappable (|)(a::NAtype, b::Bool) = b ? true : NA
+@swappable ($)(a::NAtype, b::Bool) = NA
 
 # To avoid ambiguity warning
-@swappable Base.(:|)(a::NAtype, b::Function) = NA
+@swappable (|)(a::NAtype, b::Function) = NA
 
-for f in (:(Base.(:&)), :(Base.(:|)), :(Base.(:$)))
+for f in (:(&), :(|), :($))
     @eval begin
         # Scalar with NA
         ($f)(::NAtype, ::NAtype) = NA
@@ -529,20 +467,20 @@ for f in (:(Base.(:&)), :(Base.(:|)), :(Base.(:$)))
 end
 
 # DataArray with DataArray
-Base.(:&)(a::DataArray{Bool}, b::DataArray{Bool}) =
+(&)(a::DataArray{Bool}, b::DataArray{Bool}) =
     DataArray(a.data & b.data, (a.na & b.na) | (a.na & b.data) | (b.na & a.data))
-Base.(:|)(a::DataArray{Bool}, b::DataArray{Bool}) =
+(|)(a::DataArray{Bool}, b::DataArray{Bool}) =
     DataArray(a.data | b.data, (a.na & b.na) | (a.na & !b.data) | (b.na & !a.data))
-Base.(:$)(a::DataArray{Bool}, b::DataArray{Bool}) =
+($)(a::DataArray{Bool}, b::DataArray{Bool}) =
     DataArray(a.data $ b.data, a.na | b.na)
 
 # DataArray with non-DataArray
 # Need explicit definition for BitArray to avoid ambiguity
 for t in (:(BitArray), :(Range{Bool}), :((@compat Union{AbstractArray{Bool}, Bool})))
     @eval begin
-        @swappable Base.(:&)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data & b), a.na & b)
-        @swappable Base.(:|)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data | b), a.na & !b)
-        @swappable Base.(:$)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data $ b), copy(a.na))
+        @swappable (&)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data & b), a.na & b)
+        @swappable (|)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data | b), a.na & !b)
+        @swappable ($)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data $ b), copy(a.na))
     end
 end
 
@@ -572,16 +510,16 @@ function Base.isequal(a::DataArray, b::DataArray)
 end
 
 # ambiguity
-@swappable Base.(:(==))(a::DataArray{Bool}, b::BitArray) =
+@swappable (==)(a::DataArray{Bool}, b::BitArray) =
     invoke(==, (DataArray, AbstractArray), a, b)
-@swappable Base.(:(==))(a::DataArray, b::BitArray) =
+@swappable (==)(a::DataArray, b::BitArray) =
     invoke(==, (DataArray, AbstractArray), a, b)
-@swappable Base.(:(==))(a::AbstractDataArray{Bool}, b::BitArray) =
+@swappable (==)(a::AbstractDataArray{Bool}, b::BitArray) =
     invoke(==, (DataArray, AbstractArray), a, b)
-@swappable Base.(:(==))(a::AbstractDataArray, b::BitArray) =
+@swappable (==)(a::AbstractDataArray, b::BitArray) =
     invoke(==, (DataArray, AbstractArray), a, b)
 
-function Base.(:(==))(a::DataArray, b::DataArray)
+function (==)(a::DataArray, b::DataArray)
     size(a) == size(b) || return false
     adata = a.data
     bdata = b.data
@@ -598,10 +536,10 @@ function Base.(:(==))(a::DataArray, b::DataArray)
 end
 
 # ambiguity
-@swappable Base.(:(==))(a::DataArray, b::AbstractDataArray) =
+@swappable (==)(a::DataArray, b::AbstractDataArray) =
     invoke(==, (AbstractDataArray, AbstractDataArray), a, b)
 
-@swappable function Base.(:(==))(a::DataArray, b::AbstractArray)
+@swappable function (==)(a::DataArray, b::AbstractArray)
     size(a) == size(b) || return false
     adata = a.data
     has_na = false
@@ -615,7 +553,7 @@ end
     has_na ? NA : true
 end
 
-function Base.(:(==))(a::AbstractDataArray, b::AbstractDataArray)
+function (==)(a::AbstractDataArray, b::AbstractDataArray)
     size(a) == size(b) || return false
     has_na = false
     for i = 1:length(a)
@@ -628,7 +566,7 @@ function Base.(:(==))(a::AbstractDataArray, b::AbstractDataArray)
     has_na ? NA : true
 end
 
-@swappable function Base.(:(==))(a::AbstractDataArray, b::AbstractArray)
+@swappable function (==)(a::AbstractDataArray, b::AbstractArray)
     size(a) == size(b) || return false
     has_na = false
     for i = 1:length(a)
@@ -642,7 +580,7 @@ end
 end
 
 # ambiguity
-@swappable Base.(:(==))(::NAtype, ::WeakRef) = NA
+@swappable (==)(::NAtype, ::WeakRef) = NA
 
 for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
@@ -665,11 +603,11 @@ end
 #
 
 # Necessary to avoid ambiguity warnings
-Base.(:.^)(::Irrational{:e}, B::DataArray) = exp(B)
-Base.(:.^)(::Irrational{:e}, B::AbstractDataArray) = exp(B)
+(.^)(::Irrational{:e}, B::DataArray) = exp(B)
+(.^)(::Irrational{:e}, B::AbstractDataArray) = exp(B)
 
-for f in (:(Base.(:+)), :(Base.(:.+)), :(Base.(:-)), :(Base.(:.-)),
-          :(Base.(:*)), :(Base.(:.*)), :(Base.(:.^)), :(Base.div),
+for f in (:(+), :(.+), :(-), :(.-),
+          :(*), :(.*), :(.^), :(Base.div),
           :(Base.mod), :(Base.fld), :(Base.rem), :(Base.min),
           :(Base.max))
     @eval begin
@@ -683,8 +621,8 @@ end
 # warnings...
 if isdefined(Base, :UniformScaling)
 
-function Base.(:+){TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
-    n = Base.LinAlg.chksquare(A)
+function (+){TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
+    n = Compat.LinAlg.checksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
     @inbounds for i = 1:n
@@ -694,10 +632,10 @@ function Base.(:+){TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
     end
     B
 end
-Base.(:+){TA}(J::UniformScaling,A::DataArray{TA,2}) = A + J
+(+){TA}(J::UniformScaling,A::DataArray{TA,2}) = A + J
 
-function Base.(:-){TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
-    n = Base.LinAlg.chksquare(A)
+function (-){TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
+    n = Compat.LinAlg.checksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
     @inbounds for i = 1:n
@@ -707,8 +645,8 @@ function Base.(:-){TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
     end
     B
 end
-function Base.(:-){TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
-    n = Base.LinAlg.chksquare(A)
+function (-){TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
+    n = Compat.LinAlg.checksquare(A)
     B = -A
     @inbounds for i = 1:n
         if !B.na[i,i]
@@ -718,37 +656,37 @@ function Base.(:-){TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
     B
 end
 
-Base.(:+)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
+(+)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
     invoke(+, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
-Base.(:+)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
+(+)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
     invoke(+, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
-Base.(:-)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
+(-)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
     invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
-Base.(:-)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
+(-)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
     invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
 
-Base.(:+){TA,TJ}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
+(+){TA,TJ}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
     invoke(+, (AbstractArray{TA,2}, UniformScaling{TJ}), A, J)
-Base.(:+){TA}(J::UniformScaling,A::AbstractDataArray{TA,2}) =
+(+){TA}(J::UniformScaling,A::AbstractDataArray{TA,2}) =
     invoke(+, (UniformScaling, AbstractArray{TA,2}), J, A)
-Base.(:-){TA,TJ<:Number}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
+(-){TA,TJ<:Number}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
     invoke(-, (AbstractArray{TA,2}, UniformScaling{TJ}), A, J)
-Base.(:-){TA,TJ<:Number}(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) =
+(-){TA,TJ<:Number}(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) =
     invoke(-, (UniformScaling{TJ}, AbstractArray{TA,2}), J, A)
 
-Base.(:+)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
+(+)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
     invoke(+, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
-Base.(:+)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
+(+)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
     invoke(+, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
-Base.(:-)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
+(-)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
     invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
-Base.(:-)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
+(-)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
     invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
 
 end # if isdefined(Base, :UniformScaling)
 
-for f in (:(Base.(:.+)), :(Base.(:.-)), :(Base.(:*)), :(Base.(:.*)),
-          :(Base.(:.^)), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
+for f in (:(.+), :(.-), :(*), :(.*),
+          :(.^), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
         # Array with NA
         @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
@@ -759,44 +697,44 @@ for f in (:(Base.(:.+)), :(Base.(:.-)), :(Base.(:*)), :(Base.(:.*)),
     end
 end
 
-for f in (:(Base.(:+)), :(Base.(:-)))
+for f in (:(+), :(-))
     # Array with NA
     @eval @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
         DataArray(Array(T, size(b)), trues(size(b)))
 end
 
-Base.(:^)(::NAtype, ::NAtype) = NA
-Base.(:^)(a, ::NAtype) = NA
-Base.(:^)(::NAtype, ::Integer) = NA
-Base.(:^)(::NAtype, ::Number) = NA
+(^)(::NAtype, ::NAtype) = NA
+(^)(a, ::NAtype) = NA
+(^)(::NAtype, ::Integer) = NA
+(^)(::NAtype, ::Number) = NA
 
-for (vf, sf) in ((:(Base.(:+)), :(Base.(:+))),
-                 (:(Base.(:-)), :(Base.(:-))))
+for (vf, sf) in ((:(+), :(+)),
+                 (:(-), :(-)))
     @eval begin
         # Necessary to avoid ambiguity warnings
-        @swappable ($vf)(A::BitArray, B::AbstractDataArray{Bool}) = ($vf)(bitunpack(A), B)
-        @swappable ($vf)(A::BitArray, B::DataArray{Bool}) = ($vf)(bitunpack(A), B)
+        @swappable ($vf)(A::BitArray, B::AbstractDataArray{Bool}) = ($vf)(Array(A), B)
+        @swappable ($vf)(A::BitArray, B::DataArray{Bool}) = ($vf)(Array(A), B)
 
         @dataarray_binary_array $vf $sf promote_type(eltype(a), eltype(b))
     end
 end
 
 # / and ./ are defined separately since they promote to floating point
-for f in ((:(Base.(:/)), :(Base.(:./))))
+for f in (:(/), :(./))
     @eval begin
         ($f)(::NAtype, ::NAtype) = NA
         @swappable ($f)(d::NAtype, x::Number) = NA
     end
 end
 
-Base.(:/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
+(/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
     DataArray(Array(T, size(b)), trues(size(b)))
-@dataarray_binary_scalar Base.(:/) Base.(:/) eltype(a) <: AbstractFloat || typeof(b) <: AbstractFloat ?
-                                      promote_type(eltype(a), typeof(b)) : Float64 false
-@swappable Base.(:./){T,N}(::NAtype, b::AbstractArray{T,N}) =
+@dataarray_binary_scalar(/, /, eltype(a) <: AbstractFloat || typeof(b) <: AbstractFloat ?
+                                      promote_type(eltype(a), typeof(b)) : Float64, false)
+@swappable (./){T,N}(::NAtype, b::AbstractArray{T,N}) =
     DataArray(Array(T, size(b)), trues(size(b)))
-@dataarray_binary_scalar Base.(:./) Base.(:/) eltype(a) <: AbstractFloat || typeof(b) <: AbstractFloat ?
-                                      promote_type(eltype(a), typeof(b)) : Float64 true
+@dataarray_binary_scalar(./, /, eltype(a) <: AbstractFloat || typeof(b) <: AbstractFloat ?
+                                      promote_type(eltype(a), typeof(b)) : Float64, true)
 
 for f in biscalar_operators
     @eval begin
@@ -849,8 +787,8 @@ end
 for f in (:(Base.minimum), :(Base.maximum), :(Base.prod), :(Base.sum),
           :(Base.mean), :(Base.median), :(Base.std), :(Base.var),
           :(Base.norm))
-    colf = symbol("col$(f)s")
-    rowf = symbol("row$(f)s")
+    colf = Symbol("col$(f)s")
+    rowf = Symbol("row$(f)s")
     @eval begin
         function ($colf)(dm::AbstractDataMatrix)
             n, p = nrow(dm), ncol(dm)
@@ -995,7 +933,7 @@ end
 ## inverse run-length encoding
 function inverse_rle{T, I <: Integer}(values::AbstractVector{T},
                                       lengths::Vector{I})
-    total_n = sum(lengths)
+    total_n = Int(sum(lengths))
     pos = 0
     res = similar(values, total_n)
     n = length(values)

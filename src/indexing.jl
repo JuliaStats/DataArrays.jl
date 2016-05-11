@@ -186,25 +186,31 @@ end
     end
 end
 
+if VERSION > v"0.5-"
+    Base.unsafe_getindex(x::Number, i::Int) = (@inbounds r = x[i]; r)
+end
+
 # Vector case
-@ngenerate N typeof(dest) function _getindex!(dest::DataArray, src::DataArray,
-                                              I::NTuple{N,(@compat Union{Int,AbstractVector})}...)
-    Base.checksize(dest, I...)
-    stride_1 = 1
-    @nexprs N d->(stride_{d+1} = stride_d*size(src,d))
-    @nexprs N d->(offset_d = 1)  # only really need offset_$N = 1
-    k = 1
-    srcextr = daextract(src)
-    destextr = daextract(dest)
-    @nloops N i dest d->(@inbounds offset_{d-1} = offset_d + (Base.unsafe_getindex(I_d, i_d)-1)*stride_d) begin
-        @inbounds if unsafe_isna(src, srcextr, offset_0)
-            unsafe_dasetindex!(dest, destextr, NA, k)
-        else
-            unsafe_dasetindex!(dest, destextr, unsafe_getindex_notna(src, srcextr, offset_0), k)
+@generated function _getindex!(dest::DataArray, src::DataArray, I::Union{Real, AbstractArray, Colon}...)
+    N = length(I)
+    quote
+        $(Expr(:meta, :inline))
+        idxlens = index_lengths(src, I...) # TODO: unsplat?
+        srcextr = daextract(src)
+        destextr = daextract(dest)
+        srcsz = size(src)
+        k = 1
+        @nloops $N i d->(1:idxlens[d]) d->(@inbounds j_d = getindex(I[d], i_d)) begin
+            offset_0 = @ncall $N sub2ind srcsz j
+            if unsafe_isna(src, srcextr, offset_0)
+                unsafe_dasetindex!(dest, destextr, NA, k)
+            else
+                unsafe_dasetindex!(dest, destextr, unsafe_getindex_notna(src, srcextr, offset_0), k)
+            end
+            k += 1
         end
-        k += 1
+        dest
     end
-    dest
 end
 
 function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,AbstractVector}}})

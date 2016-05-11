@@ -10,10 +10,10 @@ if isdefined(Base.Broadcast, :type_minus)
     const _type_pow = type_pow
 else
     using Base.Broadcast: promote_op
-    _type_minus(T, S) = promote_op(Base.SubFun(), T, S)
-    _type_rdiv(T, S) = promote_op(Base.RDivFun(), T, S)
-    _type_ldiv(T, S) = promote_op(Base.LDivFun(), T, S)
-    _type_pow(T, S) = promote_op(Base.PowFun(), T, S)
+    _type_minus(T, S) = promote_op(@functorize(-), T, S)
+    _type_rdiv(T, S) = promote_op(@functorize(/), T, S)
+    _type_ldiv(T, S) = promote_op(@functorize(\), T, S)
+    _type_pow(T, S) = promote_op(@functorize(^), T, S)
 end
 
 # Check that all arguments are broadcast compatible with shape
@@ -38,10 +38,10 @@ end
 # Get ref for value for a PooledDataArray, adding to the pool if
 # necessary
 _unsafe_pdaref!(Bpool, Brefdict::Dict, val::NAtype) = 0
-function _unsafe_pdaref!{K,V}(Bpool, Brefdict::Dict{K,V}, val)
+function _unsafe_pdaref!(Bpool, Brefdict::Dict, val)
     @get! Brefdict val begin
         push!(Bpool, val)
-        convert(V, length(Bpool))
+        length(Bpool)
     end
 end
 
@@ -49,7 +49,7 @@ end
 # gives good performance at the cost of 2^narrays branches.
 function gen_na_conds(f, nd, arrtype, outtype, daidx=find([arrtype...] .!= AbstractArray), pos=1, isna=())
     if pos > length(daidx)
-        args = Any[symbol("v_$(k)") for k = 1:length(arrtype)]
+        args = Any[Symbol("v_$(k)") for k = 1:length(arrtype)]
         for i = 1:length(daidx)
             if isna[i]
                 args[daidx[i]] = NA
@@ -69,13 +69,13 @@ function gen_na_conds(f, nd, arrtype, outtype, daidx=find([arrtype...] .!= Abstr
     else
         k = daidx[pos]
         quote
-            if $(symbol("isna_$(k)"))
+            if $(Symbol("isna_$(k)"))
                 $(gen_na_conds(f, nd, arrtype, outtype, daidx, pos+1, tuple(isna..., true)))
             else
                 $(if arrtype[k] == DataArray
-                    :(@inbounds $(symbol("v_$(k)")) = $(symbol("data_$(k)"))[$(symbol("state_$(k)_0"))])
+                    :(@inbounds $(Symbol("v_$(k)")) = $(Symbol("data_$(k)"))[$(Symbol("state_$(k)_0"))])
                 else
-                    :(@inbounds $(symbol("v_$(k)")) = $(symbol("pool_$(k)"))[$(symbol("r_$(k)"))])
+                    :(@inbounds $(Symbol("v_$(k)")) = $(Symbol("pool_$(k)"))[$(Symbol("r_$(k)"))])
                 end)
                 $(gen_na_conds(f, nd, arrtype, outtype, daidx, pos+1, tuple(isna..., false)))
             end
@@ -90,7 +90,7 @@ end
 function gen_broadcast_dataarray(nd::Int, arrtype::@compat(Tuple{Vararg{DataType}}), outtype, f::Function)
     F = Expr(:quote, f)
     narrays = length(arrtype)
-    As = [symbol("A_$(i)") for i = 1:narrays]
+    As = [Symbol("A_$(i)") for i = 1:narrays]
     dataarrays = find([arrtype...] .== DataArray)
     abstractdataarrays = find([arrtype...] .!= AbstractArray)
     have_fastpath = outtype == DataArray && all(x->!(x <: PooledDataArray), arrtype)
@@ -102,13 +102,13 @@ function gen_broadcast_dataarray(nd::Int, arrtype::@compat(Tuple{Vararg{DataType
             # Set up input DataArray/PooledDataArrays
             $(Expr(:block, [
                 arrtype[k] == DataArray ? quote
-                    $(symbol("na_$(k)")) = $(symbol("A_$(k)")).na.chunks
-                    $(symbol("data_$(k)")) = $(symbol("A_$(k)")).data
-                    $(symbol("state_$(k)_0")) = $(symbol("state_$(k)_$(nd)")) = 1
-                    @nexprs $nd d->($(symbol("skip_$(k)_d")) = size($(symbol("data_$(k)")), d) == 1)
+                    $(Symbol("na_$(k)")) = $(Symbol("A_$(k)")).na.chunks
+                    $(Symbol("data_$(k)")) = $(Symbol("A_$(k)")).data
+                    $(Symbol("state_$(k)_0")) = $(Symbol("state_$(k)_$(nd)")) = 1
+                    @nexprs $nd d->($(Symbol("skip_$(k)_d")) = size($(Symbol("data_$(k)")), d) == 1)
                 end : arrtype[k] == PooledDataArray ? quote
-                    $(symbol("refs_$(k)")) = $(symbol("A_$(k)")).refs
-                    $(symbol("pool_$(k)")) = $(symbol("A_$(k)")).pool
+                    $(Symbol("refs_$(k)")) = $(Symbol("A_$(k)")).refs
+                    $(Symbol("pool_$(k)")) = $(Symbol("A_$(k)")).pool
                 end : nothing
             for k = 1:narrays]...))
 
@@ -134,16 +134,16 @@ function gen_broadcast_dataarray(nd::Int, arrtype::@compat(Tuple{Vararg{DataType
                 # pre
                 d->($(Expr(:block, [
                     arrtype[k] == DataArray ? quote
-                        $(symbol("state_$(k)_")){d-1} = $(symbol("state_$(k)_d"));
-                        $(symbol("j_$(k)_d")) = $(symbol("skip_$(k)_d")) ? 1 : i_d
+                        $(Symbol("state_$(k)_")){d-1} = $(Symbol("state_$(k)_d"));
+                        $(Symbol("j_$(k)_d")) = $(Symbol("skip_$(k)_d")) ? 1 : i_d
                     end : quote
-                        $(symbol("j_$(k)_d")) = size($(symbol("A_$(k)")), d) == 1 ? 1 : i_d
+                        $(Symbol("j_$(k)_d")) = size($(Symbol("A_$(k)")), d) == 1 ? 1 : i_d
                     end
                 for k = 1:narrays]...))),
 
                 # post
                 d->($(Expr(:block, [quote
-                    $(symbol("skip_$(k)_d")) || ($(symbol("state_$(k)_d")) = $(symbol("state_$(k)_0")))
+                    $(Symbol("skip_$(k)_d")) || ($(Symbol("state_$(k)_d")) = $(Symbol("state_$(k)_0")))
                 end for k in dataarrays]...))),
 
                 # body
@@ -151,23 +151,23 @@ function gen_broadcast_dataarray(nd::Int, arrtype::@compat(Tuple{Vararg{DataType
                     # Advance iterators for DataArray and determine NA status
                     $(Expr(:block, [
                         arrtype[k] == DataArray ? quote
-                            @inbounds $(symbol("isna_$(k)")) = Base.unsafe_bitgetindex($(symbol("na_$(k)")), $(symbol("state_$(k)_0")))
+                            @inbounds $(Symbol("isna_$(k)")) = Base.unsafe_bitgetindex($(Symbol("na_$(k)")), $(Symbol("state_$(k)_0")))
                         end : arrtype[k] == PooledDataArray ? quote
-                            @inbounds $(symbol("r_$(k)")) = @nref $nd $(symbol("refs_$(k)")) d->$(symbol("j_$(k)_d"))
-                            $(symbol("isna_$(k)")) = $(symbol("r_$(k)")) == 0
+                            @inbounds $(Symbol("r_$(k)")) = @nref $nd $(Symbol("refs_$(k)")) d->$(Symbol("j_$(k)_d"))
+                            $(Symbol("isna_$(k)")) = $(Symbol("r_$(k)")) == 0
                         end : nothing
                     for k = 1:narrays]...))
 
                     # Extract values for ordinary AbstractArrays
                     $(Expr(:block, [
-                        :(@inbounds $(symbol("v_$(k)")) = @nref $nd $(symbol("A_$(k)")) d->$(symbol("j_$(k)_d")))
+                        :(@inbounds $(Symbol("v_$(k)")) = @nref $nd $(Symbol("A_$(k)")) d->$(Symbol("j_$(k)_d")))
                     for k = find([arrtype...] .== AbstractArray)]...))
 
                     # Compute and store return value
                     $(gen_na_conds(F, nd, arrtype, outtype))
 
                     # Increment state
-                    $(Expr(:block, [:($(symbol("state_$(k)_0")) += 1) for k in dataarrays]...))
+                    $(Expr(:block, [:($(Symbol("state_$(k)_0")) += 1) for k in dataarrays]...))
                     $(if outtype == DataArray
                         :(ind += 1)
                     end)
@@ -207,9 +207,7 @@ for bsig in (DataArray, PooledDataArray), asig in ((@compat Union{Array,BitArray
             func(B, As...)
             B
         end
-        # ambiguity
-        Base.map!(f::Base.Callable, B::$bsig, r::Range) =
-            invoke(Base.map!, (Base.Callable, $bsig, $asig), f, B, r)
+
         function Base.broadcast!(f::Function, B::$bsig, As::$asig...)
             nd = ndims(B)
             length(As) <= 8 || throw(ArgumentError("too many arguments"))
@@ -254,15 +252,15 @@ macro da_broadcast_vararg(func)
     defs = Any[]
     for n = 1:4, aa = 0:n-1
         def = deepcopy(func)
-        rep = Any[symbol("A_$(i)") for i = 1:n]
+        rep = Any[Symbol("A_$(i)") for i = 1:n]
         push!(rep, va)
         exreplace!(def.args[2], va, rep)
         rep = cell(n+1)
         for i = 1:aa
-            rep[i] = Expr(:(::), symbol("A_$i"), AbstractArray)
+            rep[i] = Expr(:(::), Symbol("A_$i"), AbstractArray)
         end
         for i = aa+1:n
-            rep[i] = Expr(:(::), symbol("A_$i"), (@compat Union{DataArray, PooledDataArray}))
+            rep[i] = Expr(:(::), Symbol("A_$i"), (@compat Union{DataArray, PooledDataArray}))
         end
         rep[end] = Expr(:..., Expr(:(::), va.args[1], AbstractArray))
         exreplace!(def.args[1], va, rep)
@@ -277,12 +275,13 @@ macro da_broadcast_binary(func)
        length(func.args[1].args) != 3
         throw(ArgumentError("@da_broadcast_binary may only be applied to two-argument functions"))
     end
-    (f, A, B) = func.args[1].args
+    (ff, A, B) = func.args[1].args
+    f = esc(ff)
     body = func.args[2]
     quote
-        $f($A::(@compat Union{DataArray, PooledDataArray}), $B::(@compat Union{DataArray, PooledDataArray})) = $(body)
-        $f($A::(@compat Union{DataArray, PooledDataArray}), $B::AbstractArray) = $(body)
-        $f($A::AbstractArray, $B::(@compat Union{DataArray, PooledDataArray})) = $(body)
+        ($f)($A::(@compat Union{DataArray, PooledDataArray}), $B::(@compat Union{DataArray, PooledDataArray})) = $(body)
+        ($f)($A::(@compat Union{DataArray, PooledDataArray}), $B::AbstractArray) = $(body)
+        ($f)($A::AbstractArray, $B::(@compat Union{DataArray, PooledDataArray})) = $(body)
     end
 end
 
@@ -290,34 +289,34 @@ end
 @da_broadcast_vararg Base.broadcast(f::Function, As...) = databroadcast(f, As...)
 
 # Definitions for operators,
-Base.(:(.*))(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(*, A, B)
-Base.(:(.*))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(*, A, B)
-@da_broadcast_vararg Base.(:(.*))(As...) = databroadcast(*, As...)
-@da_broadcast_binary Base.(:(.%))(A, B) = databroadcast(%, A, B)
-@da_broadcast_vararg Base.(:(.+))(As...) = broadcast!(+, DataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
-@da_broadcast_binary Base.(:(.-))(A, B) = broadcast!(-, DataArray(_type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
-@da_broadcast_binary Base.(:(./))(A, B) = broadcast!(/, DataArray(_type_rdiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-@da_broadcast_binary Base.(:(.\))(A, B) = broadcast!(\, DataArray(_type_ldiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
-Base.(:(.^))(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
-Base.(:(.^))(A::AbstractArray{Bool}, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
-Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(>=, A, B)
-Base.(:(.^))(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
-@da_broadcast_binary Base.(:(.^))(A, B) = broadcast!(^, DataArray(_type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+(.*)(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(*, A, B)
+(.*)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(*, A, B)
+@da_broadcast_vararg (.*)(As...) = databroadcast(*, As...)
+@da_broadcast_binary (.%)(A, B) = databroadcast(%, A, B)
+@da_broadcast_vararg (.+)(As...) = broadcast!(+, DataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
+@da_broadcast_binary (.-)(A, B) = broadcast!(-, DataArray(_type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
+@da_broadcast_binary (./)(A, B) = broadcast!(/, DataArray(_type_rdiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+@da_broadcast_binary (.\)(A, B) = broadcast!(\, DataArray(_type_ldiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+(.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
+(.^)(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
+(.^)(A::AbstractArray{Bool}, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
+(.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(>=, A, B)
+(.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
+@da_broadcast_binary (.^)(A, B) = broadcast!(^, DataArray(_type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 
 # XXX is a PDA the right return type for these?
 Base.broadcast(f::Function, As::PooledDataArray...) = pdabroadcast(f, As...)
-Base.(:(.*))(As::PooledDataArray...) = pdabroadcast(*, As...)
-Base.(:(.%))(A::PooledDataArray, B::PooledDataArray) = pdabroadcast(%, A, B)
-Base.(:(.+))(As::PooledDataArray...) = broadcast!(+, PooledDataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
-Base.(:(.-))(A::PooledDataArray, B::PooledDataArray) =
+(.*)(As::PooledDataArray...) = pdabroadcast(*, As...)
+(.%)(A::PooledDataArray, B::PooledDataArray) = pdabroadcast(%, A, B)
+(.+)(As::PooledDataArray...) = broadcast!(+, PooledDataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
+(.-)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(-, PooledDataArray(_type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
-Base.(:(./))(A::PooledDataArray, B::PooledDataArray) =
+(./)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(/, PooledDataArray(_type_rdiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-Base.(:(.\))(A::PooledDataArray, B::PooledDataArray) =
+(.\)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(\, PooledDataArray(_type_ldiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-Base.(:(.^))(A::PooledDataArray{Bool}, B::PooledDataArray{Bool}) = databroadcast(>=, A, B)
-Base.(:(.^))(A::PooledDataArray, B::PooledDataArray) =
+(.^)(A::PooledDataArray{Bool}, B::PooledDataArray{Bool}) = databroadcast(>=, A, B)
+(.^)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(^, PooledDataArray(_type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
 
 for (sf, vf) in zip(scalar_comparison_operators, array_comparison_operators)

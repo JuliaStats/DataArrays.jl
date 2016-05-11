@@ -22,7 +22,7 @@ const NA = NAtype()
 Base.show(io::IO, x::NAtype) = print(io, "NA")
 
 type NAException <: Exception
-    msg::UTF8String
+    msg::String
 end
 NAException() = NAException("NA found")
 

@@ -81,7 +81,7 @@ end
 #'
 #' da = DataArray([1, 2, 3], [false, false, true])
 function DataArray(d::Array, m::Array{Bool}) # -> DataArray{T}
-    return DataArray(d, bitpack(m))
+    return DataArray(d, BitArray(m))
 end
 
 #' @description
