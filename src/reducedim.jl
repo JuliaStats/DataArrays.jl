@@ -1,8 +1,6 @@
 ## Utility function
 
-check_reducedims = VERSION < v"0.4-" ?
-    Base.check_reducdims :
-    Base.check_reducedims
+using Base.check_reducedims
 
 # This is a substantially faster implementation of the "all" reduction
 # across dimensions for reducing a BitArray to an Array{Bool}. We use
@@ -19,7 +17,7 @@ check_reducedims = VERSION < v"0.4-" ?
         d->(state_{d-1} = state_d),
         d->(skip_d || (state_d = state_0)),
         begin
-            @inbounds R[state_0] &= evaluate(f, Base.unsafe_bitgetindex(Achunks, k))
+            @inbounds R[state_0] &= f(Base.unsafe_bitgetindex(Achunks, k))
             state_0 += 1
             k += 1
         end)
@@ -107,9 +105,9 @@ end
                     @inbounds new_na[state_0] = true
                 else
                     @inbounds x = data[k]
-                    v = evaluate(f, x)
+                    v = f(x)
                     @inbounds v0 = new_data[state_0]
-                    nv = evaluate(op, v0, v)
+                    nv = op(v0, v)
                     @inbounds new_data[state_0] = nv
                 end
 
@@ -152,9 +150,9 @@ end
         any(isna(A)) && throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
         @nloops N i data d->(j_d = sizeR_d==1 ? 1 : i_d) begin
             @inbounds x = (@nref N data i)
-            v = evaluate(f, x)
+            v = f(x)
             @inbounds v0 = (@nref N R j)
-            nv = evaluate(op, v0, v)
+            nv = op(v0, v)
             @inbounds (@nref N R j) = nv
         end
     end
@@ -191,7 +189,7 @@ _getdata(A::DataArray) = A.data
             for k = ibase+1:ibase+lsiz
                 @inbounds Base.unsafe_bitgetindex(na_chunks, k) && continue
                 @inbounds x = data[k]
-                v = convert(typeof(v), evaluate(op, evaluate(f, x), v))::typeof(v)
+                v = convert(typeof(v), op(f(x), v))::typeof(v)
             end
             @inbounds new_data[i] = v
             ibase += lsiz
@@ -211,9 +209,9 @@ _getdata(A::DataArray) = A.data
                     C !== nothing && @inbounds C[state_0] -= 1
                 else
                     @inbounds x = data[k]
-                    v = evaluate(f, x)
+                    v = f(x)
                     @inbounds v0 = new_data[state_0]
-                    nv = evaluate(op, v0, v)
+                    nv = op(v0, v)
                     @inbounds new_data[state_0] = nv
                 end
 
@@ -357,11 +355,7 @@ immutable MapReduceDim2ArgHelperFun{F,T}
     f::F
     val::T
 end
-if VERSION < v"0.4.0-dev+1274"
-    evaluate(f::MapReduceDim2ArgHelperFun, x) = evaluate(f.f, x, f.val)
-else
-    Base.call(f::MapReduceDim2ArgHelperFun, x) = f.f(x, f.val)
-end
+Base.call(f::MapReduceDim2ArgHelperFun, x) = f.f(x, f.val)
 
 # A version of _mapreducedim! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
@@ -409,9 +403,9 @@ end
                 else
                     @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
                     @inbounds x = data[k]
-                    v = evaluate(f, x, s)
+                    v = f(x, s)
                     @inbounds v0 = new_data[state_0]
-                    nv = evaluate(op, v0, v)
+                    nv = op(v0, v)
                     @inbounds new_data[state_0] = nv
                 end
 
@@ -463,7 +457,7 @@ end
                 for k = ibase+1:ibase+lsiz
                     @inbounds Base.unsafe_bitgetindex(na_chunks, k) && continue
                     @inbounds x = data[k]
-                    v = convert(typeof(v), evaluate(op, evaluate(f, x, s), v))::typeof(v)
+                    v = convert(typeof(v), op(f(x, s), v))::typeof(v)
                 end
 
                 @inbounds new_data[i] = v
@@ -486,9 +480,9 @@ end
                 else
                     @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
                     @inbounds x = data[k]
-                    v = evaluate(f, x, s)
+                    v = f(x, s)
                     @inbounds v0 = new_data[state_0]
-                    nv = evaluate(op, v0, v)
+                    nv = op(v0, v)
                     @inbounds new_data[state_0] = nv
                 end
 
@@ -500,11 +494,7 @@ end
 end
 
 immutable Abs2MinusFun end
-if VERSION < v"0.4.0-dev+1274"
-    evaluate(f::Abs2MinusFun, x, m) = abs2(x - m)
-else
-    Base.call(f::Abs2MinusFun, x, m) = abs2(x - m)
-end
+Base.call(f::Abs2MinusFun, x, m) = abs2(x - m)
 
 function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected::Bool=true,
                     skipna::Bool=false, init::Bool=true)

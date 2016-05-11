@@ -79,47 +79,22 @@ function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
 
     first = true
 
-    if VERSION < v"0.4.0-"
-        cartesianmap(itershape) do idxs...
-            if first
-                first = false
-            else
-                ia = [idxs...]
-                idx[otherdims] = ia
-                ridx[otherdims] = ia
-                try
-                    R[ridx...] = f(reshape(A[idx...], Asliceshape); skipna=skipna)
-                catch e
-                    if (isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed.") ||
-                        (isa(e, ArgumentError) && e.msg == "reducing over an empty collection is not allowed")
+    for idxs = CartesianRange(itershape)
+        if first
+            first = false
+        else
+            ia = [idxs.I...]
+            idx[otherdims] = ia
+            ridx[otherdims] = ia
+            try
+                R[ridx...] = f(copy(reshape(A[idx...], Asliceshape)); skipna=skipna)
+            catch e
+                if (isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed.") || (isa(e, ArgumentError) && e.msg == "reducing over an empty collection is not allowed")
 
-                        R[ridx...] = NA
-                    else
-                        println(typeof(e))
-                        println(e.msg)
-                        rethrow(e)
-                    end
-                end
-            end
-        end
-    else
-        for idxs = CartesianRange(itershape)
-            if first
-                first = false
-            else
-                ia = [idxs.I...]
-                idx[otherdims] = ia
-                ridx[otherdims] = ia
-                try
-                    R[ridx...] = f(copy(reshape(A[idx...], Asliceshape)); skipna=skipna)
-                catch e
-                    if (isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed.") || (isa(e, ArgumentError) && e.msg == "reducing over an empty collection is not allowed")
-
-                        R[ridx...] = NA
-                    else
-                        println(typeof(e))
-                        rethrow(e)
-                    end
+                    R[ridx...] = NA
+                else
+                    println(typeof(e))
+                    rethrow(e)
                 end
             end
         end

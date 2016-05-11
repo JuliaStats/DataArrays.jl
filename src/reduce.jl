@@ -1,9 +1,3 @@
-if VERSION < v"0.4.0-dev+1274"
-    import Base.evaluate
-else
-    evaluate(f, args...) = f(args...)
-end
-
 ## mapreduce implementation that skips NA
 
 function skipna_init(f, op, na::BitArray, data::Array, ifirst::Int, ilast::Int)
@@ -16,7 +10,7 @@ function skipna_init(f, op, na::BitArray, data::Array, ifirst::Int, ilast::Int)
     @inbounds d2 = data[ifirst]
 
     # Reduce first two elements
-    (evaluate(op, evaluate(f, d1), evaluate(f, d2)), ifirst)
+    (op(f(d1), f(d2)), ifirst)
 end
 
 function mapreduce_seq_impl_skipna(f, op, T, A::DataArray, ifirst::Int, ilast::Int)
@@ -31,7 +25,7 @@ function mapreduce_seq_impl_skipna(f, op, T, A::DataArray, ifirst::Int, ilast::I
         @inbounds na = Base.unsafe_bitgetindex(chunks, i)
         na && continue
         @inbounds d = data[i]
-        v = evaluate(op, v, evaluate(f, d))
+        v = op(v, f(d))
     end
     v
 end
@@ -59,7 +53,7 @@ function mapreduce_pairwise_impl_skipna{T}(f, op, A::DataArray{T}, bytefirst::In
 
     v1 = mapreduce_pairwise_impl_skipna(f, op, A, bytefirst, imid, nmid, blksize)
     v2 = mapreduce_pairwise_impl_skipna(f, op, A, imid+1, bytelast, n_notna-nmid, blksize)
-    evaluate(op, v1, v2)
+    op(v1, v2)
 end
 
 mapreduce_impl_skipna{T}(f, op, A::DataArray{T}) =
@@ -77,7 +71,7 @@ function _mapreduce_skipna{T}(f, op, A::DataArray{T})
 
     nna = countnz(na)
     nna == n && return Base.mr_empty(f, op, T)
-    nna == n-1 && return Base.r_promote(op, evaluate(f, A.data[Base.findnextnot(na, 1)]))
+    nna == n-1 && return Base.r_promote(op, f(A.data[Base.findnextnot(na, 1)]))
     nna == 0 && return Base.mapreduce_impl(f, op, A.data, 1, n)
 
     mapreduce_impl_skipna(f, op, A)

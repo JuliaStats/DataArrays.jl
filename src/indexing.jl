@@ -19,19 +19,10 @@ unsafe_getindex_notna(a, extr, idx::Real) = Base.unsafe_getindex(a, idx)
 
 # Set NA or data portion of DataArray
 
-if VERSION < v"0.4.0-dev+2456"
-    eval(quote
-         unsafe_bitsettrue!(chunks::Vector{UInt64}, idx::Real) =
-             chunks[Base.@_div64(@compat(Int(idx))-1)+1] |= (@compat(UInt64(1)) << Base.@_mod64(@compat(Int(idx))-1))
-         unsafe_bitsetfalse!(chunks::Vector{UInt64}, idx::Real) =
-             chunks[Base.@_div64(@compat(Int(idx))-1)+1] &= ~(@compat(UInt64(1)) << Base.@_mod64(@compat(Int(idx))-1))
-         end)
-else
-    unsafe_bitsettrue!(chunks::Vector{UInt64}, idx::Real) =
-        chunks[Base._div64(@compat(Int(idx))-1)+1] |= (@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
-    unsafe_bitsetfalse!(chunks::Vector{UInt64}, idx::Real) =
-        chunks[Base._div64(@compat(Int(idx))-1)+1] &= ~(@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
-end
+unsafe_bitsettrue!(chunks::Vector{UInt64}, idx::Real) =
+    chunks[Base._div64(@compat(Int(idx))-1)+1] |= (@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
+unsafe_bitsetfalse!(chunks::Vector{UInt64}, idx::Real) =
+    chunks[Base._div64(@compat(Int(idx))-1)+1] &= ~(@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
 
 unsafe_setna!(da::DataArray, extr, idx::Real) = unsafe_bitsettrue!(extr[2], idx)
 unsafe_setna!(da::PooledDataArray, extr, idx::Real) = setindex!(extr[1], 0, idx)
@@ -86,81 +77,19 @@ function Base.to_index(A::DataArray)
     Base.to_index(A.data)
 end
 
-# Fast implementation of checkbounds for DataArray input
-# This overrides an internal API that changed after JuliaLang/julia#10525,
-# and which was finally stabilized and documented with JuliaLang/julia#11895.
-if VERSION < v"0.4-dev+5194"
-    Base.checkbounds(sz::Int, I::AbstractDataVector{Bool}) =
-        length(I) == sz || throw(BoundsError())
-    function Base.checkbounds{T<:Real}(sz::Int, I::AbstractDataArray{T})
-        anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
-        extr = daextract(I)
-        for i = 1:length(I)
-            @inbounds v = unsafe_getindex_notna(I, extr, i)
-            checkbounds(sz, v)
-        end
+Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
+function Base.checkbounds{T<:Real}(::Type{Bool}, sz::Int, I::AbstractDataArray{T})
+    anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
+    extr = daextract(I)
+    b = true
+    for i = 1:length(I)
+        @inbounds v = unsafe_getindex_notna(I, extr, i)
+        b &= Base.checkbounds(Bool, sz, v)
     end
-elseif VERSION < v"0.4-dev+6993"
-    Base._checkbounds(sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
-    function Base._checkbounds{T<:Real}(sz::Int, I::AbstractDataArray{T})
-        anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
-        extr = daextract(I)
-        b = true
-        for i = 1:length(I)
-            @inbounds v = unsafe_getindex_notna(I, extr, i)
-            b &= Base._checkbounds(sz, v)
-        end
-        b
-    end
-else
-    Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
-    function Base.checkbounds{T<:Real}(::Type{Bool}, sz::Int, I::AbstractDataArray{T})
-        anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
-        extr = daextract(I)
-        b = true
-        for i = 1:length(I)
-            @inbounds v = unsafe_getindex_notna(I, extr, i)
-            b &= Base.checkbounds(Bool, sz, v)
-        end
-        b
-    end
+    b
 end
 
-# Indexing uses undocumented APIs to determine the resulting shape. These APIs
-# changed to support indices like `:`, which need the array to know the shape
-if VERSION < v"0.4-dev+5194" # Merge commit of Julialang/julia#10525
-    index_shape(A, I...) = Base.index_shape(I...)
-    _lengths() = ()
-    _lengths(i, I...) = tuple(length(i), _lengths(I...)...)
-    index_lengths(A, I...) = _lengths(I...)
-    function throw_setindex_mismatch(X, I)
-        if length(I) == 1
-            throw(DimensionMismatch("tried to assign $(length(X)) elements to $(I[1]) destinations"))
-        else
-            throw(DimensionMismatch("tried to assign $(Base.dims2string(size(X))) array to $(Base.dims2string(I)) destination"))
-        end
-    end
-    setindex_shape_check(X::AbstractArray) =
-        (length(X)==1 ||    throw_setindex_mismatch(X,()))
-    setindex_shape_check(X::AbstractArray, i::Int) =
-        (length(X)==i ||    throw_setindex_mismatch(X, (i,)))
-    setindex_shape_check{T}(X::AbstractArray{T,1}, i::Int) =
-        (length(X)==i ||    throw_setindex_mismatch(X, (i,)))
-    setindex_shape_check{T}(X::AbstractArray{T,1}, i::Int, j::Int) =
-        (length(X)==i*j ||  throw_setindex_mismatch(X, (i,j)))
-    function setindex_shape_check{T}(X::AbstractArray{T,2}, i::Int, j::Int)
-        if length(X) != i*j
-            throw_setindex_mismatch(X, (i,j))
-        end
-        sx1 = size(X,1)
-        if !(i == 1 || i == sx1 || sx1 == 1)
-            throw_setindex_mismatch(X, (i,j))
-        end
-    end
-    setindex_shape_check(X, I::Int...) = nothing # Non-arrays broadcast to all idxs
-else
-    import Base: index_shape, index_lengths, setindex_shape_check
-end
+import Base: index_shape, index_lengths, setindex_shape_check
 
 # Fallbacks to avoid ambiguity
 Base.setindex!(t::AbstractDataArray, x, i::Real) =
@@ -218,16 +147,9 @@ function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,Abstrac
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
 
-if VERSION >= v"0.4.0-dev+5578"
-    @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
-        checkbounds(A, I...)
-        _getindex(A, Base.to_indexes(I...))
-    end
-else
-    @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
-        checkbounds(A, I...)
-        _getindex(A, Base.to_index(I...))
-    end
+@nsplat N function Base.getindex(A::DataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
+    checkbounds(A, I...)
+    _getindex(A, Base.to_indexes(I...))
 end
 
 # Dispatch our implementation for these cases instead of Base

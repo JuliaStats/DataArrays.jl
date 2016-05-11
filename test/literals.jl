@@ -5,11 +5,7 @@ module TestLiterals
 
     dv = @data []
     @test isequal(dv, DataArray([], Bool[]))
-    if VERSION >= v"0.4.0-dev+848"
-        @test typeof(dv) == DataVector{Any}
-    else
-        @test typeof(dv) == DataVector{None}
-    end
+    @test typeof(dv) == DataVector{Any}
 
     dv = @data Float64[]
     @test isequal(dv, DataArray(Float64[], Bool[]))
@@ -45,14 +41,6 @@ module TestLiterals
     @test isequal(dv, DataArray(Any, 1, 2))
     @test typeof(dv) == DataMatrix{Any}
 
-    if VERSION >= v"0.4.0-"
-      println("Testing parsing 0.3 cell literal syntax, (6) warnings expected")
-    end
-    dv = @data {1, NA, 3}
-    @test isequal(dv,
-                  DataArray(Any[1, 0, 3],
-                            [false, true, false]))
-
     dm = @data [1 NA; 3 4]
     @test isequal(dm,
                   DataArray([1 0; 3 4],
@@ -68,16 +56,6 @@ module TestLiterals
     @test isequal(dm, DataArray(Any, 2, 2))
     @test typeof(dm) == DataMatrix{Any}
 
-    dm = @data {1 NA; 3 4}
-    @test isequal(dm,
-                  DataArray(Any[1 0; 3 4],
-                            [false true; false false]))
-
-    dm = @data {1 NA; 3 4}
-    @test isequal(dm,
-                  DataArray(Any[1 0; 3 4],
-                            [false true; false false]))
-
     pdv = @pdata [1, NA, 3]
     @test isequal(pdv,
                   PooledDataArray([1, 0, 3],
@@ -88,11 +66,6 @@ module TestLiterals
                   PooledDataArray(Float64[1, 0, 3],
                                   [false, true, false]))
     @test typeof(pdv) == PooledDataArray{Float64,UInt32,1}
-
-    pdv = @pdata {1, NA, 3}
-    @test isequal(pdv,
-                  PooledDataArray(Any[1, 0, 3],
-                                  [false, true, false]))
 
     pdv = @pdata [1 NA 3]
     @test isequal(pdv,
@@ -116,19 +89,10 @@ module TestLiterals
                                   [false true; false false]))
     @test typeof(pdm) == PooledDataArray{Float64,UInt32,2}
 
-    pdm = @pdata {1 NA; 3 4}
-    @test isequal(pdm,
-                  PooledDataArray(Any[1 0; 3 4],
-                                  [false true; false false]))
-
     pdm = @pdata [1 NA;
                 3 4]
     @test isequal(pdm,
                   PooledDataArray([1 0; 3 4],
-                                  [false true; false false]))
-    pdm = @pdata {1 NA; 3 4}
-    @test isequal(pdm,
-                  PooledDataArray(Any[1 0; 3 4],
                                   [false true; false false]))
 
     dv1 = @data zeros(4)
