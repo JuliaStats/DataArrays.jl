@@ -191,7 +191,7 @@ datype_int(A_1::DataArray, As...) = (@compat(UInt64(1)) | (datype_int(As...) << 
 datype_int(A_1, As...) = (datype_int(As...) << 2)
 datype_int() = @compat UInt64(0)
 
-for bsig in (DataArray, PooledDataArray), asig in ((@compat Union{Array,BitArray,Number}), Any)
+for bsig in (DataArray, PooledDataArray), asig in (Union{Array,BitArray,Number},DataArray, PooledDataArray)
     @eval let cache = Dict{Function,Dict{UInt64,Dict{Int,Function}}}()
         function Base.map!(f::Base.Callable, B::$bsig, As::$asig...)
             nd = ndims(B)

@@ -176,7 +176,7 @@ Base.std(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false) =
 
 ## weighted mean
 
-function Base.mean{W,V}(a::DataArray, w::WeightVec{W,V}; skipna::Bool=false)
+function Base.mean(a::DataArray, w::WeightVec; skipna::Bool=false)
     if skipna
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values, v.na); skipna=true)
