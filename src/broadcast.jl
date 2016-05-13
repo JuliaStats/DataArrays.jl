@@ -191,7 +191,17 @@ datype_int(A_1::DataArray, As...) = (@compat(UInt64(1)) | (datype_int(As...) << 
 datype_int(A_1, As...) = (datype_int(As...) << 2)
 datype_int() = @compat UInt64(0)
 
-for bsig in (DataArray, PooledDataArray), asig in (Union{Array,BitArray,Number},DataArray, PooledDataArray)
+# The following four methods are to avoid ambiguity warnings on 0.4
+Base.map!(f::Base.Callable, B::DataArray) =
+    invoke(map!, Tuple{Base.Callable, AbstractArray}, f, B)
+Base.map!(f::Base.Callable, B::PooledDataArray) =
+    invoke(map!, Tuple{Base.Callable, AbstractArray}, f, B)
+Base.broadcast!(f::Base.Function, B::DataArray) =
+    invoke(map!, Tuple{Base.Callable, AbstractArray}, f, B)
+Base.broadcast!(f::Base.Function, B::PooledDataArray) =
+    invoke(map!, Tuple{Base.Callable, AbstractArray}, f, B)
+
+for bsig in (DataArray, PooledDataArray), asig in (Union{Array,BitArray,Number},DataArray, PooledDataArray,)
     @eval let cache = Dict{Function,Dict{UInt64,Dict{Int,Function}}}()
         function Base.map!(f::Base.Callable, B::$bsig, As::$asig...)
             nd = ndims(B)
