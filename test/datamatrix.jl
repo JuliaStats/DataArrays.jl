@@ -42,11 +42,11 @@ module TestDataMatrix
     #
 
     b[1, 1] = NA
-    res = a * b[1, :]
+    res = a * b[1:1, :]
     @assert all(isna(res[:, 1]))
     @assert all(!isna(res[:, 2]))
     @assert all(!isna(res[:, 3]))
-    res = a * b[2, :]
+    res = a * b[2:2, :]
     @assert all(!isna(res))
 
     #

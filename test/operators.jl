@@ -109,14 +109,14 @@ module TestOperators
     # Broadcasting operations between NA's and DataVector's
     dv = convert(DataArray, ones(5))
     @test_da_pda dv begin
-        for f in map(eval, [:(Base.(:.+)),
-                            :(Base.(:+)),
-                            :(Base.(:.-)),
-                            :(Base.(:-)),
-                            :(Base.(:*)),
-                            :(Base.(:.*)),
-                            :(Base.(:./)),
-                            :(Base.(:.^)),
+        for f in map(eval, [:(.+),
+                            :(+),
+                            :(.-),
+                            :(-),
+                            :(*),
+                            :(.*),
+                            :(./),
+                            :(.^),
                             :(Base.div),
                             :(Base.mod),
                             :(Base.fld),
@@ -150,7 +150,7 @@ module TestOperators
     dv = convert(DataArray, ones(5))
     dv[1] = NA
     bv = [true, false, false, true, true]
-    bbv = bitpack([true, false, false, true, true])
+    bbv = BitArray([true, false, false, true, true])
     bdv = @data [false, true, false, false, true]
     @test_da_pda dv begin
         for f in map(eval, DataArrays.array_arithmetic_operators)

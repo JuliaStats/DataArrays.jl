@@ -57,9 +57,9 @@ for arr in (identity, as_dataarray, as_pda, as_dataarray_bigfloat, as_pda_bigflo
     @test arr([1 2]) ./ arr([8, 4]) == [1/8 2/8; 1/4 2/4]
     @test arr([1 2]) .\ arr([3, 4]) == [3 1.5; 4 2]
     @test arr([3 4]) .^ arr([1, 2]) == [3 4; 9 16]
-    @test arr(bitpack([true false])) .* arr(bitpack([true, true])) == [true false; true false]
-    @test arr(bitpack([true false])) .^ arr(bitpack([false, true])) == [true true; true false]
-    @test arr(bitpack([true false])) .^ arr([0, 3]) == [true true; true false]
+    @test arr(BitArray([true false])) .* arr(BitArray([true, true])) == [true false; true false]
+    @test arr(BitArray([true false])) .^ arr(BitArray([false, true])) == [true true; true false]
+    @test arr(BitArray([true false])) .^ arr([0, 3]) == [true true; true false]
 
     # NOT YET IMPLEMENTED
     # M = arr([11 12; 21 22])

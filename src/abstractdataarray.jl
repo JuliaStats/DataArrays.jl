@@ -53,7 +53,7 @@ Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 #' a = [1, 2, 3]
 #' isna(a)
 isna{T}(a::AbstractArray{T}) =
-    NAtype <: T ? bitpack(map(x->isa(x, NAtype), a)) : falses(size(a)) # -> BitArray
+    NAtype <: T ? BitArray(map(x->isa(x, NAtype), a)) : falses(size(a)) # -> BitArray
 
 #' @description
 #'
@@ -125,8 +125,9 @@ type EachFailNA{T}
     da::AbstractDataArray{T}
 end
 each_failna{T}(da::AbstractDataArray{T}) = EachFailNA(da)
+Base.length(itr::EachFailNA) = length(itr.da)
 Base.start(itr::EachFailNA) = 1
-Base.done(itr::EachFailNA, ind::Integer) = ind > length(itr.da)
+Base.done(itr::EachFailNA, ind::Integer) = ind > length(itr)
 function Base.next(itr::EachFailNA, ind::Integer)
     if isna(itr.da[ind])
         throw(NAException())
@@ -146,6 +147,7 @@ function _next_nonna_ind{T}(da::AbstractDataArray{T}, ind::Int)
     end
     ind
 end
+Base.length(itr::EachDropNA) = length(itr.da) - sum(itr.da.na)
 Base.start(itr::EachDropNA) = _next_nonna_ind(itr.da, 0)
 Base.done(itr::EachDropNA, ind::Int) = ind > length(itr.da)
 function Base.next(itr::EachDropNA, ind::Int)
@@ -162,8 +164,9 @@ end
 function each_replacena(replacement::Any)
     x -> each_replacena(x, replacement)
 end
+Base.length(itr::EachReplaceNA) = length(itr.da)
 Base.start(itr::EachReplaceNA) = 1
-Base.done(itr::EachReplaceNA, ind::Integer) = ind > length(itr.da)
+Base.done(itr::EachReplaceNA, ind::Integer) = ind > length(itr)
 function Base.next(itr::EachReplaceNA, ind::Integer)
     item = isna(itr.da, ind) ? itr.replacement : itr.da[ind]
     (item, ind + 1)

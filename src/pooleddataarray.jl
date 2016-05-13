@@ -113,8 +113,8 @@ PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Array
 # Convert a BitArray to an Array{Bool} (m = missingness)
 # For some reason an additional method is needed but even that doesn't work
 # For a BitArray a refs type of UInt8 will always be sufficient as the size of the pool is 0, 1 or 2
-PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(bitunpack(d), falses(size(d)), UInt8)
-PooledDataArray{N}(d::BitArray{N}, m::AbstractArray{Bool, N}) = PooledDataArray(bitunpack(d), m, UInt8)
+PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(Array(d), falses(size(d)), UInt8)
+PooledDataArray{N}(d::BitArray{N}, m::AbstractArray{Bool, N}) = PooledDataArray(Array(d), m, UInt8)
 
 # Convert a DataArray to a PooledDataArray
 PooledDataArray{T,R<:Integer}(da::DataArray{T},
@@ -598,7 +598,6 @@ type FastPerm{O<:Base.Sort.Ordering,V<:AbstractVector} <: Base.Sort.Ordering
     ord::O
     vec::V
 end
-FastPerm{O<:Base.Sort.Ordering,V<:AbstractVector}(o::O,v::V) = FastPerm{O,V}(o,v)
 Base.sortperm{V}(x::AbstractVector, a::Base.Sort.Algorithm, o::FastPerm{Base.Sort.ForwardOrdering,V}) = x[sortperm(o.vec)]
 Base.sortperm{V}(x::AbstractVector, a::Base.Sort.Algorithm, o::FastPerm{Base.Sort.ReverseOrdering,V}) = x[reverse(sortperm(o.vec))]
 Perm{O<:Base.Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
@@ -640,11 +639,6 @@ function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
             PooledDataArray(RefArray(refs2), pool))
 end
 
-function PooledDataVecs{S,R<:Integer,N}(v1::PooledDataArray{S,R,N},
-                                        v2::AbstractArray{S,N})
-    return PooledDataVecs(v1,
-                          PooledDataArray(v2))
-end
 function PooledDataVecs{S,R<:Integer,N}(v1::PooledDataArray{S,R,N},
                                         v2::AbstractArray{S,N})
     return PooledDataVecs(v1,

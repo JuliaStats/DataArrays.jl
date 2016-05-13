@@ -81,7 +81,7 @@ end
 #'
 #' da = DataArray([1, 2, 3], [false, false, true])
 function DataArray(d::Array, m::Array{Bool}) # -> DataArray{T}
-    return DataArray(d, bitpack(m))
+    return DataArray(d, BitArray(m))
 end
 
 #' @description
@@ -447,9 +447,9 @@ isna(da::DataArray) = copy(da.na) # -> BitArray
 #' a = @data([1, 2, 3])
 #' isna(a, 1)
 #' isna(a, 1:2)
-isna(da::DataArray, I::Any) = getindex(da.na, I)
+isna(da::DataArray, I::Real) = getindex(da.na, I)
 
-@nsplat N function isna(da::DataArray, I::NTuple{N,Any}...)
+@nsplat N function isna(da::DataArray, I::NTuple{N,Real}...)
     getindex(da.na, I...)
 end
 

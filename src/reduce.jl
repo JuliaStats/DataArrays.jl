@@ -1,9 +1,3 @@
-if VERSION < v"0.4.0-dev+1274"
-    import Base.evaluate
-else
-    evaluate(f, args...) = f(args...)
-end
-
 ## mapreduce implementation that skips NA
 
 function skipna_init(f, op, na::BitArray, data::Array, ifirst::Int, ilast::Int)
@@ -16,7 +10,7 @@ function skipna_init(f, op, na::BitArray, data::Array, ifirst::Int, ilast::Int)
     @inbounds d2 = data[ifirst]
 
     # Reduce first two elements
-    (evaluate(op, evaluate(f, d1), evaluate(f, d2)), ifirst)
+    (op(f(d1), f(d2)), ifirst)
 end
 
 function mapreduce_seq_impl_skipna(f, op, T, A::DataArray, ifirst::Int, ilast::Int)
@@ -31,7 +25,7 @@ function mapreduce_seq_impl_skipna(f, op, T, A::DataArray, ifirst::Int, ilast::I
         @inbounds na = Base.unsafe_bitgetindex(chunks, i)
         na && continue
         @inbounds d = data[i]
-        v = evaluate(op, v, evaluate(f, d))
+        v = op(v, f(d))
     end
     v
 end
@@ -59,12 +53,12 @@ function mapreduce_pairwise_impl_skipna{T}(f, op, A::DataArray{T}, bytefirst::In
 
     v1 = mapreduce_pairwise_impl_skipna(f, op, A, bytefirst, imid, nmid, blksize)
     v2 = mapreduce_pairwise_impl_skipna(f, op, A, imid+1, bytelast, n_notna-nmid, blksize)
-    evaluate(op, v1, v2)
+    op(v1, v2)
 end
 
 mapreduce_impl_skipna{T}(f, op, A::DataArray{T}) =
     mapreduce_seq_impl_skipna(f, op, T, A, 1, length(A.data))
-mapreduce_impl_skipna(f, op::Base.AddFun, A::DataArray) =
+mapreduce_impl_skipna(f, op::typeof(@functorize(+)), A::DataArray) =
     mapreduce_pairwise_impl_skipna(f, op, A, 1, length(A.na.chunks),
                                    length(A.na)-countnz(A.na),
                                    max(128, Base.sum_pairwise_blocksize(f)))
@@ -77,7 +71,7 @@ function _mapreduce_skipna{T}(f, op, A::DataArray{T})
 
     nna = countnz(na)
     nna == n && return Base.mr_empty(f, op, T)
-    nna == n-1 && return Base.r_promote(op, evaluate(f, A.data[Base.findnextnot(na, 1)]))
+    nna == n-1 && return Base.r_promote(op, f(A.data[Base.findnextnot(na, 1)]))
     nna == 0 && return Base.mapreduce_impl(f, op, A.data, 1, n)
 
     mapreduce_impl_skipna(f, op, A)
@@ -87,48 +81,48 @@ end
 # NA, it returns NA. Otherwise we will fall back to the implementation
 # in Base, which is slow because it's type-unstable, but guarantees the
 # correct semantics
-typealias SafeMapFuns @compat Union{Base.IdFun, Base.AbsFun, Base.Abs2Fun,
-                            Base.ExpFun, Base.LogFun, Base.CentralizedAbs2Fun}
-typealias SafeReduceFuns @compat Union{Base.AddFun, Base.MulFun, Base.MaxFun, Base.MinFun}
+typealias SafeMapFuns @compat Union{typeof(@functorize(identity)), typeof(@functorize(abs)), typeof(@functorize(abs2)),
+                            typeof(@functorize(exp)), typeof(@functorize(log)), typeof(@functorize(centralizedabs2fun))}
+typealias SafeReduceFuns @compat Union{typeof(@functorize(+)), typeof(@functorize(*)), typeof(@functorize(max)), typeof(@functorize(min))}
 function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
     any(A.na) && return NA
     Base._mapreduce(f, op, A.data)
 end
 
 function Base.mapreduce(f, op::Function, A::DataArray; skipna::Bool=false)
-    is(op, +) ? (skipna ? _mapreduce_skipna(f, Base.AddFun(), A) : Base._mapreduce(f, Base.AddFun(), A)) :
-    is(op, *) ? (skipna ? _mapreduce_skipna(f, Base.MulFun(), A) : Base._mapreduce(f, Base.MulFun(), A)) :
-    is(op, &) ? (skipna ? _mapreduce_skipna(f, Base.AndFun(), A) : Base._mapreduce(f, Base.AndFun(), A)) :
-    is(op, |) ? (skipna ? _mapreduce_skipna(f, Base.OrFun(), A) : Base._mapreduce(f, Base.OrFun(), A)) :
+    is(op, +) ? (skipna ? _mapreduce_skipna(f, @functorize(+), A) : Base._mapreduce(f, @functorize(+), A)) :
+    is(op, *) ? (skipna ? _mapreduce_skipna(f, @functorize(*), A) : Base._mapreduce(f, @functorize(*), A)) :
+    is(op, &) ? (skipna ? _mapreduce_skipna(f, @functorize(&), A) : Base._mapreduce(f, @functorize(&), A)) :
+    is(op, |) ? (skipna ? _mapreduce_skipna(f, @functorize(|), A) : Base._mapreduce(f, @functorize(|), A)) :
     skipna ? _mapreduce_skipna(f, op, A) : Base._mapreduce(f, op, A)
 end
 
 # To silence deprecations, but could be more efficient
-Base.mapreduce(f, op::(@compat Union{Base.OrFun, Base.AndFun}), A::DataArray; skipna::Bool=false) =
+Base.mapreduce(f, op::(@compat Union{typeof(@functorize(|)), typeof(@functorize(&))}), A::DataArray; skipna::Bool=false) =
     skipna ? _mapreduce_skipna(f, op, A) : Base._mapreduce(f, op, A)
 
 Base.mapreduce(f, op, A::DataArray; skipna::Bool=false) =
     skipna ? _mapreduce_skipna(f, op, A) : Base._mapreduce(f, op, A)
 
 Base.reduce(op, A::DataArray; skipna::Bool=false) =
-    mapreduce(Base.IdFun(), op, A; skipna=skipna)
+    mapreduce(@functorize(identity), op, A; skipna=skipna)
 
 ## usual reductions
 
-for (fn, op) in ((:(Base.sum), Base.AddFun()),
-                 (:(Base.prod), Base.MulFun()),
-                 (:(Base.minimum), Base.MinFun()),
-                 (:(Base.maximum), Base.MaxFun()))
+for (fn, op) in ((:(Base.sum), @functorize(+)),
+                 (:(Base.prod), @functorize(*)),
+                 (:(Base.minimum), @functorize(min)),
+                 (:(Base.maximum), @functorize(max)))
     @eval begin
-        $fn(f::(@compat Union{Function,Base.Func{1}}), a::DataArray; skipna::Bool=false) =
+        $fn(f::(@compat Union{Function,$(supertype(typeof(@functorize(abs))))}), a::DataArray; skipna::Bool=false) =
             mapreduce(f, $op, a; skipna=skipna)
         $fn(a::DataArray; skipna::Bool=false) =
-            mapreduce(Base.IdFun(), $op, a; skipna=skipna)
+            mapreduce(@functorize(identity), $op, a; skipna=skipna)
     end
 end
 
-for (fn, f, op) in ((:(Base.sumabs), Base.AbsFun(), Base.AddFun()),
-                    (:(Base.sumabs2), Base.Abs2Fun(), Base.AddFun()))
+for (fn, f, op) in ((:(Base.sumabs), @functorize(abs), @functorize(+)),
+                    (:(Base.sumabs2), @functorize(abs2), @functorize(+)))
     @eval $fn(a::DataArray; skipna::Bool=false) = mapreduce($f, $op, a; skipna=skipna)
 end
 
@@ -150,7 +144,7 @@ function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::
                                      abs2(A.data[Base.findnextnot(na, 1)] - m)/(1 - @compat(Int(corrected))))
 
         /(nna == 0 ? Base.centralize_sumabs2(A.data, m, 1, n) :
-                     mapreduce_impl_skipna(Base.CentralizedAbs2Fun(m), Base.AddFun(), A),
+                     mapreduce_impl_skipna(@functorize(centralizedabs2fun)(m), @functorize(+), A),
           n - nna - @compat(Int(corrected)))
     else
         any(A.na) && return NA
@@ -182,7 +176,7 @@ Base.std(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false) =
 
 ## weighted mean
 
-function Base.mean{W,V}(a::DataArray, w::WeightVec{W,V}; skipna::Bool=false)
+function Base.mean(a::DataArray, w::WeightVec; skipna::Bool=false)
     if skipna
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values, v.na); skipna=true)

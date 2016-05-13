@@ -49,7 +49,7 @@ function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})
     n = length(breaks)
     from = map(x -> sprint(showcompact, x), breaks[1:(n - 1)])
     to = map(x -> sprint(showcompact, x), breaks[2:n])
-    pool = Array(ASCIIString, n - 1)
+    pool = Array(String, n - 1)
     if breaks[1] == min_x
         pool[1] = string("[", from[1], ",", to[1], "]")
     else
@@ -79,7 +79,7 @@ function rep{T <: Integer}(x::AbstractVector, lengths::AbstractVector{T})
     return res
 end
 
-function rep(x::AbstractVector, times::Integer = 1, each::Integer = 1)
+function rep(x::AbstractVector, times::Integer, each::Integer = 1)
     res = similar(x, each * times * length(x))
     i = 1
     for jdx in 1:times
@@ -98,4 +98,4 @@ function rep(x::AbstractVector; times::Integer = 1, each::Integer = 1)
     rep(x, times, each)
 end
 
-rep(x::Any, times::Integer) = fill(x, times)
+rep(x::Number, times::Integer) = fill(x, times)

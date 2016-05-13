@@ -1,10 +1,14 @@
-VERSION >= v"0.4.0-dev+6641" && __precompile__()
+__precompile__()
 
 module DataArrays
     using Base.Cartesian, Compat, Reexport
+    import Compat.String
     @reexport using StatsBase
 
     const DEFAULT_POOLED_REF_TYPE = UInt32
+
+    import Base: ==, !=, >, <, >=, <=, +, -, *, !, &, |, $, ^, /,
+      .==, .!=, .>, .<, .>=, .<=, .+, .-, .*, .%, ./, .\, .^
 
     export @data,
            @pdata,

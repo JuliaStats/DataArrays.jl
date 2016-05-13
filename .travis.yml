@@ -2,13 +2,9 @@ language: julia
 julia:
   - nightly
   - 0.4
-  - 0.3
 os:
   - linux
 notifications:
   email: false
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.clone(pwd()); Pkg.build("DataArrays"); Pkg.test("DataArrays", coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("DataArrays")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'

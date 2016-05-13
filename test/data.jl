@@ -1,6 +1,8 @@
 module TestData
     using Base.Test
     using DataArrays
+    using Compat
+    import Compat.String
 
     #test_context("Data types and NA's")
 
@@ -24,12 +26,20 @@ module TestData
     @assert isa(dvint2, DataVector{Int})
     @assert isa(dvint3, DataVector{Int})
     @assert isa(dvflt, DataVector{Float64})
-    @assert isa(dvstr, DataVector{ASCIIString})
+    if VERSION < v"0.5.0-dev+3876"
+        @assert isa(dvstr, DataVector{ASCIIString})
+    else
+        @assert isa(dvstr, DataVector{String})
+    end
     # @test throws_exception(DataArray([5:8], falses(2)), Exception)
 
     #test_group("PooledDataVector creation")
     pdvstr = @pdata ["one", "one", "two", "two", NA, "one", "one"]
-    @assert isa(pdvstr, PooledDataVector{ASCIIString})
+    if VERSION < v"0.5.0-dev+3876"
+        @assert isa(pdvstr, PooledDataVector{ASCIIString})
+    else
+        @assert isa(pdvstr, PooledDataVector{String})
+    end
     # @test throws_exception(PooledDataVector["one", "one", 9], Exception)
     @assert isequal(PooledDataArray(pdvstr), pdvstr)
 
@@ -51,9 +61,9 @@ module TestData
 
     #test_group("PooledDataVector utf8 support")
     pdvpp = PooledDataArray([utf8("hello")], [false])
-    @assert isa(pdvpp[1], UTF8String)
+    @assert isa(pdvpp[1], String)
     pdvpp = PooledDataArray([utf8("hello")])
-    @assert isa(pdvpp[1], UTF8String)
+    @assert isa(pdvpp[1], String)
 
     #test_group("DataVector access")
     @assert dvint[1] == 1
@@ -82,7 +92,11 @@ module TestData
     @assert size(pdvstr) == (7,)
     @assert length(pdvstr) == 7
     @assert sum(isna(pdvstr)) == 1
-    @assert eltype(pdvstr) == ASCIIString
+    if VERSION < v"0.5.0-dev+3876"
+        @assert eltype(pdvstr) == ASCIIString
+    else
+        @assert eltype(pdvstr) == String
+    end
 
     #test_group("DataVector operations")
     @assert isequal(dvint .+ 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
@@ -97,8 +111,8 @@ module TestData
     @assert all(dropna(dvint) .== [1, 2, 4])
     @assert all(convert(Vector, dvint, 0) .== [1, 2, 0, 4])
     @assert all(convert(Vector, dvany, 0) .== [1, 2, 0, 4])
-    utf8three = convert(UTF8String, "three")
-    asciithree = convert(ASCIIString, "three")
+    utf8three = convert(String, "three")
+    asciithree = convert(String, "three")
     @assert all(convert(Vector, dvstr, utf8three) .== ["one", "two", "three", "four"])
     @assert all(convert(Vector, dvstr, asciithree) .== ["one", "two", "three", "four"])
     @assert all(convert(Vector{Int}, dvint2) .== [5:8;])
