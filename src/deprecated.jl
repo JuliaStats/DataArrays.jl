@@ -115,3 +115,6 @@ function array{T, R}(da::PooledDataArray{T, R}, replacement::T)
     end
     return res
 end
+
+@deprecate head(dv::AbstractDataVector) dv[1:min(6, end)]
+@deprecate tail(dv::AbstractDataVector) dv[max(end-6, 1):end]

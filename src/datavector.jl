@@ -1,6 +1,3 @@
-head(dv::AbstractDataVector) = dv[1:min(6, length(dv))]
-tail(dv::AbstractDataVector) = dv[max(length(dv) - 6, 1):length(dv)]
-
 # Container operations
 
 # TODO: Macroize these definitions
