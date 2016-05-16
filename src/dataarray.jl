@@ -622,28 +622,6 @@ for f in (:(Base.int), :(Base.float), :(Base.bool))
     end
 end
 
-#' @description
-#'
-#' Compute the hash of an AbstractDataArray.
-#'
-#' @param da::DataArray{T} DataArray whose hash is desired.
-#'
-#' @returns h::UInt An unsigned integer hash value for `da`.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' k = hash(dv)
-#
-# TODO: Make sure this agrees with is_equals()
-function Base.hash(a::AbstractDataArray) # -> UInt
-    h = hash(size(a)) + 1
-    for i in 1:length(a)
-        h = hash(@compat(Int(hash(a[i]))), h)
-    end
-    return @compat UInt(h)
-end
-
 #' @internal
 #' @description
 #'
