@@ -28,7 +28,8 @@ type DataArray{T, N} <: AbstractDataArray{T, N}
             msg = "Data and missingness arrays must be the same size"
             throw(ArgumentError(msg))
         end
-        new(d, m)
+        # additionally check if d does not contain NA entries
+        new(d, isna(d) | m)
     end
 end
 
