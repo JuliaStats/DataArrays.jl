@@ -29,7 +29,12 @@ type DataArray{T, N} <: AbstractDataArray{T, N}
             throw(ArgumentError(msg))
         end
         # additionally check if d does not contain NA entries
-        new(d, isna(d) | m)
+        for i in eachindex(d)
+            if isdefined(d, i) && isna(d, i)
+                m[i] = true
+            end
+        end
+        new(d, m)
     end
 end
 
