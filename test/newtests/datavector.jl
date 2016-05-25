@@ -8,12 +8,6 @@ module TestDataVectors
     da[2, 1]
     # da[1, 2]
 
-    # head(dv::AbstractDataVector)
-    head(da)
-
-    # tail(dv::AbstractDataVector)
-    tail(da)
-
     # Base.push!{T}(dv::DataVector{T}, v::NAtype)
     push!(da, NA)
 

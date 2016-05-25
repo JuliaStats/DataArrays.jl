@@ -115,3 +115,32 @@ function array{T, R}(da::PooledDataArray{T, R}, replacement::T)
     end
     return res
 end
+
+@deprecate head(dv::AbstractDataVector) dv[1:min(6, end)]
+@deprecate tail(dv::AbstractDataVector) dv[max(end-6, 1):end]
+
+function rep{T <: Integer}(x::AbstractVector, lengths::AbstractVector{T})
+    Base.depwarn(
+        """
+        rep{T <: Integer}(x::AbstractVector, lengths::AbstractVector{T}) is deprecated.
+        """,
+        :rep
+    )
+    if length(x) != length(lengths)
+        throw(DimensionMismatch("vector lengths must match"))
+    end
+    res = similar(x, sum(lengths))
+    i = 1
+    for idx in 1:length(x)
+        tmp = x[idx]
+        for kdx in 1:lengths[idx]
+            res[i] = tmp
+            i += 1
+        end
+    end
+    return res
+end
+
+@deprecate rep(x::AbstractVector, times::Integer, each::Integer = 1) Compat.repeat(x; inner=each, outer=times)
+@deprecate rep(x::AbstractVector; times::Integer = 1, each::Integer = 1) Compat.repeat(x; inner=each, outer=times)
+@deprecate rep(x::Any, times::Integer) Compat.repeat(x; inner=times)
