@@ -173,13 +173,6 @@ end
 Base.sizehint!(pda::PooledDataVector, newsz::Integer) =
     sizehint!(pda.refs, newsz)
 
-function Base.sizehint(da::DataVector, newsz::Integer)
-    sizehint(da.data, newsz)
-    sizehint(da.na, newsz)
-end
-
-Base.sizehint(pda::PooledDataVector, newsz::Integer) = sizehint(pda.refs, newsz)
-
 # Pad a vector with NA's
 
 function padNA(dv::AbstractDataVector,
