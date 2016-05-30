@@ -355,7 +355,7 @@ immutable MapReduceDim2ArgHelperFun{F,T}
     f::F
     val::T
 end
-Base.call(f::MapReduceDim2ArgHelperFun, x) = f.f(x, f.val)
+@compat (f::MapReduceDim2ArgHelperFun)(x) = f.f(x, f.val)
 
 # A version of _mapreducedim! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
@@ -494,7 +494,7 @@ end
 end
 
 immutable Abs2MinusFun end
-Base.call(f::Abs2MinusFun, x, m) = abs2(x - m)
+@compat (::Abs2MinusFun)(x, m) = abs2(x - m)
 
 function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected::Bool=true,
                     skipna::Bool=false, init::Bool=true)
