@@ -60,9 +60,9 @@ module TestData
             "[one, two, NA]"
 
     #test_group("PooledDataVector utf8 support")
-    pdvpp = PooledDataArray([utf8("hello")], [false])
+    pdvpp = PooledDataArray([String("hello")], [false])
     @assert isa(pdvpp[1], String)
-    pdvpp = PooledDataArray([utf8("hello")])
+    pdvpp = PooledDataArray([String("hello")])
     @assert isa(pdvpp[1], String)
 
     #test_group("DataVector access")
