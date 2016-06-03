@@ -48,7 +48,7 @@ function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
 
     otherdims = setdiff(alldims, dims)
 
-    idx = cell(ndimsA)
+    idx = Vector{Any}(ndimsA)
     fill!(idx, 1)
     Asliceshape = tuple(dimsA[dims]...)
     itershape   = tuple(dimsA[otherdims]...)
@@ -69,7 +69,7 @@ function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
     Rsize[dims] = [size(r1)...; ones(Int,max(0,length(dims)-ndims(r1)))]
     R = similar(r1, tuple(Rsize...))
 
-    ridx = cell(ndims(R))
+    ridx = Vector{Any}(ndims(R))
     fill!(ridx, 1)
     for d in dims
         ridx[d] = 1:size(R,d)

@@ -265,7 +265,7 @@ macro da_broadcast_vararg(func)
         rep = Any[Symbol("A_$(i)") for i = 1:n]
         push!(rep, va)
         exreplace!(def.args[2], va, rep)
-        rep = cell(n+1)
+        rep = Vector{Any}(n+1)
         for i = 1:aa
             rep[i] = Expr(:(::), Symbol("A_$i"), AbstractArray)
         end
