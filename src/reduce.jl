@@ -56,12 +56,18 @@ function mapreduce_pairwise_impl_skipna{T}(f, op, A::DataArray{T}, bytefirst::In
     op(v1, v2)
 end
 
+if isdefined(Base, :pairwise_blocksize)
+    sum_pairwise_blocksize(f) = Base.pairwise_blocksize(f, +)
+else
+    const sum_pairwise_blocksize = Base.sum_pairwise_blocksize
+end
+
 mapreduce_impl_skipna{T}(f, op, A::DataArray{T}) =
     mapreduce_seq_impl_skipna(f, op, T, A, 1, length(A.data))
 mapreduce_impl_skipna(f, op::typeof(@functorize(+)), A::DataArray) =
     mapreduce_pairwise_impl_skipna(f, op, A, 1, length(A.na.chunks),
                                    length(A.na)-countnz(A.na),
-                                   max(128, Base.sum_pairwise_blocksize(f)))
+                                   max(128, sum_pairwise_blocksize(f)))
 
 ## general mapreduce interface
 

@@ -58,7 +58,7 @@ bfz = convert(DataArray{BigFloat}, z)
 @test sum(fz; skipna=true) === 130.0
 @test sum(bfz; skipna=true) == 130
 
-bs = Base.sum_pairwise_blocksize(@functorize(identity))
+bs = DataArrays.sum_pairwise_blocksize(@functorize(identity))
 for n in [bs-64, bs-1, bs, bs+1, bs+2, 2*bs-2:2*bs+3..., 4*bs-2:4*bs+3...]
     da = DataArray(randn(n))
     s = sum(da.data)
