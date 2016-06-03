@@ -22,11 +22,21 @@ type DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
     na::BitArray{N}
 
-    # Ensure data values and missingness metadata match
     function DataArray(d::Array{T, N}, m::BitArray{N})
+        # Ensure data values and missingness metadata match
         if size(d) != size(m)
             msg = "Data and missingness arrays must be the same size"
             throw(ArgumentError(msg))
+        end
+        # additionally check that d does not contain NA entries
+        if eltype(d) === Any
+            for i in eachindex(d)
+                if isassigned(d, i) && isna(d, i)
+                    m[i] = true
+                end
+            end
+        elseif eltype(d) <: NAtype
+            m = trues(m)
         end
         new(d, m)
     end

@@ -27,6 +27,9 @@ module TestDataArray
     similar(dm, 2, 2)
     similar(dt, 2, 2, 2)
 
+    @test isequal(DataArray([NA, NA], [true, true]), DataArray([NA, NA], [false, false]))
+    @test isequal(DataArray(Any[1, NA], [false, true]), DataArray(Any[1, NA], [false, false]))
+    @test isequal(DataArray(Any[1, 2], [false, true]), DataArray(Any[1, NA], [false, false]))
 
     x = DataArray([9, 9, 8])
     y = DataArray([1, 9, 3, 2, 2])
