@@ -1,3 +1,11 @@
+promote_op{R,S}(f::Any, ::Type{R}, ::Type{S}) =
+    Base.promote_op(f, R, S)
+
+# Required for /(::Int, ::Int)
+if VERSION < v"0.5.0-dev"
+    promote_op{R<:Integer,S<:Integer}(op, ::Type{R}, ::Type{S}) = typeof(op(one(R), one(S)))
+end
+
 const unary_operators = [:+, :-, :!, :*]
 
 const numeric_unary_operators = [:+, :-]
@@ -223,6 +231,10 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
         # warnings
         Any[
             begin
+                if outtype == :nothing
+                    outtype = :(promote_op(@functorize($scalarfunc),
+                                           eltype(a), eltype(b)))
+                end
                 fns = Any[
                     :(function $(vectorfunc)(a::DataArray, b::$t)
                         data = a.data
@@ -255,7 +267,7 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
 end
 
 # Binary operators with two array arguments
-macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
+macro dataarray_binary_array(vectorfunc, scalarfunc)
     esc(Expr(:block,
         # DataArray with other array
         Any[
@@ -263,7 +275,8 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                 function $(vectorfunc)(a::$atype, b::$btype)
                     data1 = $(atype == :DataArray || atype == :(DataArray{Bool}) ? :(a.data) : :a)
                     data2 = $(btype == :DataArray || btype == :(DataArray{Bool}) ? :(b.data) : :b)
-                    res = Array($outtype, promote_shape(size(a), size(b)))
+                    res = Array(promote_op(@functorize($vectorfunc), eltype(a), eltype(b)),
+                                promote_shape(size(a), size(b)))
                     resna = $narule
                     @bitenumerate resna i na begin
                         if !na
@@ -284,7 +297,9 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
         Any[
             quote
                 function $(vectorfunc)(a::$atype, b::$btype)
-                    res = similar($(asim ? :a : :b), $outtype, promote_shape(size(a), size(b)))
+                    res = similar($(asim ? :a : :b),
+                                  promote_op(@functorize($vectorfunc), eltype(a), eltype(b)),
+                                  promote_shape(size(a), size(b)))
                     for i = 1:length(a)
                         res[i] = $(scalarfunc)(a[i], b[i])
                     end
@@ -607,7 +622,7 @@ end
 (.^)(::Irrational{:e}, B::AbstractDataArray) = exp(B)
 
 for f in (:(+), :(.+), :(-), :(.-),
-          :(*), :(.*), :(.^), :(Base.div),
+          :(*), :(.*), :(/), :(./), :(.^), :(Base.div),
           :(Base.mod), :(Base.fld), :(Base.rem), :(Base.min),
           :(Base.max))
     @eval begin
@@ -685,7 +700,7 @@ end
 
 end # if isdefined(Base, :UniformScaling)
 
-for f in (:(.+), :(.-), :(*), :(.*),
+for f in (:(.+), :(.-), :(*), :(.*), :(./),
           :(.^), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
         # Array with NA
@@ -693,7 +708,7 @@ for f in (:(.+), :(.-), :(*), :(.*),
             DataArray(Array(T, size(b)), trues(size(b)))
 
         # DataArray with scalar
-        @dataarray_binary_scalar $f $f promote_type(eltype(a), eltype(b)) true
+        @dataarray_binary_scalar $f $f nothing true
     end
 end
 
@@ -708,33 +723,20 @@ end
 (^)(::NAtype, ::Integer) = NA
 (^)(::NAtype, ::Number) = NA
 
-for (vf, sf) in ((:(+), :(+)),
-                 (:(-), :(-)))
+for f in (:(+), :(-))
     @eval begin
         # Necessary to avoid ambiguity warnings
-        @swappable ($vf)(A::BitArray, B::AbstractDataArray{Bool}) = ($vf)(Array(A), B)
-        @swappable ($vf)(A::BitArray, B::DataArray{Bool}) = ($vf)(Array(A), B)
+        @swappable ($f)(A::BitArray, B::AbstractDataArray{Bool}) = ($f)(Array(A), B)
+        @swappable ($f)(A::BitArray, B::DataArray{Bool}) = ($f)(Array(A), B)
 
-        @dataarray_binary_array $vf $sf promote_type(eltype(a), eltype(b))
+        @dataarray_binary_array $f $f
     end
 end
 
-# / and ./ are defined separately since they promote to floating point
-for f in (:(/), :(./))
-    @eval begin
-        ($f)(::NAtype, ::NAtype) = NA
-        @swappable ($f)(d::NAtype, x::Number) = NA
-    end
-end
-
+# / is defined separately since it is not swappable
 (/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
     DataArray(Array(T, size(b)), trues(size(b)))
-@dataarray_binary_scalar(/, /, eltype(a) <: AbstractFloat || typeof(b) <: AbstractFloat ?
-                                      promote_type(eltype(a), typeof(b)) : Float64, false)
-@swappable (./){T,N}(::NAtype, b::AbstractArray{T,N}) =
-    DataArray(Array(T, size(b)), trues(size(b)))
-@dataarray_binary_scalar(./, /, eltype(a) <: AbstractFloat || typeof(b) <: AbstractFloat ?
-                                      promote_type(eltype(a), typeof(b)) : Float64, true)
+@dataarray_binary_scalar(/, /, nothing, false)
 
 for f in biscalar_operators
     @eval begin

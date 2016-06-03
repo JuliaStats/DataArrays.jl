@@ -173,7 +173,9 @@ module TestOperators
 
     # Binary operations on pairs of DataVector's
     dv = convert(DataArray, ones(5))
-    dv[1] = NA
+    # Dates are an example of type for which - and .- return a different type from its inputs
+    dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
+    dv[1] = dvd[1] = NA
     @test_da_pda dv begin
         for f in map(eval, DataArrays.array_arithmetic_operators)
             for i in 1:length(dv)
@@ -185,6 +187,12 @@ module TestOperators
             for i in 1:length(bv)
                 @assert f(bv, bv)[i] == f(bv[i], bv[i])
             end
+        end
+        for i in 1:length(dvd)
+            @assert isna((dvd - dvd)[i]) && isna(dvd[i]) ||
+                    (dvd - dvd)[i] == dvd[i] - dvd[i]
+            @assert isna((dvd .- dvd)[i]) && isna(dvd[i]) ||
+                    (dvd .- dvd)[i] == dvd[i] - dvd[i]
         end
     end
 
@@ -226,27 +234,46 @@ module TestOperators
 
     # Pairwise vector operators on DataVector's
     dv = @data([911, 269, 835.0, 448, 772])
+    # Dates are an example of type for which operations return a different type from their inputs
+    dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
     for f in map(eval, DataArrays.pairwise_vector_operators)
         @assert isequal(f(dv), f(dv.data))
+        @assert isequal(f(dvd), f(dvd.data))
     end
     dv = @data([NA, 269, 835.0, 448, 772])
+    dvd = @data([NA, Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
     for f in map(eval, DataArrays.pairwise_vector_operators)
         v = f(dv)
         @assert isna(v[1])
         @assert isequal(v[2:4], f(dv.data)[2:4])
+
+        d = f(dvd)
+        @assert isna(d[1])
+        @assert isequal(d[2:3], f(dvd.data)[2:3])
     end
     dv = @data([911, NA, 835.0, 448, 772])
+    dvd = @data([Base.Date("2000-01-01"), NA, Base.Date("2010-01-01"), Base.Date("2010-01-05")])
     for f in map(eval, DataArrays.pairwise_vector_operators)
         v = f(dv)
         @assert isna(v[1])
         @assert isna(v[2])
         @assert isequal(v[3:4], f(dv.data)[3:4])
+
+        d = f(dvd)
+        @assert isna(d[1])
+        @assert isna(d[2])
+        @assert isequal(d[3:3], f(dvd.data)[3:3])
     end
     dv = @data([911, 269, 835.0, 448, NA])
+    dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05"), NA])
     for f in map(eval, DataArrays.pairwise_vector_operators)
         v = f(dv)
         @assert isna(v[4])
         @assert isequal(v[1:3], f(dv.data)[1:3])
+
+        d = f(dvd)
+        @assert isna(d[3])
+        @assert isequal(d[1:2], f(dvd.data)[1:2])
     end
 
     # Cumulative vector operators on DataVector's
