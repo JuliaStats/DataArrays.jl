@@ -602,24 +602,22 @@ data(a::AbstractArray) = convert(DataArray, a)
 
 #' @description
 #'
-#' Convert a DataArray to an Array of int, float or bool type.
+#' Convert a DataArray to an Array of float type.
 #'
 #' @param da::DataArray{T} The DataArray that will be converted.
 #'
-#' @returns a::Array{Union(Int, Float64, Bool)} An Array containing the
+#' @returns a::Array{Float64} An Array containing the
 #'          type-converted values of `da`.
 #'
 #' @examples
 #'
 #' dv = @data [1, 2, NA, 4]
-#' v = int(dv)
 #' v = float(dv)
-#' v = bool(dv)
 #
 # TODO: Make sure these handle copying correctly
 # TODO: Remove these? They have odd behavior, because they convert to Array's.
 # TODO: Rethink multi-item documentation approach
-for f in (:(Base.int), :(Base.float), :(Base.bool))
+for f in (:(Base.float),)
     @eval begin
         function ($f)(da::DataArray) # -> DataArray
             if anyna(da)
