@@ -28,6 +28,16 @@ type DataArray{T, N} <: AbstractDataArray{T, N}
             msg = "Data and missingness arrays must be the same size"
             throw(ArgumentError(msg))
         end
+        # additionally check if d does not contain NA entries
+        if eltype(d) == Any
+            for i in eachindex(d)
+                if isassigned(d, i) && isna(d, i)
+                    m[i] = true
+                end
+            end
+        elseif eltype(d) <: NAtype
+            m = trues(m)
+        end
         new(d, m)
     end
 end
@@ -592,22 +602,24 @@ data(a::AbstractArray) = convert(DataArray, a)
 
 #' @description
 #'
-#' Convert a DataArray to an Array of float type.
+#' Convert a DataArray to an Array of int, float or bool type.
 #'
 #' @param da::DataArray{T} The DataArray that will be converted.
 #'
-#' @returns a::Array{Float64} An Array containing the
+#' @returns a::Array{Union(Int, Float64, Bool)} An Array containing the
 #'          type-converted values of `da`.
 #'
 #' @examples
 #'
 #' dv = @data [1, 2, NA, 4]
+#' v = int(dv)
 #' v = float(dv)
+#' v = bool(dv)
 #
 # TODO: Make sure these handle copying correctly
 # TODO: Remove these? They have odd behavior, because they convert to Array's.
 # TODO: Rethink multi-item documentation approach
-for f in (:(Base.float),)
+for f in (:(Base.int), :(Base.float), :(Base.bool))
     @eval begin
         function ($f)(da::DataArray) # -> DataArray
             if anyna(da)
