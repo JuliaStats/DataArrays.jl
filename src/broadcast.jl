@@ -2,20 +2,6 @@ using DataArrays, Base.@get!
 using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache,
                       promote_eltype, broadcast_shape, eltype_plus
 
-if isdefined(Base.Broadcast, :type_minus)
-    using Base.Broadcast: type_minus, type_div, type_pow
-    const _type_minus = type_minus
-    const _type_rdiv = type_div
-    const _type_ldiv = type_div
-    const _type_pow = type_pow
-else
-    using Base.Broadcast: promote_op
-    _type_minus(T, S) = promote_op(@functorize(-), T, S)
-    _type_rdiv(T, S) = promote_op(@functorize(/), T, S)
-    _type_ldiv(T, S) = promote_op(@functorize(\), T, S)
-    _type_pow(T, S) = promote_op(@functorize(^), T, S)
-end
-
 # Check that all arguments are broadcast compatible with shape
 # Differs from Base in that we check for exact matches
 function check_broadcast_shape(shape::Dims, As::(@compat Union{AbstractArray,Number})...)
@@ -265,7 +251,7 @@ macro da_broadcast_vararg(func)
         rep = Any[Symbol("A_$(i)") for i = 1:n]
         push!(rep, va)
         exreplace!(def.args[2], va, rep)
-        rep = cell(n+1)
+        rep = Vector{Any}(n+1)
         for i = 1:aa
             rep[i] = Expr(:(::), Symbol("A_$i"), AbstractArray)
         end
@@ -304,30 +290,43 @@ end
 @da_broadcast_vararg (.*)(As...) = databroadcast(*, As...)
 @da_broadcast_binary (.%)(A, B) = databroadcast(%, A, B)
 @da_broadcast_vararg (.+)(As...) = broadcast!(+, DataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
-@da_broadcast_binary (.-)(A, B) = broadcast!(-, DataArray(_type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
-@da_broadcast_binary (./)(A, B) = broadcast!(/, DataArray(_type_rdiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
-@da_broadcast_binary (.\)(A, B) = broadcast!(\, DataArray(_type_ldiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+@da_broadcast_binary (.-)(A, B) =
+    broadcast!(-, DataArray(promote_op(@functorize(-), eltype(A), eltype(B)),
+                            broadcast_shape(A,B)), A, B)
+@da_broadcast_binary (./)(A, B) =
+    broadcast!(/, DataArray(promote_op(@functorize(/), eltype(A), eltype(B)),
+                            broadcast_shape(A, B)), A, B)
+@da_broadcast_binary (.\)(A, B) =
+    broadcast!(\, DataArray(promote_op(@functorize(\), eltype(A), eltype(B)),
+                            broadcast_shape(A, B)), A, B)
 (.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
 (.^)(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
 (.^)(A::AbstractArray{Bool}, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
 (.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(>=, A, B)
 (.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
-@da_broadcast_binary (.^)(A, B) = broadcast!(^, DataArray(_type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+@da_broadcast_binary (.^)(A, B) =
+    broadcast!(^, DataArray(promote_op(@functorize(^), eltype(A), eltype(B)),
+                            broadcast_shape(A, B)), A, B)
 
 # XXX is a PDA the right return type for these?
 Base.broadcast(f::Function, As::PooledDataArray...) = pdabroadcast(f, As...)
 (.*)(As::PooledDataArray...) = pdabroadcast(*, As...)
 (.%)(A::PooledDataArray, B::PooledDataArray) = pdabroadcast(%, A, B)
-(.+)(As::PooledDataArray...) = broadcast!(+, PooledDataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
+(.+)(As::PooledDataArray...) =
+    broadcast!(+, PooledDataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
 (.-)(A::PooledDataArray, B::PooledDataArray) =
-    broadcast!(-, PooledDataArray(_type_minus(eltype(A), eltype(B)), broadcast_shape(A,B)), A, B)
+    broadcast!(-, PooledDataArray(promote_op(@functorize(-), eltype(A), eltype(B)),
+                                  broadcast_shape(A,B)), A, B)
 (./)(A::PooledDataArray, B::PooledDataArray) =
-    broadcast!(/, PooledDataArray(_type_rdiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+    broadcast!(/, PooledDataArray(promote_op(@functorize(/), eltype(A), eltype(B)),
+                                  broadcast_shape(A, B)), A, B)
 (.\)(A::PooledDataArray, B::PooledDataArray) =
-    broadcast!(\, PooledDataArray(_type_ldiv(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+    broadcast!(\, PooledDataArray(promote_op(@functorize(\), eltype(A), eltype(B)),
+                                  broadcast_shape(A, B)), A, B)
 (.^)(A::PooledDataArray{Bool}, B::PooledDataArray{Bool}) = databroadcast(>=, A, B)
 (.^)(A::PooledDataArray, B::PooledDataArray) =
-    broadcast!(^, PooledDataArray(_type_pow(eltype(A), eltype(B)), broadcast_shape(A, B)), A, B)
+    broadcast!(^, PooledDataArray(promote_op(@functorize(^), eltype(A), eltype(B)),
+                                  broadcast_shape(A, B)), A, B)
 
 for (sf, vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
