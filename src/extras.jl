@@ -64,15 +64,15 @@ end
 cut(x::AbstractVector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
 
 function Base.repeat{T,N}(A::DataArray{T,N};
-                          inner::Array{Int} = ones(Int, ndims(A)),
-                          outer::Array{Int} = ones(Int, ndims(A)))
+                          inner = ones(Int, ndims(A)),
+                          outer = ones(Int, ndims(A)))
     DataArray{T,N}(Compat.repeat(A.data; inner=inner, outer=outer),
                    bitpack(Compat.repeat(A.na; inner=inner, outer=outer)))
 end
 
 function Base.repeat{T,R,N}(A::PooledDataArray{T,R,N};
-                            inner::Array{Int} = ones(Int, ndims(A)),
-                            outer::Array{Int} = ones(Int, ndims(A)))
+                            inner = ones(Int, ndims(A)),
+                            outer = ones(Int, ndims(A)))
     PooledDataArray(RefArray{R,N}(Compat.repeat(A.refs; inner=inner, outer=outer)),
                     A.pool)
 end
