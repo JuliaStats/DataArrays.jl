@@ -525,42 +525,15 @@ function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected:
     end
 end
 
-function Base.varzm!(R::AbstractArray, A::DataArray; corrected::Bool=true,
-                     skipna::Bool=false, init::Bool=true)
-    if isempty(A)
-        fill!(R, convert(eltype(R), NaN))
-    else
-        init && fill!(R, zero(eltype(R)))
-        if skipna
-            C = Array(Int, size(R))
-            _mapreducedim_skipna_impl!(@functorize(abs2), @functorize(+), R, C, A)
-            if corrected
-                for i = 1:length(C)
-                    @inbounds C[i] = max(C[i] - 1, 0)
-                end
-            end
-            broadcast!(/, R, R, C)
-        else
-            Base.sumabs2!(R, A; init=true)
-            broadcast!(/, R, R, div(length(A), length(R)) - @compat(Int(corrected)))
-        end
-    end
-end
-
 Base.varm{T}(A::DataArray{T}, m::AbstractArray, region; corrected::Bool=true,
              skipna::Bool=false) =
     Base.varm!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A, m;
                corrected=corrected, skipna=skipna, init=false)
 
-Base.varzm{T}(A::DataArray{T}, region::(@compat Union{Integer, AbstractArray, Tuple});
-              corrected::Bool=true, skipna::Bool=false) =
-    Base.varzm!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A;
-               corrected=corrected, skipna=skipna, init=false)
-
 function Base.var{T}(A::DataArray{T}, region::(@compat Union{Integer, AbstractArray, Tuple});
                      corrected::Bool=true, mean=nothing, skipna::Bool=false)
     if mean == 0
-        Base.varzm(A, region; corrected=corrected, skipna=skipna)
+        Base.varm(A, Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), region; corrected=corrected, skipna=skipna)
     elseif mean == nothing
         if skipna
             # Can reduce mean into ordinary array

@@ -159,15 +159,8 @@ function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::
 end
 Base.varm{T}(A::DataArray{T}, m::NAtype; corrected::Bool=true, skipna::Bool=false) = NA
 
-function Base.varzm{T}(A::DataArray{T}; corrected::Bool=true, skipna::Bool=false)
-    n = length(A)
-    nna = skipna ? countnz(A.na) : 0
-    (n == 0 || n == nna) && return convert(Base.momenttype(T), NaN)
-    return Base.sumabs2(A; skipna=skipna) / (n - nna - @compat(Int(corrected)))
-end
-
 function Base.var(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false)
-    mean == 0 ? Base.varzm(A; corrected=corrected, skipna=skipna) :
+    mean == 0 ? Base.varm(A, 0; corrected=corrected, skipna=skipna) :
     mean == nothing ? varm(A, Base.mean(A; skipna=skipna); corrected=corrected, skipna=skipna) :
     isa(mean, (@compat Union{Number, NAtype})) ?
         varm(A, mean; corrected=corrected, skipna=skipna) :
