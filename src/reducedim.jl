@@ -533,7 +533,8 @@ Base.varm{T}(A::DataArray{T}, m::AbstractArray, region; corrected::Bool=true,
 function Base.var{T}(A::DataArray{T}, region::(@compat Union{Integer, AbstractArray, Tuple});
                      corrected::Bool=true, mean=nothing, skipna::Bool=false)
     if mean == 0
-        Base.varm(A, Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), region; corrected=corrected, skipna=skipna)
+        Base.varm(A, Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), region;
+                  corrected=corrected, skipna=skipna)
     elseif mean == nothing
         if skipna
             # Can reduce mean into ordinary array
