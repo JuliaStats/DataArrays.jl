@@ -67,7 +67,7 @@ function Base.repeat{T,N}(A::DataArray{T,N};
                           inner::Array{Int} = ones(Int, ndims(A)),
                           outer::Array{Int} = ones(Int, ndims(A)))
     DataArray{T,N}(Compat.repeat(A.data; inner=inner, outer=outer),
-                   bitpack(Compat.repeat(A.na; inner=inner, outer=outer)))
+                   BitArray(Compat.repeat(A.na; inner=inner, outer=outer)))
 end
 
 function Base.repeat{T,R,N}(A::PooledDataArray{T,R,N};
