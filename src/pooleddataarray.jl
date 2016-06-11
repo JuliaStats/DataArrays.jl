@@ -613,7 +613,7 @@ Perm{O<:Base.Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
 
 function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
                                                    v2::PooledDataArray{S,R,N})
-    pool = sort(unique([v1.pool, v2.pool]))
+    pool = sort(unique([v1.pool; v2.pool]))
     sz = length(pool)
 
     REFTYPE = sz <= typemax(UInt8)  ? UInt8 :
