@@ -49,4 +49,9 @@ module TestExtras
     @test isequal(repeat(@pdata [:a :b NA]; inner = [2,1], outer = [1,3]),
                   @pdata [:a :b NA :a :b NA :a :b NA;
                           :a :b NA :a :b NA :a :b NA])
+    @test isequal(repeat(@data [3.0, 2.0, NA]; inner = 2, outer = 1),
+                  @data [3.0, 3.0, 2.0, 2.0, NA, NA])
+    @test isequal(repeat(@pdata ["a", "b", NA]; inner = 2, outer = 1),
+                  @pdata ["a", "a", "b", "b", NA, NA])
+
 end
