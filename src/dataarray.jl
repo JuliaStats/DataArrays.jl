@@ -176,7 +176,11 @@ function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Inte
     if n == 0
         return dest
     elseif n < 0
-        throw(BoundsError())
+        if VERSION >= v"0.5.0-dev+4711"
+            throw(ArgumentError("tried to copy n=$n elements, but n should be nonnegative"))
+        else
+            throw(BoundsError())
+        end
     end
     if isbits(eltype(src))
         copy!(dest.data, doffs, src.data, soffs, n)
