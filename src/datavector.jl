@@ -68,19 +68,31 @@ function Base.splice!(dv::DataVector, inds::(@compat Union{Integer, UnitRange{In
     l = last(inds)
     d = length(inds)
 
-    if m < d
-        delta = d - m
-        if f-1 < n-l
-            Base._deleteat_beg!(a, f, delta)
-        else
-            Base._deleteat_end!(a, l-delta+1, delta)
+    if VERSION >= v"0.5.0-dev+5022"
+        if m < d
+            delta = d - m
+            i = (f - 1 < n - l) ? f : (l - delta + 1)
+            Base._deleteat!(a, i, delta)
+        elseif m > d
+            delta = m - d
+            i = (f - 1 < n - l) ? f : (l + 1)
+            Base._growat!(a, i, delta)
         end
-    elseif m > d
-        delta = m - d
-        if f-1 < n-l
-            Base._growat_beg!(a, f, delta)
-        else
-            Base._growat_end!(a, l+1, delta)
+    else
+        if m < d
+            delta = d - m
+            if f-1 < n-l
+                Base._deleteat_beg!(a, f, delta)
+            else
+                Base._deleteat_end!(a, l-delta+1, delta)
+            end
+        elseif m > d
+            delta = m - d
+            if f-1 < n-l
+                Base._growat_beg!(a, f, delta)
+            else
+                Base._growat_end!(a, l+1, delta)
+            end
         end
     end
 
