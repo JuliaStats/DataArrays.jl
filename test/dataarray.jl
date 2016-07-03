@@ -92,7 +92,11 @@ module TestDataArray
             @test_throws BoundsError copy!(dest, 1, src, idx, 1)
         end
 
-        @test_throws BoundsError copy!(dest, 1, src, 1, -1)
+        if VERSION >= v"0.5.0-dev+4711"
+            @test_throws ArgumentError copy!(dest, 1, src, 1, -1)
+        else
+            @test_throws BoundsError copy!(dest, 1, src, 1, -1)
+        end
 
         @test_throws BoundsError copy!(dest, bigsrc)
 
