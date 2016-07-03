@@ -27,6 +27,8 @@ module TestPDA
     @assert levels(setlevels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
     @assert levels(setlevels!(copy(p), Dict([(1, 111)]))) == [111, 8, 9]
     @assert levels(setlevels!(copy(p), Dict([(1, 111), (8, NA)]))) == [111, 9]
+    # issue #201
+    @assert levels(setlevels!(@pdata([1.0, 2.0]), [3,4])) == [3.0, 4.0]
 
     y = @pdata [1, NA, -2, 1, NA, 4, NA]
     @assert isequal(unique(y), @pdata [1, NA, -2, 4])

@@ -399,6 +399,9 @@ function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
     end
 end
 
+setlevels!{T, R}(x::PooledDataArray{T, R},
+                 newpool::AbstractVector) = setlevels!(x, convert(Array{T}, newpool))
+
 function setlevels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
