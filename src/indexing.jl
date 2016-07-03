@@ -77,16 +77,22 @@ function Base.to_index(A::DataArray)
     Base.to_index(A.data)
 end
 
-Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
-function Base.checkbounds{T<:Real}(::Type{Bool}, sz::Int, I::AbstractDataArray{T})
-    anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
-    extr = daextract(I)
-    b = true
-    for i = 1:length(I)
-        @inbounds v = unsafe_getindex_notna(I, extr, i)
-        b &= Base.checkbounds(Bool, sz, v)
+
+if VERSION >= v"0.5.0-"
+    Base.checkindex(::Type{Bool}, ::UnitRange, ::NAtype) =
+        throw(NAException("cannot index an array with a DataArray containing NA values"))
+else
+    Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
+    function Base.checkbounds{T<:Real}(::Type{Bool}, sz::Int, I::AbstractDataArray{T})
+        anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
+        extr = daextract(I)
+        b = true
+        for i = 1:length(I)
+            @inbounds v = unsafe_getindex_notna(I, extr, i)
+            b &= Base.checkbounds(Bool, sz, v)
+        end
+        b
     end
-    b
 end
 
 import Base: index_shape, index_lengths, setindex_shape_check
