@@ -78,7 +78,7 @@ function Base.to_index(A::DataArray)
 end
 
 
-if VERSION >= v"0.5.0-"
+if isdefined(Base, :checkindex)
     Base.checkindex(::Type{Bool}, ::UnitRange, ::NAtype) =
         throw(NAException("cannot index an array with a DataArray containing NA values"))
 else
