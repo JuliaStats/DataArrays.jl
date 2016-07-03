@@ -61,7 +61,7 @@ function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})
     PooledDataArray(RefArray(refs), pool)
 end
 
-cut(x::AbstractVector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
+cut(x::AbstractVector, ngroups::Integer) = cut(x, quantile(x, collect(1 : ngroups - 1) / ngroups))
 
 function Base.repeat{T,N}(A::DataArray{T,N};
                           inner = ntuple(x->1, ndims(A)),
