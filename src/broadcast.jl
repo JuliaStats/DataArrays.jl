@@ -221,8 +221,8 @@ for bsig in (DataArray, PooledDataArray), asig in (Union{Array,BitArray,Number},
     end
 end
 
-databroadcast(f::Function, As...) = broadcast!(f, DataArray(promote_eltype(As...), broadcast_shape(As...)), As...)
-pdabroadcast(f::Function, As...) = broadcast!(f, PooledDataArray(promote_eltype(As...), broadcast_shape(As...)), As...)
+databroadcast(f::Function, As...) = broadcast!(f, DataArray(promote_eltype(As...), map(last, broadcast_shape(As...))), As...)
+pdabroadcast(f::Function, As...) = broadcast!(f, PooledDataArray(promote_eltype(As...), map(last, broadcast_shape(As...))), As...)
 
 function exreplace!(ex::Expr, search, rep)
     for i = 1:length(ex.args)
@@ -289,16 +289,16 @@ end
 (.*)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(*, A, B)
 @da_broadcast_vararg (.*)(As...) = databroadcast(*, As...)
 @da_broadcast_binary (.%)(A, B) = databroadcast(%, A, B)
-@da_broadcast_vararg (.+)(As...) = broadcast!(+, DataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
+@da_broadcast_vararg (.+)(As...) = broadcast!(+, DataArray(eltype_plus(As...), map(last, broadcast_shape(As...))), As...)
 @da_broadcast_binary (.-)(A, B) =
     broadcast!(-, DataArray(promote_op(@functorize(-), eltype(A), eltype(B)),
-                            broadcast_shape(A,B)), A, B)
+                            map(last, broadcast_shape(A,B))), A, B)
 @da_broadcast_binary (./)(A, B) =
     broadcast!(/, DataArray(promote_op(@functorize(/), eltype(A), eltype(B)),
-                            broadcast_shape(A, B)), A, B)
+                            map(last, broadcast_shape(A, B))), A, B)
 @da_broadcast_binary (.\)(A, B) =
     broadcast!(\, DataArray(promote_op(@functorize(\), eltype(A), eltype(B)),
-                            broadcast_shape(A, B)), A, B)
+                            map(last, broadcast_shape(A, B))), A, B)
 (.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
 (.^)(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
 (.^)(A::AbstractArray{Bool}, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
@@ -306,38 +306,40 @@ end
 (.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
 @da_broadcast_binary (.^)(A, B) =
     broadcast!(^, DataArray(promote_op(@functorize(^), eltype(A), eltype(B)),
-                            broadcast_shape(A, B)), A, B)
+                            map(last, broadcast_shape(A, B))), A, B)
 
 # XXX is a PDA the right return type for these?
 Base.broadcast(f::Function, As::PooledDataArray...) = pdabroadcast(f, As...)
 (.*)(As::PooledDataArray...) = pdabroadcast(*, As...)
 (.%)(A::PooledDataArray, B::PooledDataArray) = pdabroadcast(%, A, B)
 (.+)(As::PooledDataArray...) =
-    broadcast!(+, PooledDataArray(eltype_plus(As...), broadcast_shape(As...)), As...)
+    broadcast!(+, PooledDataArray(eltype_plus(As...),
+                                  map(last, broadcast_shape(As...))), As...)
 (.-)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(-, PooledDataArray(promote_op(@functorize(-), eltype(A), eltype(B)),
-                                  broadcast_shape(A,B)), A, B)
+                                  map(last, broadcast_shape(A, B))), A, B)
 (./)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(/, PooledDataArray(promote_op(@functorize(/), eltype(A), eltype(B)),
-                                  broadcast_shape(A, B)), A, B)
+                                  map(last, broadcast_shape(A, B))), A, B)
 (.\)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(\, PooledDataArray(promote_op(@functorize(\), eltype(A), eltype(B)),
-                                  broadcast_shape(A, B)), A, B)
+                                  map(last, broadcast_shape(A, B))), A, B)
 (.^)(A::PooledDataArray{Bool}, B::PooledDataArray{Bool}) = databroadcast(>=, A, B)
 (.^)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(^, PooledDataArray(promote_op(@functorize(^), eltype(A), eltype(B)),
-                                  broadcast_shape(A, B)), A, B)
+                                  map(last, broadcast_shape(A, B))), A, B)
 
 for (sf, vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
         # ambiguity
         $(vf)(A::(@compat Union{PooledDataArray{Bool},DataArray{Bool}}), B::(@compat Union{PooledDataArray{Bool},DataArray{Bool}})) =
-            broadcast!($sf, DataArray(Bool, broadcast_shape(A, B)), A, B)
+            broadcast!($sf, DataArray(Bool, map(last, broadcast_shape(A, B))), A, B)
         $(vf)(A::(@compat Union{PooledDataArray{Bool},DataArray{Bool}}), B::AbstractArray{Bool}) =
-            broadcast!($sf, DataArray(Bool, broadcast_shape(A, B)), A, B)
+            broadcast!($sf, DataArray(Bool, map(last, broadcast_shape(A, B))), A, B)
         $(vf)(A::AbstractArray{Bool}, B::(@compat Union{PooledDataArray{Bool},DataArray{Bool}})) =
-            broadcast!($sf, DataArray(Bool, broadcast_shape(A, B)), A, B)
+            broadcast!($sf, DataArray(Bool, map(last, broadcast_shape(A, B))), A, B)
 
-        @da_broadcast_binary $(vf)(A, B) = broadcast!($sf, DataArray(Bool, broadcast_shape(A, B)), A, B)
+        @da_broadcast_binary $(vf)(A, B) = broadcast!($sf,
+            DataArray(Bool, map(last, broadcast_shape(A, B))), A, B)
     end
 end
