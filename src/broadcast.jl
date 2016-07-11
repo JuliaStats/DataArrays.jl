@@ -5,7 +5,7 @@ using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache,
 if isdefined(Base, :OneTo)
     broadcastshape(x...) = Base.to_shape(broadcast_shape(x...))
 else
-    broadcastshape = broadcast_shape
+    const broadcastshape = broadcast_shape
 end
 
 # Check that all arguments are broadcast compatible with shape

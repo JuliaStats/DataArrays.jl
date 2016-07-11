@@ -79,7 +79,7 @@ end
 
 
 if isdefined(Base, :checkindex)
-    Base.checkindex(::Type{Bool}, ::UnitRange, ::NAtype) =
+    Base.checkindex(::Type{Bool}, ::AbstractUnitRange, ::NAtype) =
         throw(NAException("cannot index an array with a DataArray containing NA values"))
 else
     Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
