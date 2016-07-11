@@ -98,9 +98,9 @@ end
 import Base: index_shape, index_lengths, setindex_shape_check
 
 if isdefined(Base, :OneTo)
-    indexshape(x...) = Base.to_shape(index_shape(x...))
+    _index_shape(x...) = Base.to_shape(index_shape(x...))
 else
-    indexshape = index_shape
+    _index_shape = index_shape
 end
 
 # Fallbacks to avoid ambiguity
@@ -155,7 +155,7 @@ end
 end
 
 function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,AbstractVector}}})
-    shape = indexshape(A, I...)
+    shape = _index_shape(A, I...)
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
 
