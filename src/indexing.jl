@@ -78,7 +78,10 @@ function Base.to_index(A::DataArray)
 end
 
 
-if isdefined(Base, :checkindex)
+if isdefined(Base, :checkindex) && isdefined(Base, :AbstractUnitRange)
+    Base.checkindex(::Type{Bool}, ::AbstractUnitRange, ::NAtype) =
+        throw(NAException("cannot index an array with a DataArray containing NA values"))
+elseif isdefined(Base, :checkindex)
     Base.checkindex(::Type{Bool}, ::UnitRange, ::NAtype) =
         throw(NAException("cannot index an array with a DataArray containing NA values"))
 else
@@ -96,6 +99,12 @@ else
 end
 
 import Base: index_shape, index_lengths, setindex_shape_check
+
+if isdefined(Base, :OneTo)
+    _index_shape(x...) = Base.to_shape(index_shape(x...))
+else
+    _index_shape = index_shape
+end
 
 # Fallbacks to avoid ambiguity
 Base.setindex!(t::AbstractDataArray, x, i::Real) =
@@ -149,7 +158,7 @@ end
 end
 
 function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,AbstractVector}}})
-    shape = index_shape(A, I...)
+    shape = _index_shape(A, I...)
     _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
 end
 
