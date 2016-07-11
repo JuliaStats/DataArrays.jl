@@ -78,8 +78,11 @@ function Base.to_index(A::DataArray)
 end
 
 
-if isdefined(Base, :checkindex)
+if isdefined(Base, :checkindex) && isdefined(Base, :AbstractUnitRange)
     Base.checkindex(::Type{Bool}, ::AbstractUnitRange, ::NAtype) =
+        throw(NAException("cannot index an array with a DataArray containing NA values"))
+elseif isdefined(Base, :checkindex)
+    Base.checkindex(::Type{Bool}, ::UnitRange, ::NAtype) =
         throw(NAException("cannot index an array with a DataArray containing NA values"))
 else
     Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
