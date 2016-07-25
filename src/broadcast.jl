@@ -1,6 +1,7 @@
 using DataArrays, Base.@get!
 using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache,
-                      promote_eltype, broadcast_shape, eltype_plus
+                      promote_eltype, broadcast_shape
+using Compat: promote_eltype_op
 
 if isdefined(Base, :OneTo)
     _broadcast_shape(x...) = Base.to_shape(broadcast_shape(x...))
@@ -295,7 +296,7 @@ end
 (.*)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(*, A, B)
 @da_broadcast_vararg (.*)(As...) = databroadcast(*, As...)
 @da_broadcast_binary (.%)(A, B) = databroadcast(%, A, B)
-@da_broadcast_vararg (.+)(As...) = broadcast!(+, DataArray(eltype_plus(As...), _broadcast_shape(As...)), As...)
+@da_broadcast_vararg (.+)(As...) = broadcast!(+, DataArray(promote_eltype_op(@functorize(+), As...), _broadcast_shape(As...)), As...)
 @da_broadcast_binary (.-)(A, B) =
     broadcast!(-, DataArray(promote_op(@functorize(-), eltype(A), eltype(B)),
                             _broadcast_shape(A,B)), A, B)
@@ -319,7 +320,7 @@ Base.broadcast(f::Function, As::PooledDataArray...) = pdabroadcast(f, As...)
 (.*)(As::PooledDataArray...) = pdabroadcast(*, As...)
 (.%)(A::PooledDataArray, B::PooledDataArray) = pdabroadcast(%, A, B)
 (.+)(As::PooledDataArray...) =
-    broadcast!(+, PooledDataArray(eltype_plus(As...), _broadcast_shape(As...)), As...)
+    broadcast!(+, PooledDataArray(promote_eltype_op(@functorize(+), As...), _broadcast_shape(As...)), As...)
 (.-)(A::PooledDataArray, B::PooledDataArray) =
     broadcast!(-, PooledDataArray(promote_op(@functorize(-), eltype(A), eltype(B)),
                                   _broadcast_shape(A,B)), A, B)
