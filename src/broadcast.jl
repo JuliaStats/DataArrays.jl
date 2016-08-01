@@ -1,6 +1,6 @@
-using DataArrays, Base.@get!
-using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache,
-                      promote_eltype, broadcast_shape
+using DataArrays
+using Base: @get!, promote_eltype
+using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache, broadcast_shape
 using Compat: promote_eltype_op
 
 if isdefined(Base, :OneTo)
