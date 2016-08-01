@@ -6,6 +6,7 @@ DataArrays.jl
 
 [![DataArrays](http://pkg.julialang.org/badges/DataArrays_0.3.svg)](http://pkg.julialang.org/?pkg=DataArrays&ver=0.3)
 [![DataArrays](http://pkg.julialang.org/badges/DataArrays_0.4.svg)](http://pkg.julialang.org/?pkg=DataArrays&ver=0.4)
+[![DataArrays](http://pkg.julialang.org/badges/DataArrays_0.5.svg)](http://pkg.julialang.org/?pkg=DataArrays)
 
 The DataArrays package extends Julia by introducing data structures that can contain missing data. In particular, the package introduces three new data types to Julia:
 
