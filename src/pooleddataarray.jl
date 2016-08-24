@@ -436,9 +436,70 @@ function setlevels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this version
     setlevels!(x, newpool)
 end
 
+##############################################################################
+##
+## reorder()
+##
+##############################################################################
+
+"""
+    `reorder(pda,newpool)` reorders the current pool and references related to that pool using alphabetical order of the `newpool`.
+
+    Input:
+    - `pda` reference object to be used to contruct a new one
+    - `newpool` to replace the current one
+
+    Output:
+    A new PooledDataObject object
+"""
 reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
-reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
+"""
+    `reorder(pda,newpool)` reorders the current pool and references related to that pool. A new pool should be a subset of the 
+    old one(see `inclusioncheck` argument). If you want to change pool identifiers, use `setlevels` first, before using `reorder`.
+
+    Input:
+    - `pda` reference object to be used to contruct a new one
+    - `newpool` to replace the current one
+    - `inclusioncheck` (default true) checks whether `newpoll` ⊆ `pda.pool`
+
+    Output:
+    A new PooledDataObject object
+"""
+reorder(pda::PooledDataArray, newpool::AbstractVector, inclusioncheck=true) = begin
+    inclusioncheck && !issubset(newpool, pda.pool) && throw(ArgumentError("A new pool must be a subset of the current one."))
+    
+    PooledDataArray(pda, newpool)
+end
+
+"""
+    `reorder!(pda,newpool)` reorders the current pool and references related to that pool. A new pool should be a subset of the 
+    old one(see `inclusioncheck` argument). If you want to change pool identifiers, use `setlevels` first, before using `reorder!`.
+
+    Input:
+    - `pda` PooledDataArray to be changed
+    - `newpool` to replace the current one
+    - `inclusioncheck` (default true) checks whether `newpoll` ⊆ `pda.pool`
+
+    Output:
+    Current `pda` object
+"""
+reorder!{T,R<:Integer,N}(pda::PooledDataArray{T,R,N}, newpool::Vector{T}, inclusioncheck=true) = begin
+    inclusioncheck && !issubset(newpool, pda.pool) && throw(ArgumentError("A new pool must be a subset of the current one."))
+
+    tidx::Array{R} = findat(newpool, pda.pool)
+    oldrefs = pda.refs
+    for i in 1:length(oldrefs)
+        if oldrefs[i] != 0
+            oldrefs[i] = tidx[oldrefs[i]]
+        end
+    end
+    pda.pool = newpool
+    return pda
+end
+
+# commented due to #167 issue 
+#reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
 ### FIXME: this can't work because we don't know about DataFrames
 # reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
