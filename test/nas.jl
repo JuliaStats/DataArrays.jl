@@ -63,4 +63,9 @@ module TestNAs
     @test_throws NAException for v in each_failna(dv); end
     @test collect(each_dropna(dv)) == a
     @test collect(each_replacena(dv, 4)) == [4, 4, a..., 4]
+
+    dv = DataArray(Array(1:6), push!(fill(false, 3),fill(true, 3)...))
+    a = dropna(dv)
+    f = x -> round(Int, mean(dropna(x)))
+    @test collect(each_replacena(dv, f)) == [1, 2, 3, 2, 2, 2]
 end
