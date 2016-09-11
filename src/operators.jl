@@ -526,13 +526,13 @@ end
 
 # ambiguity
 @swappable (==)(a::DataArray{Bool}, b::BitArray) =
-    invoke(==, (DataArray, AbstractArray), a, b)
+    invoke(==, Tuple{DataArray,AbstractArray}, a, b)
 @swappable (==)(a::DataArray, b::BitArray) =
-    invoke(==, (DataArray, AbstractArray), a, b)
+    invoke(==, Tuple{DataArray,AbstractArray}, a, b)
 @swappable (==)(a::AbstractDataArray{Bool}, b::BitArray) =
-    invoke(==, (DataArray, AbstractArray), a, b)
+    invoke(==, Tuple{DataArray,AbstractArray}, a, b)
 @swappable (==)(a::AbstractDataArray, b::BitArray) =
-    invoke(==, (DataArray, AbstractArray), a, b)
+    invoke(==, Tuple{DataArray,AbstractArray}, a, b)
 
 function (==)(a::DataArray, b::DataArray)
     size(a) == size(b) || return false
@@ -552,7 +552,7 @@ end
 
 # ambiguity
 @swappable (==)(a::DataArray, b::AbstractDataArray) =
-    invoke(==, (AbstractDataArray, AbstractDataArray), a, b)
+    invoke(==, Tuple{AbstractDataArray,AbstractDataArray}, a, b)
 
 @swappable function (==)(a::DataArray, b::AbstractArray)
     size(a) == size(b) || return false
@@ -672,31 +672,31 @@ function (-){TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
 end
 
 (+)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(+, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
+    invoke(+, Tuple{AbstractArray{Bool,2},UniformScaling{Bool}}, A, J)
 (+)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
-    invoke(+, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Bool,2}}, J, A)
 (-)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
+    invoke(-, Tuple{AbstractArray{Bool,2},UniformScaling{Bool}}, A, J)
 (-)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
-    invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Bool,2}}, J, A)
 
 (+){TA,TJ}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
-    invoke(+, (AbstractArray{TA,2}, UniformScaling{TJ}), A, J)
+    invoke(+, Tuple{AbstractArray{TA,2},UniformScaling{TJ}}, A, J)
 (+){TA}(J::UniformScaling,A::AbstractDataArray{TA,2}) =
-    invoke(+, (UniformScaling, AbstractArray{TA,2}), J, A)
+    invoke(+, Tuple{UniformScaling,AbstractArray{TA,2}}, J, A)
 (-){TA,TJ<:Number}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
-    invoke(-, (AbstractArray{TA,2}, UniformScaling{TJ}), A, J)
+    invoke(-, Tuple{AbstractArray{TA,2},UniformScaling{TJ}}, A, J)
 (-){TA,TJ<:Number}(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) =
-    invoke(-, (UniformScaling{TJ}, AbstractArray{TA,2}), J, A)
+    invoke(-, Tuple{UniformScaling{TJ},AbstractArray{TA,2}}, J, A)
 
 (+)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(+, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
+    invoke(+, Tuple{AbstractArray{Bool,2},UniformScaling{Bool}}, A, J)
 (+)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
-    invoke(+, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Bool,2}}, J, A)
 (-)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(-, (AbstractArray{Bool,2}, UniformScaling{Bool}), A, J)
+    invoke(-, Tuple{AbstractArray{Bool,2},UniformScaling{Bool}}, A, J)
 (-)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
-    invoke(-, (UniformScaling{Bool}, AbstractArray{Bool,2}), J, A)
+    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Bool,2}}, J, A)
 
 end # if isdefined(Base, :UniformScaling)
 
