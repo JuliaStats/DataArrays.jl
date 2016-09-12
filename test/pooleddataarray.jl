@@ -117,6 +117,6 @@ module TestPDA
     ca1 = compact(pa1);
     ca2 = compact(pa2);
     @test vcat(ca1, ca2) == vcat(a1, a2)
-    @test vcat(ca1, ca2) |> DataArrays.reftype == UInt16
+    @test vcat(ca1, ca2) |> DataArrays.reftype == DataArrays.DEFAULT_POOLED_REF_TYPE
     @test vcat(ca1, pa2) |> DataArrays.reftype == DataArrays.DEFAULT_POOLED_REF_TYPE
 end

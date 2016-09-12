@@ -830,26 +830,23 @@ function dropna{T}(pdv::PooledDataVector{T})
     return res
 end
 
-function Base.vcat(pa::PooledDataArray...)
-    N = length(size(pa[1]))
-    for p in pa
-        @assert length(size(p))==N
+function Base.vcat{T,R,N}(p1::PooledDataArray{T,R,N}, p2::PooledDataArray...)
+    dim{T2,R2,N2}(p::PooledDataArray{T2,R2,N2}) = N
+
+    for p in p2
+        @assert dim(p)==N
     end
 
-    pools = [p.pool for p in pa]
-    pool = levels([pools...;])
+    pa = PooledDataArray[p1, p2...]
 
-    # grow the reftype as much as needed
-    # unless one of the reftypes in 'pa' was big enough
-    ref_sz = [typemax(reftype(p)) for p in pa]
-    sz = maximum([length(pool), ref_sz...])
-    REFTYPE = compactreftype(sz)
+    pools = Vector{T}[p.pool for p in pa]
+    pool = levels(T[pools...;])
 
-    idx = map(pa) do p
+    idx = [ begin
         m = findat(pool, p.pool)
         m[p.refs]
-    end
+    end for p in pa]
 
-    refs = Array{REFTYPE,N}([idx...;])
+    refs = Array{DEFAULT_POOLED_REF_TYPE,N}([idx...;])
     PooledDataArray(RefArray(refs), pool)
 end
