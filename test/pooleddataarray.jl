@@ -109,4 +109,14 @@ module TestPDA
     pda = @pdata([NA, "A", "B", "C", "A", "B"])
     @test isequal(Base.permute!!(copy(pda), [2, 5, 3, 6, 4, 1]), @pdata(["A", "A", "B", "B", "C", NA]))
     @test isequal(Base.ipermute!!(copy(pda), [6, 1, 3, 5, 2, 4]), @pdata(["A", "A", "B", "B", "C", NA]))
+
+    a1 = 1:200
+    a2 = 100:300
+    pa1 = PooledDataArray(a1);
+    pa2 = PooledDataArray(a2);
+    ca1 = compact(pa1);
+    ca2 = compact(pa2);
+    @test vcat(ca1, ca2) == vcat(a1, a2)
+    @test vcat(ca1, ca2) |> DataArrays.reftype == UInt16
+    @test vcat(ca1, pa2) |> DataArrays.reftype == DataArrays.DEFAULT_POOLED_REF_TYPE
 end

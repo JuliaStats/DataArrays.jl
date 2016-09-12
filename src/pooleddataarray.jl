@@ -143,6 +143,9 @@ for (f, basef) in ((:pdatazeros, :zeros), (:pdataones, :ones))
     end
 end
 
+# Pooled reference type
+reftype{T,R}(pa::PooledDataArray{T,R}) = R
+
 ##############################################################################
 ##
 ## Basic size properties of all Data* objects
@@ -251,13 +254,15 @@ end
 ##
 ##############################################################################
 
-function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
-    sz = length(d.pool)
-
+function compactreftype(sz)
     REFTYPE = sz <= typemax(UInt8)  ? UInt8 :
               sz <= typemax(UInt16) ? UInt16 :
               sz <= typemax(UInt32) ? UInt32 :
                                       UInt64
+end
+
+function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
+    REFTYPE = compactreftype(length(d.pool))
 
     if REFTYPE == R
         return d
@@ -618,12 +623,7 @@ Perm{O<:Base.Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
 function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
                                                    v2::PooledDataArray{S,R,N})
     pool = sort(unique([v1.pool; v2.pool]))
-    sz = length(pool)
-
-    REFTYPE = sz <= typemax(UInt8)  ? UInt8 :
-              sz <= typemax(UInt16) ? UInt16 :
-              sz <= typemax(UInt32) ? UInt32 :
-                                      UInt64
+    REFTYPE = compactreftype(length(pool))
 
     tidx1 = convert(Vector{REFTYPE}, findat(pool, v1.pool))
     tidx2 = convert(Vector{REFTYPE}, findat(pool, v2.pool))
@@ -828,4 +828,28 @@ function dropna{T}(pdv::PooledDataVector{T})
     end
     resize!(res, total)
     return res
+end
+
+function Base.vcat(pa::PooledDataArray...)
+    N = length(size(pa[1]))
+    for p in pa
+        @assert length(size(p))==N
+    end
+
+    pools = [p.pool for p in pa]
+    pool = levels([pools...;])
+
+    # grow the reftype as much as needed
+    # unless one of the reftypes in 'pa' was big enough
+    ref_sz = [typemax(reftype(p)) for p in pa]
+    sz = maximum([length(pool), ref_sz...])
+    REFTYPE = compactreftype(sz)
+
+    idx = map(pa) do p
+        m = findat(pool, p.pool)
+        m[p.refs]
+    end
+
+    refs = Array{REFTYPE,N}([idx...;])
+    PooledDataArray(RefArray(refs), pool)
 end
