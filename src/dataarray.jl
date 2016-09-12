@@ -583,7 +583,11 @@ Base.convert{T, N}(::Type{DataArray}, x::AbstractArray{T, N}) =
 #' dv_alt = convert(DataVector{Float64}, dv)
 function Base.convert{S, T, N}(::Type{DataArray{S, N}},
                                x::DataArray{T, N}) # -> DataArray{S, N}
-    return DataArray(convert(Array{S}, x.data), x.na)
+    v = Array{S,N}(size(x.data)...)
+    @inbounds for i = find(!x.na)
+        v[i] = convert(S, x.data[i])
+    end
+    return DataArray(v, x.na)
 end
 
 #' @description
