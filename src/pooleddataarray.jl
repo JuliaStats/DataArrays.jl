@@ -132,7 +132,7 @@ PooledDataArray{T,R<:Integer}(d::Array{T},
 
 # Explicitly convert Ranges into a PooledDataVector
 PooledDataArray{R<:Integer}(rs::Range,
-                            r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray([rs], falses(length(rs)), r)
+                            r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(collect(rs), falses(length(rs)), r)
 
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:pdatazeros, :zeros), (:pdataones, :ones))
