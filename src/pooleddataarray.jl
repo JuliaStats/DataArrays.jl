@@ -487,10 +487,11 @@ function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
         push!(pda.pool, val)
         pool_idx = length(pda.pool)
         if pool_idx > typemax(R)
-            throw(ErrorException(
-                "You're using a PooledDataArray with ref type $R, which can only hold $(int(typemax(R))) values,\n",
-                "and you just tried to add the $(typemax(R)+1)th reference.  Please change the ref type\n",
-                "to a larger int type, or use the default ref type ($DEFAULT_POOLED_REF_TYPE)."
+            throw(ArgumentError(
+                "You're using a PooledDataArray with ref type $R,\n" *
+                "which can only hold $(Int(typemax(R))) values, and you just tried to add the $(Int(typemax(R))+1)th\n" *
+                "reference. Please change the ref type to a larger int type, or use the\n" *
+                "default ref type ($DEFAULT_POOLED_REF_TYPE)."
             ))
         end
     end
