@@ -19,4 +19,9 @@ module TestConversions
     # Should raise errors:
     # matrix(dm)
     # convert(Matrix{Float64}, dm)
+
+    a = DataArray(Any,2)
+    convert(DataArray{Integer}, a)
+    a[1] = 2
+    convert(DataArray{Integer}, a)
 end
