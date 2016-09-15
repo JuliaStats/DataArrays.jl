@@ -835,6 +835,7 @@ function Base.vcat{T,R,N}(p1::PooledDataArray{T,R,N}, p2::PooledDataArray...)
 
     for p in p2
         @assert dim(p)==N
+        @assert size(p)[2:end] == size(p1)[2:end]
     end
 
     pa = PooledDataArray[p1, p2...]

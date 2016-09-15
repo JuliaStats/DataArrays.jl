@@ -119,4 +119,12 @@ module TestPDA
     @test vcat(ca1, ca2) == vcat(a1, a2)
     @test vcat(ca1, ca2) |> DataArrays.reftype == DataArrays.DEFAULT_POOLED_REF_TYPE
     @test vcat(ca1, pa2) |> DataArrays.reftype == DataArrays.DEFAULT_POOLED_REF_TYPE
+
+    a1 = zeros(2,3,4,5)
+    a2 = zeros(3,3,4,5)
+    a1[1:end] = 1:length(a1)
+    a2[1:end] = (1:length(a2)) + length(a1)
+    ca1 = PooledDataArray(a1) |> compact;
+    ca2 = PooledDataArray(a2) |> compact;
+    @test vcat(ca1, ca2) == vcat(a1, a2)
 end
