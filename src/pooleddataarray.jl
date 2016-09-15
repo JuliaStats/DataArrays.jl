@@ -831,10 +831,8 @@ function dropna{T}(pdv::PooledDataVector{T})
 end
 
 function Base.vcat{T,R,N}(p1::PooledDataArray{T,R,N}, p2::PooledDataArray...)
-    dim{T2,R2,N2}(p::PooledDataArray{T2,R2,N2}) = N
-
     for p in p2
-        @assert dim(p)==N
+        @assert ndims(p) == N
         @assert size(p)[2:end] == size(p1)[2:end]
     end
 
