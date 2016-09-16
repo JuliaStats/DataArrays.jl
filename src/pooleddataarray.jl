@@ -143,9 +143,6 @@ for (f, basef) in ((:pdatazeros, :zeros), (:pdataones, :ones))
     end
 end
 
-# Pooled reference type
-reftype{T,R}(pa::PooledDataArray{T,R}) = R
-
 ##############################################################################
 ##
 ## Basic size properties of all Data* objects
@@ -831,18 +828,11 @@ function dropna{T}(pdv::PooledDataVector{T})
 end
 
 function Base.vcat{T,R,N}(p1::PooledDataArray{T,R,N}, p2::PooledDataArray...)
-    for p in p2
-        @assert ndims(p) == N
-        @assert size(p)[2:end] == size(p1)[2:end]
-    end
+    pa = (p1, p2...)
+    pool = unique(T[[p.pool for p in pa]...;])
 
-    pa = PooledDataArray[p1, p2...]
-
-    pools = Vector{T}[p.pool for p in pa]
-    pool = levels(T[pools...;])
-
-    idx = [ begin
-        m = findat(pool, p.pool)
+    idx = [begin
+        m = indexin(p.pool, pool)
         m[p.refs]
     end for p in pa]
 
