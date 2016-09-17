@@ -121,8 +121,8 @@ module TestPDA
     @test isa(r, PooledDataArray{Int,DataArrays.DEFAULT_POOLED_REF_TYPE})
     @test isa(vcat(ca1, pa2), PooledDataArray{Int,DataArrays.DEFAULT_POOLED_REF_TYPE})
 
-    a1 = Array{Int64}(2,3,4,5)
-    a2 = Array{Int64}(3,3,4,5)
+    a1 = Array{Int}(2,3,4,5)
+    a2 = Array{Int}(3,3,4,5)
     a1[1:end] = length(a1):-1:1
     a2[1:end] = (1:length(a2)) + 10
     ca1 = compact(PooledDataArray(a1))
