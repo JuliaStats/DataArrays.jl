@@ -831,10 +831,7 @@ function Base.vcat{T,R,N}(p1::PooledDataArray{T,R,N}, p2::PooledDataArray...)
     pa = (p1, p2...)
     pool = unique(T[[p.pool for p in pa]...;])
 
-    idx = [begin
-        m = indexin(p.pool, pool)
-        m[p.refs]
-    end for p in pa]
+    idx = [indexin(p.pool, pool)[p.refs] for p in pa]
 
     refs = Array{DEFAULT_POOLED_REF_TYPE,N}([idx...;])
     PooledDataArray(RefArray(refs), pool)
