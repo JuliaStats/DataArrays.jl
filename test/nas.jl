@@ -4,7 +4,8 @@ module TestNAs
 
 
     # anyna(a::AbstractArray)
-    anyna([1, 2])
+    @test anyna(Any[NA, 1])
+    @test !anyna([1, 2])
     anyna(repeat([1, 2], outer = [1, 2]))
     @test !anyna(repeat([1, 2], outer = [1, 2, 2]))
 
@@ -25,7 +26,9 @@ module TestNAs
     @test anyna(pda)
 
     # allna(a::AbstractArray)
-    allna([1, 2])
+    @test allna(Any[NA, NA])
+    @test !allna(Any[NA, 1])
+    @test !allna([1, 2])
     allna(repeat([1, 2], outer = [1, 2]))
     @test !allna(repeat([1, 2], outer = [1, 2, 2]))
 

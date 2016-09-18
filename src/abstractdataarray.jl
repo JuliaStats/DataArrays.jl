@@ -85,7 +85,7 @@ isna{T}(a::AbstractArray{T}, i::Real) = NAtype <: T ? isa(a[i], NAtype) : false 
 #'
 #' a = [1, 2, 3]
 #' anyna(a)
-anyna(a::AbstractArray) = false # -> Bool
+anyna(a::AbstractArray) = any(isna(a)) # -> Bool
 
 #' @description
 #'
@@ -100,7 +100,7 @@ anyna(a::AbstractArray) = false # -> Bool
 #'
 #' a = [1, 2, 3]
 #' allna(a)
-allna(a::AbstractArray) = false # -> Bool
+allna(a::AbstractArray) = all(isna(a)) # -> Bool
 
 #' @description
 #'
