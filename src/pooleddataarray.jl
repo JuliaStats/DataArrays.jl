@@ -251,13 +251,15 @@ end
 ##
 ##############################################################################
 
-function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
-    sz = length(d.pool)
-
+function compactreftype(sz)
     REFTYPE = sz <= typemax(UInt8)  ? UInt8 :
               sz <= typemax(UInt16) ? UInt16 :
               sz <= typemax(UInt32) ? UInt32 :
                                       UInt64
+end
+
+function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
+    REFTYPE = compactreftype(length(d.pool))
 
     if REFTYPE == R
         return d
@@ -618,12 +620,7 @@ Perm{O<:Base.Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
 function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
                                                    v2::PooledDataArray{S,R,N})
     pool = sort(unique([v1.pool; v2.pool]))
-    sz = length(pool)
-
-    REFTYPE = sz <= typemax(UInt8)  ? UInt8 :
-              sz <= typemax(UInt16) ? UInt16 :
-              sz <= typemax(UInt32) ? UInt32 :
-                                      UInt64
+    REFTYPE = compactreftype(length(pool))
 
     tidx1 = convert(Vector{REFTYPE}, findat(pool, v1.pool))
     tidx2 = convert(Vector{REFTYPE}, findat(pool, v2.pool))
@@ -828,4 +825,14 @@ function dropna{T}(pdv::PooledDataVector{T})
     end
     resize!(res, total)
     return res
+end
+
+function Base.vcat{T,R,N}(p1::PooledDataArray{T,R,N}, p2::PooledDataArray...)
+    pa = (p1, p2...)
+    pool = unique(T[[p.pool for p in pa]...;])
+
+    idx = [indexin(p.pool, pool)[p.refs] for p in pa]
+
+    refs = Array{DEFAULT_POOLED_REF_TYPE,N}([idx...;])
+    PooledDataArray(RefArray(refs), pool)
 end
