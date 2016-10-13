@@ -358,7 +358,7 @@ levels{T}(pda::PooledDataArray{T}) = copy(pda.pool)
 function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
                                 newpool::Vector{S})
     # QUESTION: should we have a ! version of this? If so, needs renaming?
-    tidx::Array{R} = findat(newpool, x.pool)
+    tidx::Array{R} = indexin(x.pool, newpool)
     refs = zeros(R, length(x))
     for i in 1:length(refs)
         if x.refs[i] != 0
@@ -368,13 +368,13 @@ function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
     PooledDataArray(RefArray(refs), newpool)
 end
 
-myunique(x::AbstractVector) = x[sort(unique(findat(x, x)))]  # gets the ordering right
-myunique(x::AbstractDataVector) = myunique(dropna(x))   # gets the ordering right; removes NAs
+myunique(x::AbstractVector) = unique(x)
+myunique(x::AbstractDataVector) = unique(dropna(x))
 
 function setlevels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     pool = myunique(newpool)
     refs = zeros(R, length(x))
-    tidx::Array{R} = findat(pool, newpool)
+    tidx::Array{R} = indexin(newpool, pool)
     tidx[isna(newpool)] = 0
     for i in 1:length(refs)
         if x.refs[i] != 0
@@ -390,7 +390,7 @@ function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
         return x
     else
         x.pool = myunique(newpool)
-        tidx::Array{R} = findat(x.pool, newpool)
+        tidx::Array{R} = indexin(newpool, x.pool)
         tidx[isna(newpool)] = 0
         for i in 1:length(x.refs)
             if x.refs[i] != 0
@@ -622,8 +622,8 @@ function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
     pool = sort(unique([v1.pool; v2.pool]))
     REFTYPE = compactreftype(length(pool))
 
-    tidx1 = convert(Vector{REFTYPE}, findat(pool, v1.pool))
-    tidx2 = convert(Vector{REFTYPE}, findat(pool, v2.pool))
+    tidx1 = convert(Vector{REFTYPE}, indexin(v1.pool, pool))
+    tidx2 = convert(Vector{REFTYPE}, indexin(v2.pool, pool))
     refs1 = zeros(REFTYPE, length(v1))
     refs2 = zeros(REFTYPE, length(v2))
     for i in 1:length(refs1)
