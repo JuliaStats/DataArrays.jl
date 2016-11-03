@@ -96,10 +96,10 @@ function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
 end
 
 function Base.mapreduce(f, op::Function, A::DataArray; skipna::Bool=false)
-    is(op, +) ? (skipna ? _mapreduce_skipna(f, @functorize(+), A) : Base._mapreduce(f, @functorize(+), A)) :
-    is(op, *) ? (skipna ? _mapreduce_skipna(f, @functorize(*), A) : Base._mapreduce(f, @functorize(*), A)) :
-    is(op, &) ? (skipna ? _mapreduce_skipna(f, @functorize(&), A) : Base._mapreduce(f, @functorize(&), A)) :
-    is(op, |) ? (skipna ? _mapreduce_skipna(f, @functorize(|), A) : Base._mapreduce(f, @functorize(|), A)) :
+    (op === +) ? (skipna ? _mapreduce_skipna(f, @functorize(+), A) : Base._mapreduce(f, @functorize(+), A)) :
+    (op === *) ? (skipna ? _mapreduce_skipna(f, @functorize(*), A) : Base._mapreduce(f, @functorize(*), A)) :
+    (op === &) ? (skipna ? _mapreduce_skipna(f, @functorize(&), A) : Base._mapreduce(f, @functorize(&), A)) :
+    (op === |) ? (skipna ? _mapreduce_skipna(f, @functorize(|), A) : Base._mapreduce(f, @functorize(|), A)) :
     skipna ? _mapreduce_skipna(f, op, A) : Base._mapreduce(f, op, A)
 end
 

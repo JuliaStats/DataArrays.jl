@@ -263,19 +263,27 @@ if VERSION < v"0.5.0-dev+3701"
 end
 
 function Base.reducedim_initarray{R}(A::DataArray, region, v0, ::Type{R})
-    rd = Base.reduced_dims(A.data, region)
+    if VERSION < v"0.6.0-dev.1121"
+        rd = Base.reduced_dims(A.data, region)
+    else
+        rd = length.(Base.reduced_indices(A.data, region))
+    end
     DataArray(fill!(similar(A.data, R, rd), v0), falses(rd))
 end
 function Base.reducedim_initarray0{R}(A::DataArray, region, v0, ::Type{R})
-    rd = Base.reduced_dims0(A,region)
+    if VERSION < v"0.6.0-dev.1121"
+        rd = Base.reduced_dims0(A,region)
+    else
+        rd = length.(Base.reduced_indices0(A,region))
+    end
     DataArray(fill!(similar(A.data, R, rd), v0), falses(rd))
 end
 
 function Base.mapreducedim!(f::Function, op, R::AbstractArray, A::DataArray; skipna::Bool=false)
-    is(op, +) ? (skipna ? _mapreducedim_skipna!(f, @functorize(+), R, A) : _mapreducedim!(f, @functorize(+), R, A)) :
-    is(op, *) ? (skipna ? _mapreducedim_skipna!(f, @functorize(*), R, A) : _mapreducedim!(f, @functorize(*), R, A)) :
-    is(op, &) ? (skipna ? _mapreducedim_skipna!(f, @functorize(&), R, A) : _mapreducedim!(f, @functorize(&), R, A)) :
-    is(op, |) ? (skipna ? _mapreducedim_skipna!(f, @functorize(|), R, A) : _mapreducedim!(f, @functorize(|), R, A)) :
+    (op === +) ? (skipna ? _mapreducedim_skipna!(f, @functorize(+), R, A) : _mapreducedim!(f, @functorize(+), R, A)) :
+    (op === *) ? (skipna ? _mapreducedim_skipna!(f, @functorize(*), R, A) : _mapreducedim!(f, @functorize(*), R, A)) :
+    (op === &) ? (skipna ? _mapreducedim_skipna!(f, @functorize(&), R, A) : _mapreducedim!(f, @functorize(&), R, A)) :
+    (op === |) ? (skipna ? _mapreducedim_skipna!(f, @functorize(|), R, A) : _mapreducedim!(f, @functorize(|), R, A)) :
     skipna ? _mapreducedim_skipna!(f, op, R, A) : _mapreducedim!(f, op, R, A)
 end
 Base.mapreducedim!(f, op, R::AbstractArray, A::DataArray; skipna::Bool=false) =
@@ -538,7 +546,11 @@ function Base.var{T}(A::DataArray{T}, region::(@compat Union{Integer, AbstractAr
     elseif mean == nothing
         if skipna
             # Can reduce mean into ordinary array
-            m = zeros(Base.momenttype(T), Base.reduced_dims(A, region))
+            if VERSION < v"0.6.0-dev.1121"
+                m = zeros(Base.momenttype(T), Base.reduced_dims(A, region))
+            else
+                m = zeros(Base.momenttype(T), length.(Base.reduced_indices(A, region)))
+            end
             Base.varm(A, Base.mean!(m, A; skipna=skipna), region;
                  corrected=corrected, skipna=skipna)
         else

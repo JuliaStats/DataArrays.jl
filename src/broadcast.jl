@@ -1,12 +1,16 @@
 using DataArrays
 using Base: @get!, promote_eltype
-using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache, broadcast_shape
+using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache
 using Compat: promote_eltype_op
 
 if isdefined(Base, :OneTo)
-    _broadcast_shape(x...) = Base.to_shape(broadcast_shape(x...))
+    if VERSION < v"0.6.0-dev.1121"
+        _broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_shape(x...))
+    else
+        _broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_indices(x...))
+    end
 else
-    const _broadcast_shape = broadcast_shape
+    const _broadcast_shape = Base.Broadcast.broadcast_shape
 end
 
 # Check that all arguments are broadcast compatible with shape
