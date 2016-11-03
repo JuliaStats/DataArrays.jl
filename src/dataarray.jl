@@ -511,7 +511,7 @@ allna(da::DataArray) = all(da.na) # -> Bool
 #' da = @data([1, 2, 3])
 #' isnan(da)
 function Base.isnan(da::DataArray) # -> DataArray{Bool}
-    return DataArray(isnan(da.data), copy(da.na))
+    return @compat DataArray(isnan.(da.data), copy(da.na))
 end
 
 #' @description
