@@ -3,7 +3,7 @@ if VERSION < v"0.6.0-dev+1781"
 else
   using Primes
   numeric_predicates = (:(Base.iseven), :(Base.ispow2), :(Base.isfinite), :(Primes.isprime), :(Base.isinf), :(Base.isodd))
-endif
+end
   
 type_predicates = (:(Base.isinteger), :(Base.isreal))
 
