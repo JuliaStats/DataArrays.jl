@@ -1,5 +1,6 @@
-numeric_predicates = (:(Base.iseven), :(Base.ispow2), :(Base.isfinite), :(Base.isprime), :(Base.isinf), :(Base.isodd))
-
+numeric_predicates = [:(Base.iseven), :(Base.ispow2), :(Base.isfinite), :(Base.isinf), :(Base.isodd)]
+isdefined(Base, :isprime) && push!(numeric_predicates, :(Base.isprime))
+  
 type_predicates = (:(Base.isinteger), :(Base.isreal))
 
 container_predicates = (:(Base.isempty),)
