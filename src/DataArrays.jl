@@ -10,6 +10,8 @@ module DataArrays
     import Base: ==, !=, >, <, >=, <=, +, -, *, !, &, |, $, ^, /,
       .==, .!=, .>, .<, .>=, .<=, .+, .-, .*, .%, ./, .\, .^
 
+    import StatsBase: autocor, inverse_rle, rle
+
     export @data,
            @pdata,
            AbstractDataArray,
