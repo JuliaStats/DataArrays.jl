@@ -54,8 +54,6 @@ const two_argument_elementary_functions = [:(Base.round),
 
 const special_comparison_operators = [:(Base.isless)]
 
-const comparison_operators = [:(==),:(.==),:(!=),:(.!=),:(>),:(.>),:(>=),:(.>=),:(<),:(.<),:(<=),:(.<=)]
-
 const scalar_comparison_operators = [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
 
 const array_comparison_operators = [:(.==),:(.!=),:(.>),:(.>=),:(.<),:(.<=)]
@@ -70,12 +68,6 @@ const binary_operators = [:(+),:(.+),:(-),:(.-),:(*),:(.*),:(/),:(./),:(.^),
 
 const induced_binary_operators = [(:^)]
 
-const arithmetic_operators = [:(+),:(.+),:(-),:(.-),:(*),:(.*),:(/),:(./),:(.^),
-                              :(Base.div),
-                              :(Base.mod),
-                              :(Base.fld),
-                              :(Base.rem)]
-
 const induced_arithmetic_operators = [:(^)]
 
 const biscalar_operators = [:(Base.maximum),
@@ -89,10 +81,6 @@ const scalar_arithmetic_operators = [:(+),:(-),:(*),:(/),
 
 const induced_scalar_arithmetic_operators = [:(^)]
 
-const array_arithmetic_operators = [:(+),:(.+),:(-),:(.-),:(.*),:(.^)]
-
-const bit_operators = [:(&),:(|),:($)]
-
 const unary_vector_operators = [:(Base.median),
                                 :(StatsBase.mad),
                                 :(Base.norm),
@@ -100,10 +88,6 @@ const unary_vector_operators = [:(Base.median),
                                 :(StatsBase.kurtosis)]
 
 # TODO: dist, iqr
-
-const pairwise_vector_operators = [:(Base.diff)]
-                                   #:(Base.reldiff),
-                                   #:(Base.percent_change)]
 
 const cumulative_vector_operators = [:(Base.cumprod),
                                      :(Base.cumsum),
@@ -257,7 +241,7 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
                 if swappable
                     # For /, Array/Number is valid but not Number/Array
                     # All other operators should be swappable
-                    map!(x->Expr(:macrocall, Symbol("@swappable"), x, scalarfunc), fns)
+                    map!(x->Expr(:macrocall, Symbol("@swappable"), x, scalarfunc), fns, fns)
                 end
                 Expr(:block, fns...)
             end
@@ -275,8 +259,8 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
                 function $(vectorfunc)(a::$atype, b::$btype)
                     data1 = $(atype == :DataArray || atype == :(DataArray{Bool}) ? :(a.data) : :a)
                     data2 = $(btype == :DataArray || btype == :(DataArray{Bool}) ? :(b.data) : :b)
-                    res = Array(promote_op(@functorize($vectorfunc), eltype(a), eltype(b)),
-                                promote_shape(size(a), size(b)))
+                    res = Array{promote_op(@functorize($vectorfunc), eltype(a), eltype(b))}(
+                        promote_shape(size(a), size(b)))
                     resna = $narule
                     @bitenumerate resna i na begin
                         if !na
@@ -288,7 +272,7 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
             end
             for (atype, btype, narule) in ((:(DataArray), :(Range), :(copy(a.na))),
                                            (:(Range), :(DataArray), :(copy(b.na))),
-                                           (:DataArray, :DataArray, :(a.na | b.na)),
+                                           (:DataArray, :DataArray, :(a.na .| b.na)),
                                            (:DataArray, :AbstractArray, :(copy(a.na))),
                                            (:AbstractArray, :DataArray, :(copy(b.na))))
         ]...,
@@ -330,7 +314,8 @@ end
 # Treat ctranspose and * in a special way
 for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
     @eval begin
-        function $(f){T}(d::(@compat Union{DataVector{T}, DataMatrix{T}}))
+        $(f)(::NAtype) = NA
+        function $(f){T}(d::DataMatrix{T})
             # (c)transpose in Base uses a cache-friendly algorithm for
             # numeric arrays, which is faster than our naive algorithm,
             # but chokes on undefined values in the data array.
@@ -473,7 +458,7 @@ end
 # To avoid ambiguity warning
 @swappable (|)(a::NAtype, b::Function) = NA
 
-for f in (:(&), :(|), :($))
+for f in (:(&), :(|), :(Base.xor))
     @eval begin
         # Scalar with NA
         ($f)(::NAtype, ::NAtype) = NA
@@ -481,13 +466,13 @@ for f in (:(&), :(|), :($))
     end
 end
 
-# DataArray with DataArray
-(&)(a::DataArray{Bool}, b::DataArray{Bool}) =
-    DataArray(a.data & b.data, (a.na & b.na) | (a.na & b.data) | (b.na & a.data))
-(|)(a::DataArray{Bool}, b::DataArray{Bool}) =
-    DataArray(a.data | b.data, (a.na & b.na) | (a.na & !b.data) | (b.na & !a.data))
-($)(a::DataArray{Bool}, b::DataArray{Bool}) =
-    DataArray(a.data $ b.data, a.na | b.na)
+# # DataArray with DataArray
+# (&)(a::DataArray{Bool}, b::DataArray{Bool}) =
+#     DataArray(a.data & b.data, (a.na & b.na) | (a.na & b.data) | (b.na & a.data))
+# (|)(a::DataArray{Bool}, b::DataArray{Bool}) =
+#     DataArray(a.data | b.data, (a.na & b.na) | (a.na & !b.data) | (b.na & !a.data))
+# ($)(a::DataArray{Bool}, b::DataArray{Bool}) =
+#     DataArray(a.data $ b.data, a.na | b.na)
 
 # DataArray with non-DataArray
 # Need explicit definition for BitArray to avoid ambiguity
@@ -601,7 +586,7 @@ for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
     @eval begin
         # Array with NA
         @swappable ($(vf)){T,N}(::NAtype, b::AbstractArray{T,N}) =
-            DataArray(Array(Bool, size(b)), trues(size(b)))
+            DataArray(Array{Bool,N}(size(b)), trues(size(b)))
 
         # Scalar with NA
         ($(vf))(::NAtype, ::NAtype) = NA
@@ -705,7 +690,7 @@ for f in (:(.+), :(.-), :(*), :(.*), :(./),
     @eval begin
         # Array with NA
         @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
-            DataArray(Array(T, size(b)), trues(size(b)))
+            DataArray(Array{T,N}(size(b)), trues(size(b)))
 
         # DataArray with scalar
         @dataarray_binary_scalar $f $f nothing true
@@ -715,7 +700,7 @@ end
 for f in (:(+), :(-))
     # Array with NA
     @eval @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
-        DataArray(Array(T, size(b)), trues(size(b)))
+        DataArray(Array{T,N}(size(b)), trues(size(b)))
 end
 
 (^)(::NAtype, ::NAtype) = NA
@@ -735,7 +720,7 @@ end
 
 # / is defined separately since it is not swappable
 (/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
-    DataArray(Array(T, size(b)), trues(size(b)))
+    DataArray(Array{T,N}(size(b)), trues(size(b)))
 @dataarray_binary_scalar(/, /, nothing, false)
 
 for f in biscalar_operators
@@ -745,21 +730,19 @@ for f in biscalar_operators
     end
 end
 
-for f in pairwise_vector_operators
-    @eval function ($f)(dv::DataVector)
-        n = length(dv)
-        new_data = ($f)(dv.data)
-        new_na = falses(n - 1)
-        new_na[1] = dv.na[1]
-        for i = 2:(n - 1)
-            if dv.na[i]
-                new_na[i - 1] = true
-                new_na[i] = true
-            end
+function Base.LinAlg.diff(dv::DataVector)
+    n = length(dv)
+    new_data = diff(dv.data)
+    new_na = falses(n - 1)
+    new_na[1] = dv.na[1]
+    for i = 2:(n - 1)
+        if dv.na[i]
+            new_na[i - 1] = true
+            new_na[i] = true
         end
-        new_na[n - 1] = new_na[n - 1] || dv.na[n]
-        return DataArray(new_data, new_na)
     end
+    new_na[n - 1] = new_na[n - 1] || dv.na[n]
+    return DataArray(new_data, new_na)
 end
 
 for f in cumulative_vector_operators
@@ -900,7 +883,7 @@ function rle{T}(v::AbstractDataVector{T})
     current_length = 1
     values = DataArray(T, n)
     total_values = 1
-    lengths = Array(Int16, n)
+    lengths = Vector{Int16}(n)
     total_lengths = 1
     for i in 2:n
         if isna(v[i]) || isna(current_value)

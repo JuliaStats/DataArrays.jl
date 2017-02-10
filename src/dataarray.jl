@@ -108,7 +108,7 @@ end
 #'
 #' da = DataArray(Int, 2, 2)
 function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
-    return DataArray(Array(T, dims...), trues(dims...))
+    return DataArray(Array{T}(dims...), trues(dims...))
 end
 
 #' @description
@@ -125,7 +125,7 @@ end
 #'
 #' da = DataArray(Int, (2, 2))
 function DataArray{N}(T::Type, dims::NTuple{N, Int}) # -> DataArray{T}
-    return DataArray(Array(T, dims...), trues(dims...))
+    return DataArray(Array{T}(dims...), trues(dims...))
 end
 
 #' @description
@@ -250,7 +250,7 @@ end
 #' dv = @data [false, false, true, false]
 #' dv_new = similar(dv, Float64, 2, 2, 2)
 function Base.similar(da::DataArray, T::Type, dims::Dims) #-> DataArray{T}
-    return DataArray(Array(T, dims), trues(dims))
+    return DataArray(Array{T}(dims), falses(dims))
 end
 
 #' @description
@@ -329,7 +329,7 @@ function Base.find(da::DataArray{Bool}) # -> Array{Int}
     @inbounds @bitenumerate da.na i na begin
         ntrue += !na && data[i]
     end
-    res = Array(Int, ntrue)
+    res = Vector{Int}(ntrue)
     count = 1
     @inbounds @bitenumerate da.na i na begin
         if !na && data[i]
@@ -389,7 +389,7 @@ function Base.convert{S, T, N}(
     replacement::Any
 ) # -> Array{S, N}
     replacementS = convert(S, replacement)
-    res = Array(S, size(da))
+    res = Array{S}(size(da))
     for i in 1:length(da)
         if da.na[i]
             res[i] = replacementS
@@ -499,23 +499,6 @@ allna(da::DataArray) = all(da.na) # -> Bool
 
 #' @description
 #'
-#' Determine if the entries of an DataArray are `NaN`.
-#'
-#' @param da::DataArray{T, N} The DataArray whose elements will
-#'        be assessed.
-#'
-#' @returns na::DataArray{Bool} Elementwise Boolean whether entry is `NaN`.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' isnan(da)
-function Base.isnan(da::DataArray) # -> DataArray{Bool}
-    return @compat DataArray(isnan.(da.data), copy(da.na))
-end
-
-#' @description
-#'
 #' Determine if the entries of an DataArray are finite, which means
 #' neither `+/-NaN` nor `+/-Inf`.
 #'
@@ -530,7 +513,7 @@ end
 #' isfinite(da)
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
     n = length(da)
-    res = Array(Bool, size(da))
+    res = Array{Bool}(size(da))
     for i in 1:n
         if !da.na[i]
             res[i] = isfinite(da.data[i])
@@ -657,7 +640,7 @@ end
 #' dv = @data [1, 2, NA, 4]
 #' distinct_values, firstna = finduniques(dv)
 function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Int
-    out = Array(T,0)
+    out = Vector{T}(0)
     seen = Set{T}()
     n = length(da)
     firstna = 0
@@ -696,7 +679,7 @@ function Base.unique{T}(da::DataArray{T}) # -> DataVector{T}
     unique_values, firstna = finduniques(da)
     n = length(unique_values)
     if firstna > 0
-        res = DataArray(Array(T, n + 1))
+        res = DataArray(Vector{T}(n + 1))
         i = 1
         for val in unique_values
             if i == firstna

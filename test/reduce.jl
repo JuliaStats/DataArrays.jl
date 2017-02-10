@@ -62,26 +62,26 @@ bs = DataArrays.sum_pairwise_blocksize(@functorize(identity))
 for n in [bs-64, bs-1, bs, bs+1, bs+2, 2*bs-2:2*bs+3..., 4*bs-2:4*bs+3...]
     da = DataArray(randn(n))
     s = sum(da.data)
-    @test_approx_eq sum(da) s
-    @test_approx_eq sum(da; skipna=true) s
+    @test sum(da) ≈ s
+    @test sum(da; skipna=true) ≈ s
 
     da2 = copy(da)
     da2[1:2:end] = NA
     @test isna(sum(da2))
-    @test_approx_eq sum(da2; skipna=true) sum(dropna(da2))
+    @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
     da2 = convert(DataArray{BigFloat}, da2)
     @test isna(sum(da2))
-    @test_approx_eq sum(da2; skipna=true) sum(dropna(da2))
+    @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
     da2 = copy(da)
     da2[2:2:end] = NA
     @test isna(sum(da2))
-    @test_approx_eq sum(da2; skipna=true) sum(dropna(da2))
+    @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
     da2 = convert(DataArray{BigFloat}, da2)
     @test isna(sum(da2))
-    @test_approx_eq sum(da2; skipna=true) sum(dropna(da2))
+    @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 end
 
 ## other reductions
@@ -93,7 +93,7 @@ macro same_behavior(ex1, ex2)
         catch e
             e
         end
-        isa(v, Exception) ? @test_throws(typeof(v), $ex1) : @test_approx_eq($ex1, v)
+        isa(v, Exception) ? @test_throws(typeof(v), $ex1) : @test isapprox($ex1, v)
     end
 end
 
@@ -163,7 +163,7 @@ da1[1:3:end] = NA
 @same_behavior mean(da1, weights(da2.data); skipna=true) mean(dropna(da1), weights(da2.data[!da1.na]))
 
 da2[1:2:end] = NA
-keep = !da1.na & !da2.na
+keep = !da1.na .& !da2.na
 @test isna(mean(da1, weights(da2)))
 @same_behavior mean(da1, weights(da2); skipna=true) mean(da1.data[keep], weights(da2.data[keep]))
 end

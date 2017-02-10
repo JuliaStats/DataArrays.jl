@@ -87,9 +87,9 @@ end
 # NA, it returns NA. Otherwise we will fall back to the implementation
 # in Base, which is slow because it's type-unstable, but guarantees the
 # correct semantics
-typealias SafeMapFuns @compat Union{typeof(@functorize(identity)), typeof(@functorize(abs)), typeof(@functorize(abs2)),
-                            typeof(@functorize(exp)), typeof(@functorize(log)), typeof(@functorize(centralizedabs2fun))}
-typealias SafeReduceFuns @compat Union{typeof(@functorize(+)), typeof(@functorize(*)), typeof(@functorize(max)), typeof(@functorize(min))}
+typealias SafeMapFuns @compat Union{typeof(identity), typeof(abs), typeof(abs2),
+                            typeof(exp), typeof(log), typeof(Base.centralizedabs2fun)}
+typealias SafeReduceFuns @compat Union{typeof(+), typeof(*), typeof(max), typeof(min)}
 function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
     any(A.na) && return NA
     Base._mapreduce(f, op, A.data)
@@ -150,7 +150,7 @@ function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::
                                      abs2(A.data[Base.findnextnot(na, 1)] - m)/(1 - @compat(Int(corrected))))
 
         /(nna == 0 ? Base.centralize_sumabs2(A.data, m, 1, n) :
-                     mapreduce_impl_skipna(@functorize(centralizedabs2fun)(m), @functorize(+), A),
+                     mapreduce_impl_skipna(Base.centralizedabs2fun(m), +, A),
           n - nna - @compat(Int(corrected)))
     else
         any(A.na) && return NA

@@ -1,6 +1,6 @@
 function fixargs(args::Vector{Any}, stub::Any)
     n = length(args)
-    data = Array(Any, n)
+    data = Array{Any}(n)
     na = BitArray(n)
     for i in 1:n
         if args[i] == :NA
@@ -47,12 +47,12 @@ end
 function parsevector(ex::Expr)
     if ex.head in (:ref, :typed_hcat, :typed_vcat)
         data, na = fixargs(ex.args[2:end], :(zero($(ex.args[1]))))
-        return Expr(ex.head, ex.args[1], data...), ex.head == :typed_hcat ? na' : na
+        return Expr(ex.head, ex.args[1], data...), ex.head == :typed_hcat ? reshape(na, 1, length(na)) : na
     else
         stub = findstub_vector(ex)
         data, na = fixargs(ex.args, stub)
         if ex.head == :hcat
-            na = na'
+            na = reshape(na, 1, length(na))
         end
 
         if isequal(stub, NA)
@@ -73,8 +73,8 @@ function parsematrix(ex::Expr)
     end
 
     nrows = length(rows)
-    datarows = Array(Expr, nrows)
-    narows = Array(Expr, nrows)
+    datarows = Array{Expr}(nrows)
+    narows   = Array{Expr}(nrows)
     for irow in 1:nrows
         data, na = fixargs(ex.args[rows[irow]].args, stub)
         datarows[irow] = Expr(:row, data...)
@@ -104,7 +104,7 @@ macro data(ex)
     if !(ex.head in (:vect, :vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
             tmp = $(esc(ex))
-            DataArray(tmp, bitbroadcast(x->isequal(x, NA), tmp))
+            DataArray(tmp, broadcast(x->isequal(x, NA), tmp))
         end
     end
     dataexpr, naexpr = parsedata(ex)
@@ -115,7 +115,7 @@ macro pdata(ex)
     if !(ex.head in (:vect, :vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
             tmp = $(esc(ex))
-            PooledDataArray(tmp, bitbroadcast(x->isequal(x, NA), tmp))
+            PooledDataArray(tmp, broadcast(x->isequal(x, NA), tmp))
         end
     end
     dataexpr, naexpr = parsedata(ex)

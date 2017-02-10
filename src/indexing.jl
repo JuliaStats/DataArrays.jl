@@ -62,7 +62,7 @@ function combine_pools!(pool, newpool)
     end
 
     # Find pool elements in existing array, or add them
-    poolidx = Array(Int, length(newpool))
+    poolidx = Vector{Int}(length(newpool))
     for j = 1:length(newpool)
         poolidx[j] = Base.@get!(seen, newpool[j], (push!(pool, newpool[j]); i += 1))
     end
@@ -114,6 +114,8 @@ Base.getindex(t::AbstractDataArray, i::Real) =
 
 ## getindex: DataArray
 
+Base.linearindexing(x::Union{DataArray,PooledDataArray}) = Base.LinearFast()
+
 # Scalar case
 function Base.getindex(da::DataArray, I::Real)
     if getindex(da.na, I)
@@ -122,24 +124,24 @@ function Base.getindex(da::DataArray, I::Real)
         return getindex(da.data, I)
     end
 end
-@nsplat N function Base.getindex(da::DataArray, I::NTuple{N,Real}...)
-    if getindex(da.na, I...)
-        return NA
-    else
-        return getindex(da.data, I...)
-    end
-end
+# @nsplat N function Base.getindex(da::DataArray, I::NTuple{N,Real}...)
+#     if getindex(da.na, I...)
+#         return NA
+#     else
+#         return getindex(da.data, I...)
+#     end
+# end
 
 if VERSION > v"0.5-"
     Base.unsafe_getindex(x::Number, i::Int) = (@inbounds r = x[i]; r)
 end
 
 # Vector case
-@generated function _getindex!(dest::DataArray, src::DataArray, I::Union{Real, AbstractArray, Colon}...)
+@generated function Base._unsafe_getindex!(dest::DataArray, src::DataArray, I::Union{Real, AbstractArray}...)
     N = length(I)
     quote
         $(Expr(:meta, :inline))
-        idxlens = index_lengths(src, I...) # TODO: unsplat?
+        idxlens = index_lengths(I...) # TODO: unsplat?
         srcextr = daextract(src)
         destextr = daextract(dest)
         srcsz = size(src)
@@ -157,25 +159,25 @@ end
     end
 end
 
-function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,AbstractVector}}})
-    shape = _index_shape(A, I...)
-    _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
-end
+# function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,AbstractVector}}})
+#     shape = _index_shape(Base.to_indices(A, I)...)
+#     _getindex!(DataArray(Array{T}(shape), falses(shape)), A, I...)
+# end
 
-@nsplat N function Base.getindex(A::DataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
-    checkbounds(A, I...)
-    _getindex(A, Base.to_indexes(I...))
-end
+# @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,Union{Real,Colon,AbstractVector}}...)
+    # checkbounds(A, I...)
+    # _getindex(A, Base.to_indexes(I...))
+# end
 
 # Dispatch our implementation for these cases instead of Base
-function Base.getindex(A::DataArray, I::AbstractVector)
-    checkbounds(A, I)
-    _getindex(A, (Base.to_index(I),))
-end
-function Base.getindex(A::DataArray, I::AbstractArray)
-    checkbounds(A, I)
-    _getindex(A, (Base.to_index(I),))
-end
+# function Base.getindex(A::DataArray, I::AbstractVector)
+#     checkbounds(A, I)
+#     _getindex(A, (Base.to_index(I),))
+# end
+# function Base.getindex(A::DataArray, I::AbstractArray)
+#     checkbounds(A, I)
+#     _getindex(A, (Base.to_index(I),))
+# end
 
 ## getindex: PooledDataArray
 
@@ -187,24 +189,29 @@ function Base.getindex(pda::PooledDataArray, I::Real)
         return pda.pool[getindex(pda.refs, I)]
     end
 end
-@nsplat N function Base.getindex(pda::PooledDataArray, I::NTuple{N,Real}...)
-    if getindex(pda.refs, I...) == 0
-        return NA
-    else
-        return pda.pool[getindex(pda.refs, I...)]
+
+@generated function Base.getindex(pda::PooledDataArray, I::Integer...)
+    quote
+        if getindex(pda.refs, I...) == 0
+            return NA
+        else
+            return pda.pool[getindex(pda.refs, I...)]
+        end
     end
 end
 
 # Vector case
-@nsplat N function Base.getindex(A::PooledDataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
-    PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
+@generated function Base.getindex(A::PooledDataArray, I::Union{AbstractVector,Colon}...)
+    quote
+        PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
+    end
 end
 
 # Dispatch our implementation for these cases instead of Base
-Base.getindex(A::PooledDataArray, I::AbstractVector) =
-    PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
-Base.getindex(A::PooledDataArray, I::AbstractArray) =
-    PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
+# Base.getindex(A::PooledDataArray, I::AbstractVector) =
+#     PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
+# Base.getindex(A::PooledDataArray, I::AbstractArray) =
+#     PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
 
 ## setindex!: DataArray
 
@@ -234,7 +241,7 @@ end
 ## setindex!: both DataArray and PooledDataArray
 
 @ngenerate N typeof(A) function Base.setindex!(A::AbstractDataArray, x,
-                                               J::NTuple{N,(@compat Union{Real,AbstractArray})}...)
+                                               J::NTuple{N,Union{Real,Colon,AbstractArray}}...)
     if !isa(x, AbstractArray) && isa(A, PooledDataArray)
         # Only perform one pool lookup when assigning a scalar value in
         # a PooledDataArray
@@ -244,7 +251,7 @@ end
 
     Aextr = daextract(A)
     @ncall N checkbounds A J
-    @nexprs N d->(I_d = Base.to_index(J_d))
+    @nexprs N d->(I_d = Base.to_indices(A, J)[d])
     stride_1 = 1
     @nexprs N d->(stride_{d+1} = stride_d*size(A,d))
     @nexprs N d->(offset_d = 1)  # really only need offset_$N = 1
@@ -259,7 +266,7 @@ end
         end
     else
         X = x
-        idxlens = @ncall N index_lengths A I
+        idxlens = @ncall N index_lengths I
         @ncall N setindex_shape_check X (d->idxlens[d])
         k = 1
         if isa(A, PooledDataArray) && isa(X, PooledDataArray)

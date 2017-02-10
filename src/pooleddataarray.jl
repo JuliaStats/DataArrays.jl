@@ -70,7 +70,7 @@ function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
         throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))"))
     end
 
-    newrefs = Array(R, size(d))
+    newrefs = Array{R,N}(size(d))
     poolref = Dict{T, R}()
 
     # loop through once to fill the poolref dict
@@ -101,14 +101,14 @@ function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
 end
 
 # Construct an all-NA PooledDataVector of a specific type
-PooledDataArray(t::Type, dims::@compat Tuple{Vararg{Int}}) = PooledDataArray(Array(t, dims), trues(dims))
-PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array(t, dims), trues(dims))
-PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::@compat Tuple{Vararg{Int}}) = PooledDataArray(Array(t, dims), trues(dims), r)
+PooledDataArray(t::Type, dims::@compat Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims))
+PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array{t}(dims), trues(dims))
+PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::@compat Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims), r)
 PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::Int...) = PooledDataArray(Array(t, dims), trues(dims), r)
 
 # Construct an empty PooledDataVector of a specific type
-PooledDataArray(t::Type) = PooledDataArray(similar(Array(t,1),0), trues(0))
-PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Array(t,1),0), trues(0), r)
+PooledDataArray(t::Type) = PooledDataArray(similar(Vector{t}(1),0), trues(0))
+PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Vector{t}(1),0), trues(0), r)
 
 # Convert a BitArray to an Array{Bool} (m = missingness)
 # For some reason an additional method is needed but even that doesn't work
@@ -289,7 +289,7 @@ end
 function Base.unique{T}(pda::PooledDataArray{T})
     n = length(pda)
     nlevels = length(pda.pool)
-    unique_values = Array(T, 0)
+    unique_values = Vector{T}(0)
     sizehint!(unique_values, nlevels)
     seen = Set{eltype(pda.refs)}()
 
@@ -312,7 +312,7 @@ function Base.unique{T}(pda::PooledDataArray{T})
     end
 
     if firstna > 0
-        res = DataArray(Array(T, nlevels + 1))
+        res = DataArray(Vector{T}(nlevels + 1))
         i = 0
         for val in unique_values
             i += 1
@@ -738,7 +738,7 @@ Base.convert(::Type{PooledDataArray}, a::AbstractArray) =
 
 function Base.convert{S,T,R<:Integer,N}(::Type{DataArray{S,N}},
                                         pda::PooledDataArray{T,R,N})
-    res = DataArray(Array(S, size(pda)), BitArray(size(pda)))
+    res = DataArray(Array{S}(size(pda)), BitArray(size(pda)))
     for i in 1:length(pda)
         r = pda.refs[i]
         if r == 0 # TODO: Use zero(R)
@@ -759,9 +759,9 @@ pdata(a::AbstractArray) = convert(PooledDataArray, a)
 
 function Base.convert{S, T, R, N}(
     ::Type{Array{S, N}},
-    pda::PooledDataArray{T, R, N}
-)
-    res = Array(S, size(pda))
+    pda::PooledDataArray{T, R, N})
+
+    res = Array{S}(size(pda))
     for i in 1:length(pda)
         if pda.refs[i] == zero(R)
             throw(NAException())
@@ -787,9 +787,9 @@ end
 function Base.convert{S, T, R, N}(
     ::Type{Array{S, N}},
     pda::PooledDataArray{T, R, N},
-    replacement::Any
-)
-    res = Array(S, size(pda))
+    replacement::Any)
+
+    res = Array{S}(size(pda))
     replacementS = convert(S, replacement)
     for i in 1:length(pda)
         if pda.refs[i] == zero(R)
@@ -815,7 +815,7 @@ end
 
 function dropna{T}(pdv::PooledDataVector{T})
     n = length(pdv)
-    res = Array(T, n)
+    res = Array{T}(n)
     total = 0
     for i in 1:n
         if pdv.refs[i] > 0

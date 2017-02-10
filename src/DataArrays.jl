@@ -1,4 +1,4 @@
-__precompile__()
+__precompile__(false)
 
 module DataArrays
     using Base.Cartesian, Compat, Reexport
@@ -7,8 +7,7 @@ module DataArrays
 
     const DEFAULT_POOLED_REF_TYPE = UInt32
 
-    import Base: ==, !=, >, <, >=, <=, +, -, *, !, &, |, $, ^, /,
-      .==, .!=, .>, .<, .>=, .<=, .+, .-, .*, .%, ./, .\, .^
+    import Base: ==, !=, >, <, >=, <=, +, -, *, !, &, |, $, ^, /
 
     import StatsBase: autocor, inverse_rle, rle
 

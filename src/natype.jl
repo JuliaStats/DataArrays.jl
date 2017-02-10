@@ -28,10 +28,14 @@ NAException() = NAException("NA found")
 
 Base.length(x::NAtype) = 1
 Base.size(x::NAtype) = ()
+Base.size(x::NAtype, i::Integer) = i < 1 ? throw(BoundsError()) : 1
 Base.ndims(x::NAtype) = 0
+Base.getindex(x::NAtype, i) = i == 1 ? NA : throw(BoundsError())
 
 isna(x::NAtype) = true
 isna(x::Any) = false
 
 # TODO: Rethink this rule
 Base.promote_rule{T}(::Type{T}, ::Type{NAtype} ) = T
+
+Base.isnan(::NAtype) = NA

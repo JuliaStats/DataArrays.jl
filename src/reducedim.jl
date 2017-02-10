@@ -343,7 +343,7 @@ function Base.mean!{T}(R::AbstractArray{T}, A::DataArray; skipna::Bool=false,
                        init::Bool=true)
     init && fill!(R, zero(eltype(R)))
     if skipna
-        C = Array(Int, size(R))
+        C = Array{Int}(size(R))
         _mapreducedim_skipna_impl!(@functorize(identity), @functorize(+), R, C, A)
         broadcast!(/, R, R, C)
     else
@@ -511,7 +511,7 @@ function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected:
     else
         init && fill!(R, zero(eltype(R)))
         if skipna
-            C = Array(Int, size(R))
+            C = Array{Int}(size(R))
 
             # Compute R = abs2(A-m)
             _mapreducedim_skipna_2arg!(Abs2MinusFun(), @functorize(+), R, C, A, m)

@@ -8,7 +8,7 @@ module TestDataArray
     m = [1 2; 3 4]
     dm = DataArray(m, falses(size(m)))
 
-    t = Array(Int, 2, 2, 2)
+    t = Array{Int}(2, 2, 2)
     t[1:2, 1:2, 1:2] = 1
     dt = DataArray(t, falses(size(t)))
 
@@ -59,9 +59,9 @@ module TestDataArray
     function nonbits(dv)
         ret = similar(dv, Integer)
         for i = 1:length(dv)
-            if !isna(dv, i)
+            # if !isna(dv, i)
                 ret[i] = dv[i]
-            end
+            # end
         end
         ret
     end
