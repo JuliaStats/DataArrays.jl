@@ -303,11 +303,19 @@ for f in (:(Base.abs), :(Base.abs2), :(Base.conj), :(Base.sign))
 end
 
 # One-argument elementary functions that always return floating points
+## Base
 for f in (:(Base.acos), :(Base.acosh), :(Base.asin), :(Base.asinh), :(Base.atan), :(Base.atanh),
           :(Base.sin), :(Base.sinh), :(Base.cos), :(Base.cosh), :(Base.tan), :(Base.tanh),
           :(Base.exp), :(Base.exp2), :(Base.expm1), :(Base.log), :(Base.log10), :(Base.log1p),
-          :(Base.log2), :(Base.exponent), :(Base.sqrt), :(Base.gamma), :(Base.lgamma),
-          :(Base.digamma), :(Base.erf), :(Base.erfc))
+          :(Base.log2), :(Base.exponent), :(Base.sqrt), :(Base.gamma), :(Base.lgamma))
+    @eval begin
+        ($f)(::NAtype) = NA
+        @dataarray_unary $(f) AbstractFloat T
+        @dataarray_unary $(f) Real Float64
+    end
+end
+## SpecialFunctions (should be a conditional module when supported)
+for f in (:(SpecialFunctions.digamma), :(SpecialFunctions.erf), :(SpecialFunctions.erfc))
     @eval begin
         ($f)(::NAtype) = NA
         @dataarray_unary $(f) AbstractFloat T
