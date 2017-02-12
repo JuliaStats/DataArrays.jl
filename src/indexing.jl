@@ -161,21 +161,17 @@ function Base.getindex(pda::PooledDataArray, I::Real)
     end
 end
 
-@generated function Base.getindex(pda::PooledDataArray, I::Integer...)
-    quote
-        if getindex(pda.refs, I...) == 0
-            return NA
-        else
-            return pda.pool[getindex(pda.refs, I...)]
-        end
+@inline function Base.getindex(pda::PooledDataArray, I::Integer...)
+    if getindex(pda.refs, I...) == 0
+        return NA
+    else
+        return pda.pool[getindex(pda.refs, I...)]
     end
 end
 
 # Vector case
-@generated function Base.getindex(A::PooledDataArray, I::Union{AbstractVector,Colon}...)
-    quote
-        PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
-    end
+@inline function Base.getindex(A::PooledDataArray, I::Union{AbstractVector,Colon}...)
+    PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
 end
 
 ## setindex!: DataArray
