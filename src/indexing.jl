@@ -20,9 +20,9 @@ unsafe_getindex_notna(a, extr, idx::Real) = Base.unsafe_getindex(a, idx)
 # Set NA or data portion of DataArray
 
 unsafe_bitsettrue!(chunks::Vector{UInt64}, idx::Real) =
-    chunks[Base._div64(@compat(Int(idx))-1)+1] |= (@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
+    chunks[Base._div64(Int(idx)-1)+1] |= (UInt64(1) << Base._mod64(Int(idx)-1))
 unsafe_bitsetfalse!(chunks::Vector{UInt64}, idx::Real) =
-    chunks[Base._div64(@compat(Int(idx))-1)+1] &= ~(@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
+    chunks[Base._div64(Int(idx)-1)+1] &= ~(UInt64(1) << Base._mod64(Int(idx)-1))
 
 unsafe_setna!(da::DataArray, extr, idx::Real) = unsafe_bitsettrue!(extr[2], idx)
 unsafe_setna!(da::PooledDataArray, extr, idx::Real) = setindex!(extr[1], 0, idx)
@@ -124,17 +124,8 @@ function Base.getindex(da::DataArray, I::Real)
         return getindex(da.data, I)
     end
 end
-# @nsplat N function Base.getindex(da::DataArray, I::NTuple{N,Real}...)
-#     if getindex(da.na, I...)
-#         return NA
-#     else
-#         return getindex(da.data, I...)
-#     end
-# end
 
-if VERSION > v"0.5-"
-    Base.unsafe_getindex(x::Number, i::Int) = (@inbounds r = x[i]; r)
-end
+Base.unsafe_getindex(x::Number, i) = (@inbounds xi = x[i]; xi)
 
 # Vector case
 @generated function Base._unsafe_getindex!(dest::DataArray, src::DataArray, I::Union{Real, AbstractArray}...)
@@ -158,26 +149,6 @@ end
         dest
     end
 end
-
-# function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,AbstractVector}}})
-#     shape = _index_shape(Base.to_indices(A, I)...)
-#     _getindex!(DataArray(Array{T}(shape), falses(shape)), A, I...)
-# end
-
-# @nsplat N function Base.getindex(A::DataArray, I::NTuple{N,Union{Real,Colon,AbstractVector}}...)
-    # checkbounds(A, I...)
-    # _getindex(A, Base.to_indexes(I...))
-# end
-
-# Dispatch our implementation for these cases instead of Base
-# function Base.getindex(A::DataArray, I::AbstractVector)
-#     checkbounds(A, I)
-#     _getindex(A, (Base.to_index(I),))
-# end
-# function Base.getindex(A::DataArray, I::AbstractArray)
-#     checkbounds(A, I)
-#     _getindex(A, (Base.to_index(I),))
-# end
 
 ## getindex: PooledDataArray
 
@@ -206,12 +177,6 @@ end
         PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
     end
 end
-
-# Dispatch our implementation for these cases instead of Base
-# Base.getindex(A::PooledDataArray, I::AbstractVector) =
-#     PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
-# Base.getindex(A::PooledDataArray, I::AbstractArray) =
-#     PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
 
 ## setindex!: DataArray
 

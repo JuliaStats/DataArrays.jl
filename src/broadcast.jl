@@ -3,34 +3,7 @@ using Base: @get!, promote_eltype
 using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache
 using Compat: promote_eltype_op
 
-if isdefined(Base, :OneTo)
-    if VERSION < v"0.6.0-dev.1121"
-        _broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_shape(x...))
-    else
-        _broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_indices(x...))
-    end
-else
-    const _broadcast_shape = Base.Broadcast.broadcast_shape
-end
-
-# Check that all arguments are broadcast compatible with shape
-# Differs from Base in that we check for exact matches
-# function check_broadcast_shape(shape::Dims, As::(@compat Union{AbstractArray,Number})...)
-#     samesize = true
-#     for A in As
-#         if ndims(A) > length(shape)
-#             throw(DimensionMismatch("cannot broadcast array to have fewer dimensions"))
-#         end
-#         for k in 1:length(shape)
-#             n, nA = shape[k], size(A, k)
-#             samesize &= (n == nA)
-#             if n != nA != 1
-#                 throw(DimensionMismatch("array could not be broadcast to match destination"))
-#             end
-#         end
-#     end
-#     samesize
-# end
+_broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_indices(x...))
 
 # Get ref for value for a PooledDataArray, adding to the pool if
 # necessary
@@ -86,9 +59,6 @@ end
 #
 # TODO: Fall back on faster implementation for same-sized inputs when
 # it is safe to do so.
-# Base.map!{F}(f::F, B::Union{DataArray, PooledDataArray},
-    # As::Union{DataArray, PooledDataArray}...) =
-        # broadcast!(f, B, As...)
 Base.map!{F}(f::F, B::Union{DataArray, PooledDataArray}, A0::AbstractArray, As::AbstractArray...) =
         broadcast!(f, B, A0, As...)
 Base.map!{F}(f::F, B::Union{DataArray, PooledDataArray}, A0, As...) =
@@ -110,7 +80,6 @@ Base.map!{F}(f::F, B::Union{DataArray, PooledDataArray}, A0, As...) =
         @assert ndims(B) == $nd
 
         # Set up input DataArray/PooledDataArrays
-        # @show $(Expr(:block, [As[1] <: DataArray]))
         $(Expr(:block, [
             As[k] <: DataArray ? quote
                 $(Symbol("na_$(k)")) = $(Symbol("A_$(k)")).na.chunks
@@ -217,142 +186,6 @@ Base.Broadcast.broadcast_indices(::Type{T}, A) where T<:AbstractDataArray = indi
 @inline function Base.Broadcast.broadcast_c{S<:AbstractDataArray}(f, ::Type{S}, A, Bs...)
     T     = Base.Broadcast._broadcast_eltype(f, A, Bs...)
     shape = Base.Broadcast.broadcast_indices(A, Bs...)
-    # iter = CartesianRange(shape)
-    # if isleaftype(T)
     dest = S(T, Base.index_lengths(shape...))
     return broadcast!(f, dest, A, Bs...)
-    # end
-    # if isempty(iter)
-        # return similar(Array{T}, shape)
-    # end
-    # return broadcast_t(f, Any, shape, iter, A, Bs...)
 end
-
-# function databroadcast(f::Function, As...)
-#     T = Base.promote_op(f, eltype.(As)...)
-#     B = DataArray(T, _broadcast_shape(As...))
-#     broadcast!(f, B, As...)
-# end
-# function pdabroadcast(f::Function, As...)
-#     T = Base.promote_op(f, eltype.(As)...)
-#     B = PooledDataArray(T, _broadcast_shape(As...))
-#     broadcast!(f, B, As...)
-# end
-
-# function exreplace!(ex::Expr, search, rep)
-#     for i = 1:length(ex.args)
-#         if ex.args[i] == search
-#             splice!(ex.args, i, rep)
-#             break
-#         else
-#             exreplace!(ex.args[i], search, rep)
-#         end
-#     end
-#     ex
-# end
-# exreplace!(ex, search, rep) = ex
-
-# macro da_broadcast_vararg(func)
-#     if (func.head != :function && func.head != :(=)) ||
-#        func.args[1].head != :call || !isa(func.args[1].args[end], Expr) ||
-#        func.args[1].args[end].head != :...
-#         throw(ArgumentError("@da_broadcast_vararg may only be applied to vararg functions"))
-#     end
-
-#     va = func.args[1].args[end]
-#     defs = Any[]
-#     for n = 1:4, aa = 0:n-1
-#         def = deepcopy(func)
-#         rep = Any[Symbol("A_$(i)") for i = 1:n]
-#         push!(rep, va)
-#         exreplace!(def.args[2], va, rep)
-#         rep = Vector{Any}(n+1)
-#         for i = 1:aa
-#             rep[i] = Expr(:(::), Symbol("A_$i"), AbstractArray)
-#         end
-#         for i = aa+1:n
-#             rep[i] = Expr(:(::), Symbol("A_$i"), (@compat Union{DataArray, PooledDataArray}))
-#         end
-#         rep[end] = Expr(:..., Expr(:(::), va.args[1], AbstractArray))
-#         exreplace!(def.args[1], va, rep)
-#         push!(defs, def)
-#     end
-#     esc(Expr(:block, defs...))
-# end
-
-# macro da_broadcast_binary(func)
-#     if (func.head != :function && func.head != :(=)) ||
-#        func.args[1].head != :call ||
-#        length(func.args[1].args) != 3
-#         throw(ArgumentError("@da_broadcast_binary may only be applied to two-argument functions"))
-#     end
-#     (ff, A, B) = func.args[1].args
-#     f = esc(ff)
-#     body = func.args[2]
-#     quote
-#         ($f)($A::(@compat Union{DataArray, PooledDataArray}), $B::(@compat Union{DataArray, PooledDataArray})) = $(body)
-#         ($f)($A::(@compat Union{DataArray, PooledDataArray}), $B::AbstractArray) = $(body)
-#         ($f)($A::AbstractArray, $B::(@compat Union{DataArray, PooledDataArray})) = $(body)
-#     end
-# end
-
-# Broadcasting DataArrays returns a DataArray
-# @da_broadcast_vararg Base.broadcast(f::Function, As...) = databroadcast(f, As...)
-
-# Definitions for operators,
-# (.*)(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(*, A, B)
-# (.*)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(*, A, B)
-# @da_broadcast_vararg (.*)(As...) = databroadcast(*, As...)
-# @da_broadcast_binary (.%)(A, B) = databroadcast(%, A, B)
-# @da_broadcast_vararg (.+)(As...) = broadcast!(+, DataArray(promote_eltype_op(@functorize(+), As...), _broadcast_shape(As...)), As...)
-# @da_broadcast_binary (.-)(A, B) =
-    # broadcast!(-, DataArray(promote_op(@functorize(-), eltype(A), eltype(B)),
-                            # _broadcast_shape(A,B)), A, B)
-# @da_broadcast_binary (./)(A, B) =
-#     broadcast!(/, DataArray(promote_op(@functorize(/), eltype(A), eltype(B)),
-#                             _broadcast_shape(A, B)), A, B)
-# @da_broadcast_binary (.\)(A, B) =
-#     broadcast!(\, DataArray(promote_op(@functorize(\), eltype(A), eltype(B)),
-#                             _broadcast_shape(A, B)), A, B)
-# (.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
-# (.^)(A::BitArray, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
-# (.^)(A::AbstractArray{Bool}, B::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}})) = databroadcast(>=, A, B)
-# (.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::BitArray) = databroadcast(>=, A, B)
-# (.^)(A::(@compat Union{DataArray{Bool}, PooledDataArray{Bool}}), B::AbstractArray{Bool}) = databroadcast(>=, A, B)
-# @da_broadcast_binary (.^)(A, B) =
-#     broadcast!(^, DataArray(promote_op(@functorize(^), eltype(A), eltype(B)),
-#                             _broadcast_shape(A, B)), A, B)
-
-# XXX is a PDA the right return type for these?
-# Base.broadcast(f::Function, As::PooledDataArray...) = pdabroadcast(f, As...)
-# (.*)(As::PooledDataArray...) = pdabroadcast(*, As...)
-# (.%)(A::PooledDataArray, B::PooledDataArray) = pdabroadcast(%, A, B)
-# (.+)(As::PooledDataArray...) =
-#     broadcast!(+, PooledDataArray(promote_eltype_op(@functorize(+), As...), _broadcast_shape(As...)), As...)
-# (.-)(A::PooledDataArray, B::PooledDataArray) =
-#     broadcast!(-, PooledDataArray(promote_op(@functorize(-), eltype(A), eltype(B)),
-#                                   _broadcast_shape(A,B)), A, B)
-# (./)(A::PooledDataArray, B::PooledDataArray) =
-#     broadcast!(/, PooledDataArray(promote_op(@functorize(/), eltype(A), eltype(B)),
-#                                   _broadcast_shape(A, B)), A, B)
-# (.\)(A::PooledDataArray, B::PooledDataArray) =
-#     broadcast!(\, PooledDataArray(promote_op(@functorize(\), eltype(A), eltype(B)),
-#                                   _broadcast_shape(A, B)), A, B)
-# (.^)(A::PooledDataArray{Bool}, B::PooledDataArray{Bool}) = databroadcast(>=, A, B)
-# (.^)(A::PooledDataArray, B::PooledDataArray) =
-#     broadcast!(^, PooledDataArray(promote_op(@functorize(^), eltype(A), eltype(B)),
-#                                   _broadcast_shape(A, B)), A, B)
-
-# for (sf, vf) in zip(scalar_comparison_operators, array_comparison_operators)
-#     @eval begin
-#         # ambiguity
-#         $(vf)(A::(@compat Union{PooledDataArray{Bool},DataArray{Bool}}), B::(@compat Union{PooledDataArray{Bool},DataArray{Bool}})) =
-#             broadcast!($sf, DataArray(Bool, _broadcast_shape(A, B)), A, B)
-#         $(vf)(A::(@compat Union{PooledDataArray{Bool},DataArray{Bool}}), B::AbstractArray{Bool}) =
-#             broadcast!($sf, DataArray(Bool, _broadcast_shape(A, B)), A, B)
-#         $(vf)(A::AbstractArray{Bool}, B::(@compat Union{PooledDataArray{Bool},DataArray{Bool}})) =
-#             broadcast!($sf, DataArray(Bool, _broadcast_shape(A, B)), A, B)
-
-#         @da_broadcast_binary $(vf)(A, B) = broadcast!($sf, DataArray(Bool, _broadcast_shape(A, B)), A, B)
-#     end
-# end

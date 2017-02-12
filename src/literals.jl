@@ -91,7 +91,7 @@ end
 
 function parsedata(ex::Expr)
     if length(ex.args) == 0
-        return :([]), Expr(:call, :Array, :Bool, 0)
+        return :([]), Expr(:call, :(Array{Bool}), 0)
     end
     if ex.head == :typed_vcat || (isa(ex.args[1], Expr) && ex.args[1].head == :row)
         return parsematrix(ex)

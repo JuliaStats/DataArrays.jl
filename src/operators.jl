@@ -1,11 +1,3 @@
-promote_op{R,S}(f::Any, ::Type{R}, ::Type{S}) =
-    Base.promote_op(f, R, S)
-
-# Required for /(::Int, ::Int)
-if VERSION < v"0.5.0-dev"
-    promote_op{R<:Integer,S<:Integer}(op, ::Type{R}, ::Type{S}) = typeof(op(one(R), one(S)))
-end
-
 const unary_operators = [:+, :-, :!, :*]
 
 const numeric_unary_operators = [:+, :-]
@@ -129,7 +121,7 @@ const boolean_operators = [:(Base.any),
 
 # Swap arguments to fname() anywhere in AST. Returns the number of
 # arguments swapped
-function swapargs(ast::Expr, fname::(@compat Union{Expr, Symbol}))
+function swapargs(ast::Expr, fname::Union{Expr, Symbol})
     if ast.head == :call &&
        (ast.args[1] == fname ||
         (isa(ast.args[1], Expr) && ast.args[1].head == :curly &&
@@ -146,7 +138,7 @@ function swapargs(ast::Expr, fname::(@compat Union{Expr, Symbol}))
         n
     end
 end
-function swapargs(ast, fname::(@compat Union{Expr, Symbol}))
+function swapargs(ast, fname::Union{Expr, Symbol})
     ast
     0
 end
@@ -216,7 +208,7 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
         Any[
             begin
                 if outtype == :nothing
-                    outtype = :(promote_op(@functorize($scalarfunc),
+                    outtype = :(promote_op($scalarfunc,
                                            eltype(a), eltype(b)))
                 end
                 fns = Any[
@@ -259,7 +251,7 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
                 function $(vectorfunc)(a::$atype, b::$btype)
                     data1 = $(atype == :DataArray || atype == :(DataArray{Bool}) ? :(a.data) : :a)
                     data2 = $(btype == :DataArray || btype == :(DataArray{Bool}) ? :(b.data) : :b)
-                    res = Array{promote_op(@functorize($vectorfunc), eltype(a), eltype(b))}(
+                    res = Array{promote_op($vectorfunc, eltype(a), eltype(b))}(
                         promote_shape(size(a), size(b)))
                     resna = $narule
                     @bitenumerate resna i na begin
@@ -282,7 +274,7 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
             quote
                 function $(vectorfunc)(a::$atype, b::$btype)
                     res = similar($(asim ? :a : :b),
-                                  promote_op(@functorize($vectorfunc), eltype(a), eltype(b)),
+                                  promote_op($vectorfunc, eltype(a), eltype(b)),
                                   promote_shape(size(a), size(b)))
                     for i = 1:length(a)
                         res[i] = $(scalarfunc)(a[i], b[i])
@@ -345,8 +337,8 @@ end
 # But we're getting 10x R while maintaining NA's
 for (adata, bdata) in ((true, false), (false, true), (true, true))
     @eval begin
-        function (*)(a::$(adata ? :((@compat Union{DataVector, DataMatrix})) : :((@compat Union{Vector, Matrix}))),
-                           b::$(bdata ? :((@compat Union{DataVector, DataMatrix})) : :(@compat Union{Vector, Matrix})))
+        function (*)(a::$(adata ? :(Union{DataVector, DataMatrix}) : :(Union{Vector, Matrix})),
+                           b::$(bdata ? :(Union{DataVector, DataMatrix}) : :(Union{Vector, Matrix})))
             c = $(adata ? :(a.data) : :a) * $(bdata ? :(b.data) : :b)
             res = DataArray(c, falses(size(c)))
             # Propagation can be made more efficient by storing record of corrupt
@@ -476,7 +468,7 @@ end
 
 # DataArray with non-DataArray
 # Need explicit definition for BitArray to avoid ambiguity
-for t in (:(BitArray), :(Range{Bool}), :((@compat Union{AbstractArray{Bool}, Bool})))
+for t in (:(BitArray), :(Range{Bool}), :(Union{AbstractArray{Bool}, Bool}))
     @eval begin
         @swappable (&)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data & b), a.na & b)
         @swappable (|)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data | b), a.na & !b)

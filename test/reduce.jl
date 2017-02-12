@@ -6,37 +6,20 @@ srand(1337)
 ## extended test of sum
 
 for skipna in (true, false)
-    if VERSION < v"0.5-"
-        @test sum(@data(Int8[]); skipna=skipna) === 0
-        @test sum(@data(Int[]); skipna=skipna) === 0
-        @test sum(@data(Float64[]); skipna=skipna) === 0.0
+    @test sum(@data(Int8[]); skipna=skipna) === Int32(0)
+    @test sum(@data(Int[]); skipna=skipna) === 0
+    @test sum(@data(Float64[]); skipna=skipna) === 0.0
 
-        @test sum(@data([@compat(Int8(3))]); skipna=skipna) === 3
-        @test sum(@data([3]); skipna=skipna) === 3
-        @test sum(@data([3.0]); skipna=skipna) === 3.0
+    @test sum(@data([Int8(3)]); skipna=skipna) === Int32(3)
+    @test sum(@data([3]); skipna=skipna) === 3
+    @test sum(@data([3.0]); skipna=skipna) === 3.0
 
-        z = DataArray(reshape(1:16, (2,2,2,2)))
-        fz = convert(DataArray{Float64}, z)
-        bfz = convert(DataArray{BigFloat}, z)
-        @test sum(z) === 136
-        @test sum(fz) === 136.0
-        @test sum(bfz) == 136
-    else
-        @test sum(@data(Int8[]); skipna=skipna) === Int32(0)
-        @test sum(@data(Int[]); skipna=skipna) === 0
-        @test sum(@data(Float64[]); skipna=skipna) === 0.0
-
-        @test sum(@data([@compat(Int8(3))]); skipna=skipna) === Int32(3)
-        @test sum(@data([3]); skipna=skipna) === 3
-        @test sum(@data([3.0]); skipna=skipna) === 3.0
-
-        z = DataArray(reshape(1:16, (2,2,2,2)))
-        fz = convert(DataArray{Float64}, z)
-        bfz = convert(DataArray{BigFloat}, z)
-        @test sum(z) === 136
-        @test sum(fz) === 136.0
-        @test sum(bfz) == 136
-    end
+    z = DataArray(reshape(1:16, (2,2,2,2)))
+    fz = convert(DataArray{Float64}, z)
+    bfz = convert(DataArray{BigFloat}, z)
+    @test sum(z) === 136
+    @test sum(fz) === 136.0
+    @test sum(bfz) == 136
 end
 
 @test sum(@data(Int[NA])) === NA
@@ -58,7 +41,7 @@ bfz = convert(DataArray{BigFloat}, z)
 @test sum(fz; skipna=true) === 130.0
 @test sum(bfz; skipna=true) == 130
 
-bs = DataArrays.sum_pairwise_blocksize(@functorize(identity))
+bs = DataArrays.sum_pairwise_blocksize(identity)
 for n in [bs-64, bs-1, bs, bs+1, bs+2, 2*bs-2:2*bs+3..., 4*bs-2:4*bs+3...]
     da = DataArray(randn(n))
     s = sum(da.data)
@@ -137,9 +120,9 @@ end
 for fn in (+, *, |, &)
     da = convert(DataArray, bitrand(10))
 
-    s = mapreduce(@functorize(identity), fn, da.data)
-    @test mapreduce(@functorize(identity), fn, da) == s
-    @test mapreduce(@functorize(identity), fn, da; skipna=true) == s
+    s = mapreduce(identity, fn, da.data)
+    @test mapreduce(identity, fn, da) == s
+    @test mapreduce(identity, fn, da; skipna=true) == s
     @test reduce(fn, da) == s
     @test reduce(fn, da; skipna=true) == s
 end

@@ -127,11 +127,7 @@ for Areduc in (DataArray(rand(3, 4, 5, 6)),
             (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)]
             # println("region = $region, skipna = $skipna")
 
-            if VERSION < v"0.6.0-dev.1121"
-                outputs = Any[DataArray(fill(NaN, Base.reduced_dims(size(Areduc), region)))]
-            else
-                outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
-            end
+            outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
             has_na = anyna(Areduc)
             if has_na && !skipna
                 # Should throw an error reducing to non-DataArray

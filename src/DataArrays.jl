@@ -1,6 +1,7 @@
 __precompile__(false)
 
 module DataArrays
+    using Base: promote_op
     using Base.Cartesian, Compat, Reexport
     import Compat.String
     @reexport using StatsBase

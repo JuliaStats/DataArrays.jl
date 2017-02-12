@@ -15,7 +15,7 @@ for T in (Float64, BigFloat)
     n = 1000
     na = bitrand(n)
     nna = sum(na)
-    a = Array(T, n)
+    a = Vector{T}(n)
     ra = randn(n-nna)
     a[!na] = ra
     for da in (DataArray(a, na), PooledDataArray(a, na), (pda = PooledDataArray(a, na); setlevels!(pda, shuffle!(pda.pool))))

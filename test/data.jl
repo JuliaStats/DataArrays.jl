@@ -26,21 +26,12 @@ module TestData
     @assert isa(dvint2, DataVector{Int})
     @assert isa(dvint3, DataVector{Int})
     @assert isa(dvflt, DataVector{Float64})
-    if VERSION < v"0.5.0-dev+3876"
-        @assert isa(dvstr, DataVector{ASCIIString})
-    else
-        @assert isa(dvstr, DataVector{String})
-    end
-    # @test throws_exception(DataArray([5:8], falses(2)), Exception)
+    @assert isa(dvstr, DataVector{String})
+    @test_throws ArgumentError DataArray([5:8], falses(2))
 
     #test_group("PooledDataVector creation")
     pdvstr = @pdata ["one", "one", "two", "two", NA, "one", "one"]
-    if VERSION < v"0.5.0-dev+3876"
-        @assert isa(pdvstr, PooledDataVector{ASCIIString})
-    else
-        @assert isa(pdvstr, PooledDataVector{String})
-    end
-    # @test throws_exception(PooledDataVector["one", "one", 9], Exception)
+    @assert isa(pdvstr, PooledDataVector{String})
     @assert isequal(PooledDataArray(pdvstr), pdvstr)
 
     #test_group("PooledDataVector creation with predetermined pool")
@@ -92,11 +83,7 @@ module TestData
     @assert size(pdvstr) == (7,)
     @assert length(pdvstr) == 7
     @assert sum(isna(pdvstr)) == 1
-    if VERSION < v"0.5.0-dev+3876"
-        @assert eltype(pdvstr) == ASCIIString
-    else
-        @assert eltype(pdvstr) == String
-    end
+    @assert eltype(pdvstr) == String
 
     #test_group("DataVector operations")
     @assert isequal(dvint .+ 1, DataArray([2, 3, 4, 5], [false, false, true, false]))

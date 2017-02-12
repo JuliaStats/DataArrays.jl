@@ -101,9 +101,9 @@ function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
 end
 
 # Construct an all-NA PooledDataVector of a specific type
-PooledDataArray(t::Type, dims::@compat Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims))
+PooledDataArray(t::Type, dims::Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims))
 PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array{t}(dims), trues(dims))
-PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::@compat Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims), r)
+PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims), r)
 PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::Int...) = PooledDataArray(Array(t, dims), trues(dims), r)
 
 # Construct an empty PooledDataVector of a specific type
