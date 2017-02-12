@@ -7,7 +7,7 @@ as_dataarray_bigfloat(x) = convert(DataArray{BigFloat}, x)
 as_pda(x) = convert(PooledDataArray, x)
 as_pda_bigfloat(x) = convert(PooledDataArray{BigFloat}, x)
 
-bittest(f::Function, ewf::Function, a...) = (@test ewf(a...) ==
+bittest(f::Function, a...) = (@test broadcast(f, a...) ==
         invoke(broadcast, Tuple{Function,ntuple(x->AbstractArray, length(a))...}, f, a...))
 n1 = 21
 n2 = 32
@@ -81,21 +81,18 @@ for arr in (identity, as_dataarray, as_pda, as_dataarray_bigfloat, as_pda_bigflo
     # @test A == diagm(10:12)
     # @test_throws BoundsError broadcast_setindex!(A, 7, [1,-1], [1 2])
 
-    for (f, ewf) in (((==), (.==)),
-                     ((<) , (.<) ),
-                     ((!=), (.!=)),
-                     ((<=), (.<=)))
-        bittest(f, ewf, arr(eye(2)), arr([1, 4]))
-        bittest(f, ewf, arr(eye(2)), arr([1  4]))
-        bittest(f, ewf, arr([0, 1]), arr([1  4]))
-        bittest(f, ewf, arr([0  1]), arr([1, 4]))
-        bittest(f, ewf, arr([1, 0]), arr([1, 4]))
+    for f in (==, (<), (!=), (<=))
+        bittest(f, arr(eye(2)), arr([1, 4]))
+        bittest(f, arr(eye(2)), arr([1  4]))
+        bittest(f, arr([0, 1]), arr([1  4]))
+        bittest(f, arr([0  1]), arr([1, 4]))
+        bittest(f, arr([1, 0]), arr([1, 4]))
 
         # these should work once indexing is fixed
-        #bittest(f, ewf, arr(rand(rb, n1, n2, n3)), arr(rand(rb, n1, n2, n3)))
-        #bittest(f, ewf, arr(rand(rb,  1, n2, n3)), arr(rand(rb, n1,  1, n3)))
-        #bittest(f, ewf, arr(rand(rb,  1, n2,  1)), arr(rand(rb, n1,  1, n3)))
-        #bittest(f, ewf, arr(bitrand(n1, n2, n3)), arr(bitrand(n1, n2, n3)))
+        bittest(f, arr(rand(rb, n1, n2, n3)), arr(rand(rb, n1, n2, n3)))
+        bittest(f, arr(rand(rb,  1, n2, n3)), arr(rand(rb, n1,  1, n3)))
+        bittest(f, arr(rand(rb,  1, n2,  1)), arr(rand(rb, n1,  1, n3)))
+        bittest(f, arr(bitrand(n1, n2, n3)), arr(bitrand(n1, n2, n3)))
     end
 end
 
@@ -106,8 +103,8 @@ ratio = @data [1,1/2,1/3,1/4,1/5]
 @test r1./r2 == ratio
 m = @data [1 2]
 @test m.*r2 == DataArray([1:5 2:2:10])
-@test_approx_eq m./r2 [ratio 2ratio]
-@test_approx_eq m./collect(r2) [ratio 2ratio]
+@test m./r2 ≈ [ratio 2ratio]
+@test m./collect(r2) ≈ [ratio 2ratio]
 
 @test @inferred([0,1.2].+reshape([0,-2],1,1,2)) == reshape([0 -2; 1.2 -0.8],2,1,2)
 rt = Base.return_types(.+, (DataArray{Float64, 3}, DataArray{Int, 1}))

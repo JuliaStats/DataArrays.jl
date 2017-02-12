@@ -127,24 +127,24 @@ end
 
 Base.unsafe_getindex(x::Number, i) = (@inbounds xi = x[i]; xi)
 
-# Vector case
 @generated function Base._unsafe_getindex!(dest::DataArray, src::DataArray, I::Union{Real, AbstractArray}...)
     N = length(I)
     quote
         $(Expr(:meta, :inline))
-        idxlens = index_lengths(I...) # TODO: unsplat?
+        @nexprs $N d->(J_d = I[d])
         srcextr = daextract(src)
         destextr = daextract(dest)
         srcsz = size(src)
-        k = 1
-        @nloops $N i d->(1:idxlens[d]) d->(@inbounds j_d = getindex(I[d], i_d)) begin
+        D = eachindex(dest)
+        Ds = start(D)
+        @nloops $N j d->J_d begin
             offset_0 = @ncall $N sub2ind srcsz j
+            d, Ds = next(D, Ds)
             if unsafe_isna(src, srcextr, offset_0)
-                unsafe_dasetindex!(dest, destextr, NA, k)
+                unsafe_dasetindex!(dest, destextr, NA, d)
             else
-                unsafe_dasetindex!(dest, destextr, unsafe_getindex_notna(src, srcextr, offset_0), k)
+                unsafe_dasetindex!(dest, destextr, unsafe_getindex_notna(src, srcextr, offset_0), d)
             end
-            k += 1
         end
         dest
     end

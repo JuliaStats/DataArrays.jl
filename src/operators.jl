@@ -1,78 +1,3 @@
-const unary_operators = [:+, :-, :!, :*]
-
-const numeric_unary_operators = [:+, :-]
-
-const logical_unary_operators = [:!]
-
-const elementary_functions = [:(Base.abs),
-                              :(Base.abs2),
-                              :(Base.sign),
-                              :(Base.acos),
-                              :(Base.acosh),
-                              :(Base.asin),
-                              :(Base.asinh),
-                              :(Base.atan),
-                              :(Base.atanh),
-                              :(Base.sin),
-                              :(Base.sinh),
-                              :(Base.conj),
-                              :(Base.cos),
-                              :(Base.cosh),
-                              :(Base.tan),
-                              :(Base.tanh),
-                              :(Base.ceil),
-                              :(Base.floor),
-                              :(Base.round),
-                              :(Base.trunc),
-                              :(Base.exp),
-                              :(Base.exp2),
-                              :(Base.expm1),
-                              :(Base.log),
-                              :(Base.log10),
-                              :(Base.log1p),
-                              :(Base.log2),
-                              :(Base.exponent),
-                              :(Base.sqrt),
-                              :(Base.gamma),
-                              :(Base.lgamma),
-                              :(Base.digamma),
-                              :(Base.erf),
-                              :(Base.erfc)]
-
-const two_argument_elementary_functions = [:(Base.round),
-                                           :(Base.ceil),
-                                           :(Base.floor),
-                                           :(Base.trunc)]
-
-const special_comparison_operators = [:(Base.isless)]
-
-const scalar_comparison_operators = [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
-
-const array_comparison_operators = [:(.==),:(.!=),:(.>),:(.>=),:(.<),:(.<=)]
-
-const vectorized_comparison_operators = [:(.==),:(==),:(.!=),:(!=),:(.>),:(>),:(.>=),:(>=),:(.<),:(<),:(.<=),:(<=)]
-
-const binary_operators = [:(+),:(.+),:(-),:(.-),:(*),:(.*),:(/),:(./),:(.^),
-                          :(Base.div),
-                          :(Base.mod),
-                          :(Base.fld),
-                          :(Base.rem)]
-
-const induced_binary_operators = [(:^)]
-
-const induced_arithmetic_operators = [:(^)]
-
-const biscalar_operators = [:(Base.maximum),
-                            :(Base.minimum)]
-
-const scalar_arithmetic_operators = [:(+),:(-),:(*),:(/),
-                                     :(Base.div),
-                                     :(Base.mod),
-                                     :(Base.fld),
-                                     :(Base.rem)]
-
-const induced_scalar_arithmetic_operators = [:(^)]
-
 const unary_vector_operators = [:(Base.median),
                                 :(StatsBase.mad),
                                 :(Base.norm),
@@ -80,12 +5,6 @@ const unary_vector_operators = [:(Base.median),
                                 :(StatsBase.kurtosis)]
 
 # TODO: dist, iqr
-
-const cumulative_vector_operators = [:(Base.cumprod),
-                                     :(Base.cumsum),
-                                     :(Base.cumsum_kbn),
-                                     :(Base.cummin),
-                                     :(Base.cummax)]
 
 const ffts = [:(Base.fft)]
 
@@ -104,20 +23,6 @@ const rowwise_operators = [:rowminimums,
                            :rowvars,
                            :rowffts,
                            :rownorms]
-
-const columnar_operators = [:colminimums,
-                            :colmaxs,
-                            :colprods,
-                            :colsums,
-                            :colmeans,
-                            :colmedians,
-                            :colstds,
-                            :colvars,
-                            :colffts,
-                            :colnorms]
-
-const boolean_operators = [:(Base.any),
-                           :(Base.all)]
 
 # Swap arguments to fname() anywhere in AST. Returns the number of
 # arguments swapped
@@ -294,7 +199,7 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
 end
 
 # Unary operators, NA
-for f in unary_operators
+for f in [:+,:-,:*,:/]
     @eval $(f)(d::NAtype) = NA
 end
 
@@ -574,19 +479,11 @@ end
 # ambiguity
 @swappable (==)(::NAtype, ::WeakRef) = NA
 
-for (sf,vf) in zip(scalar_comparison_operators, array_comparison_operators)
+for sf in [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
     @eval begin
-        # Array with NA
-        @swappable ($(vf)){T,N}(::NAtype, b::AbstractArray{T,N}) =
-            DataArray(Array{Bool,N}(size(b)), trues(size(b)))
-
         # Scalar with NA
-        ($(vf))(::NAtype, ::NAtype) = NA
         ($(sf))(::NAtype, ::NAtype) = NA
-        @swappable ($(vf))(::NAtype, b) = NA
         @swappable ($(sf))(::NAtype, b) = NA
-
-        @dataarray_binary_scalar $(vf) $(sf) Bool true
     end
 end
 
@@ -594,14 +491,8 @@ end
 # Binary operators
 #
 
-# Necessary to avoid ambiguity warnings
-(.^)(::Irrational{:e}, B::DataArray) = exp(B)
-(.^)(::Irrational{:e}, B::AbstractDataArray) = exp(B)
-
-for f in (:(+), :(.+), :(-), :(.-),
-          :(*), :(.*), :(/), :(./), :(.^), :(Base.div),
-          :(Base.mod), :(Base.fld), :(Base.rem), :(Base.min),
-          :(Base.max))
+for f in (:(+), :(-), :(*), :(/),
+          :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem), :(Base.min), :(Base.max))
     @eval begin
         # Scalar with NA
         ($f)(::NAtype, ::NAtype) = NA
@@ -677,8 +568,7 @@ end
 
 end # if isdefined(Base, :UniformScaling)
 
-for f in (:(.+), :(.-), :(*), :(.*), :(./),
-          :(.^), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
+for f in (:(*), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
         # Array with NA
         @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
@@ -715,7 +605,7 @@ end
     DataArray(Array{T,N}(size(b)), trues(size(b)))
 @dataarray_binary_scalar(/, /, nothing, false)
 
-for f in biscalar_operators
+for f in [:(Base.maximum), :(Base.minimum)]
     @eval begin
         ($f)(::NAtype, ::NAtype) = NA
         @swappable $(f)(::Number, ::NAtype) = NA
@@ -737,19 +627,31 @@ function Base.LinAlg.diff(dv::DataVector)
     return DataArray(new_data, new_na)
 end
 
-for f in cumulative_vector_operators
-    @eval function ($f)(dv::DataVector)
-        new_data = ($f)(dv.data)
-        new_na = falses(length(dv))
-        hitna = false
-        @bitenumerate dv.na i na begin
-            hitna |= na
-            if hitna
-                new_na[i] = true
-            end
+# for f in cumulative_vector_operators
+#     @eval function ($f)(dv::DataVector)
+#         new_data = ($f)(dv.data)
+#         new_na = falses(length(dv))
+#         hitna = false
+#         @bitenumerate dv.na i na begin
+#             hitna |= na
+#             if hitna
+#                 new_na[i] = true
+#             end
+#         end
+#         return DataArray(new_data, new_na)
+#     end
+# end
+function Base.accumulate(f, dv::DataVector)
+    new_data = accumulate(f, dv.data)
+    new_na = falses(length(dv))
+    hitna = false
+    @bitenumerate dv.na i na begin
+        hitna |= na
+        if hitna
+            new_na[i] = true
         end
-        return DataArray(new_data, new_na)
     end
+    return DataArray(new_data, new_na)
 end
 
 for f in [unary_vector_operators; ffts]

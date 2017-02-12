@@ -8,6 +8,41 @@ module TestOperators
 
     const comparison_operators = [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
 
+    const elementary_functions = [:(Base.abs),
+                                  :(Base.abs2),
+                                  :(Base.sign),
+                                  :(Base.acos),
+                                  :(Base.acosh),
+                                  :(Base.asin),
+                                  :(Base.asinh),
+                                  :(Base.atan),
+                                  :(Base.atanh),
+                                  :(Base.sin),
+                                  :(Base.sinh),
+                                  :(Base.conj),
+                                  :(Base.cos),
+                                  :(Base.cosh),
+                                  :(Base.tan),
+                                  :(Base.tanh),
+                                  :(Base.ceil),
+                                  :(Base.floor),
+                                  :(Base.round),
+                                  :(Base.trunc),
+                                  :(Base.exp),
+                                  :(Base.exp2),
+                                  :(Base.expm1),
+                                  :(Base.log),
+                                  :(Base.log10),
+                                  :(Base.log1p),
+                                  :(Base.log2),
+                                  :(Base.exponent),
+                                  :(Base.sqrt),
+                                  :(Base.gamma),
+                                  :(Base.lgamma),
+                                  :(Base.digamma),
+                                  :(Base.erf),
+                                  :(Base.erfc)]
+
     macro test_da_pda(da, code)
         esc(quote
             let $da = copy($da)
@@ -20,13 +55,13 @@ module TestOperators
     end
 
     # All unary operators return NA when evaluating NA
-    for f in map(eval, DataArrays.unary_operators)
+    for f in [+,-,*,/]
         @assert isna(f(NA))
     end
 
     # All elementary functions return NA when evaluating NA
-    for f in map(eval, DataArrays.elementary_functions)
-        @assert isna(f(NA))
+    for f in elementary_functions
+        @assert @eval isna(($f)(NA))
     end
 
     # All comparison operators return NA when comparing NA with NA
@@ -60,7 +95,7 @@ module TestOperators
     # application of those same operators
     dv = @data ones(5)
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.numeric_unary_operators)
+        for f in [+,-]
             for i in 1:length(dv)
                 @assert f(dv)[i] == f(dv[i])
             end
@@ -68,7 +103,7 @@ module TestOperators
     end
     dv = convert(DataArray, trues(5))
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.logical_unary_operators)
+        for f in [!]
             for i in 1:length(dv)
                 @assert f(dv)[i] == f(dv[i])
             end
@@ -105,9 +140,9 @@ module TestOperators
     # Elementary functions on DataVector's
     dv = convert(DataArray, ones(5))
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.elementary_functions)
+        for f in elementary_functions
             for i in 1:length(dv)
-                @assert f(dv)[i] == f(dv[i])
+                @assert @eval ($f).(dv)[$i] == ($f)(dv[$i])
             end
         end
     end
@@ -289,13 +324,13 @@ module TestOperators
 
     # Cumulative vector operators on DataVector's
     dv = convert(DataArray, ones(5))
-    for f in map(eval, DataArrays.cumulative_vector_operators)
+    for f in [Base.cumprod, Base.cumsum]
         for i in 1:length(dv)
             @assert f(dv)[i] == f(dv.data)[i]
         end
     end
     dv[4] = NA
-    for f in map(eval, DataArrays.cumulative_vector_operators)
+    for f in [Base.cumprod, Base.cumsum]
         for i in 1:3
             @assert f(dv)[i] == f(dv.data)[i]
         end
