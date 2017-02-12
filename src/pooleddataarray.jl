@@ -15,16 +15,15 @@
 
 # This is used as a wrapper during PooledDataArray construction only, to distinguish
 # arrays of pool indices from normal arrays
-type RefArray{R<:Integer,N}
+struct RefArray{R<:Integer,N}
     a::Array{R,N}
 end
 
-type PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
+mutable struct PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
     refs::Array{R, N}
     pool::Vector{T}
 
-    function PooledDataArray(rs::RefArray{R, N},
-                             p::Vector{T})
+    function PooledDataArray{T,R,N}(rs::RefArray{R, N}, p::Vector{T}) where {T,R,N}
         # refs mustn't overflow pool
         if length(rs.a) > 0 && maximum(rs.a) > prod(size(p))
             throw(ArgumentError("Reference array points beyond the end of the pool"))
@@ -32,8 +31,8 @@ type PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
         new(rs.a,p)
     end
 end
-typealias PooledDataVector{T,R} PooledDataArray{T,R,1}
-typealias PooledDataMatrix{T,R} PooledDataArray{T,R,2}
+const PooledDataVector{T,R} = PooledDataArray{T,R,1}
+const PooledDataMatrix{T,R} = PooledDataArray{T,R,2}
 
 ##############################################################################
 ##
@@ -600,7 +599,7 @@ end
 
 Base.sort(pda::PooledDataArray; kw...) = pda[sortperm(pda; kw...)]
 
-type FastPerm{O<:Base.Sort.Ordering,V<:AbstractVector} <: Base.Sort.Ordering
+struct FastPerm{O<:Base.Sort.Ordering,V<:AbstractVector} <: Base.Sort.Ordering
     ord::O
     vec::V
 end

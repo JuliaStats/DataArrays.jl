@@ -18,11 +18,11 @@
 #' dv = DataArray([1, 2, 3], [false, false, true])
 #'
 #' dm = DataArray([1 2; 3 4], [false false; true false])
-type DataArray{T, N} <: AbstractDataArray{T, N}
+mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
     na::BitArray{N}
 
-    function DataArray(d::Array{T, N}, m::BitArray{N})
+    function DataArray{T,N}(d::Array{T, N}, m::BitArray{N}) where {T, N}
         # Ensure data values and missingness metadata match
         if size(d) != size(m)
             msg = "Data and missingness arrays must be the same size"
@@ -45,12 +45,12 @@ end
 #' @description
 #'
 #' An DataVector is an DataArray of order 1.
-typealias DataVector{T} DataArray{T, 1}
+const DataVector{T} = DataArray{T, 1}
 
 #' @description
 #'
 #' An DataMatrix is an DataArray of order 2.
-typealias DataMatrix{T} DataArray{T, 2}
+const DataMatrix{T} = DataArray{T, 2}
 
 #' @description
 #'

@@ -14,14 +14,14 @@
 ##
 ##############################################################################
 
-type NAtype
+struct NAtype
 end
 
 const NA = NAtype()
 
 Base.show(io::IO, x::NAtype) = print(io, "NA")
 
-type NAException <: Exception
+struct NAException <: Exception
     msg::String
 end
 NAException() = NAException("NA found")

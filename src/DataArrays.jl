@@ -1,10 +1,10 @@
-__precompile__(false)
+__precompile__()
 
 module DataArrays
     using Base: promote_op
     using Base.Cartesian, Compat, Reexport
-    import Compat.String
     @reexport using StatsBase
+    using SpecialFunctions
 
     const DEFAULT_POOLED_REF_TYPE = UInt32
 

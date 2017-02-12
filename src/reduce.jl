@@ -87,9 +87,9 @@ end
 # NA, it returns NA. Otherwise we will fall back to the implementation
 # in Base, which is slow because it's type-unstable, but guarantees the
 # correct semantics
-typealias SafeMapFuns Union{typeof(identity), typeof(abs), typeof(abs2),
+const SafeMapFuns = Union{typeof(identity), typeof(abs), typeof(abs2),
                             typeof(exp), typeof(log), typeof(Base.centralizedabs2fun)}
-typealias SafeReduceFuns Union{typeof(+), typeof(*), typeof(max), typeof(min)}
+const SafeReduceFuns = Union{typeof(+), typeof(*), typeof(max), typeof(min)}
 function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
     any(A.na) && return NA
     Base._mapreduce(f, op, A.data)

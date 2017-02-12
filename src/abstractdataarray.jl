@@ -2,17 +2,17 @@
 #'
 #' An AbstractDataArray is an Array whose entries can take on
 #' values of type `T` or the value `NA`.
-abstract AbstractDataArray{T, N} <: AbstractArray{T, N}
+abstract type AbstractDataArray{T, N} <: AbstractArray{T, N} end
 
 #' @description
 #'
 #' An AbstractDataVector is an AbstractDataArray of order 1.
-typealias AbstractDataVector{T} AbstractDataArray{T, 1}
+const AbstractDataVector{T} = AbstractDataArray{T, 1}
 
 #' @description
 #'
 #' An AbstractDataMatrix is an AbstractDataArray of order 2.
-typealias AbstractDataMatrix{T} AbstractDataArray{T, 2}
+const AbstractDataMatrix{T} = AbstractDataArray{T, 2}
 
 #' @description
 #' Determine the type of the elements of an AbstractDataArray.
@@ -121,7 +121,7 @@ dropna(v::AbstractVector) = copy(v) # -> AbstractVector
 # TODO: Use values()
 #       Use DataValueIterator type?
 
-type EachFailNA{T}
+struct EachFailNA{T}
     da::AbstractDataArray{T}
 end
 each_failna{T}(da::AbstractDataArray{T}) = EachFailNA(da)
@@ -136,7 +136,7 @@ function Base.next(itr::EachFailNA, ind::Integer)
     end
 end
 
-type EachDropNA{T}
+struct EachDropNA{T}
     da::AbstractDataArray{T}
 end
 each_dropna{T}(da::AbstractDataArray{T}) = EachDropNA(da)
@@ -154,7 +154,7 @@ function Base.next(itr::EachDropNA, ind::Int)
     (itr.da[ind], _next_nonna_ind(itr.da, ind))
 end
 
-type EachReplaceNA{S, T}
+struct EachReplaceNA{S, T}
     da::AbstractDataArray{S}
     replacement::T
 end

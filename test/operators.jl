@@ -324,7 +324,7 @@ module TestOperators
 
     # Cumulative vector operators on DataVector's
     dv = convert(DataArray, ones(5))
-    for f in [Base.cumprod, Base.cumsum]
+    for f in [Base.cumprod, Base.cumsum, t -> accumulate(min, t), t -> accumulate(max, t)]
         for i in 1:length(dv)
             @assert f(dv)[i] == f(dv.data)[i]
         end

@@ -653,6 +653,8 @@ function Base.accumulate(f, dv::DataVector)
     end
     return DataArray(new_data, new_na)
 end
+Base.cumsum(dv::DataVector) = accumulate(+, dv)
+Base.cumprod(dv::DataVector)   = accumulate(*, dv)
 
 for f in [unary_vector_operators; ffts]
     @eval ($f)(dv::DataVector) = any(dv.na) ? NA : ($f)(dv.data)
