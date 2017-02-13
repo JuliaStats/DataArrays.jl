@@ -131,6 +131,7 @@ Base.unsafe_getindex(x::Number, i) = (@inbounds xi = x[i]; xi)
     N = length(I)
     quote
         $(Expr(:meta, :inline))
+        flipbits!(dest.na) # similar initializes with NAs
         @nexprs $N d->(J_d = I[d])
         srcextr = daextract(src)
         destextr = daextract(dest)

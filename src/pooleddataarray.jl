@@ -658,8 +658,8 @@ function PooledDataVecs(v1::AbstractArray,
     ## Return two PooledDataVecs that share the same pool.
 
     ## TODO: allow specification of REFTYPE
-    refs1 = Array(DEFAULT_POOLED_REF_TYPE, size(v1))
-    refs2 = Array(DEFAULT_POOLED_REF_TYPE, size(v2))
+    refs1 = Array{DEFAULT_POOLED_REF_TYPE}(size(v1))
+    refs2 = Array{DEFAULT_POOLED_REF_TYPE}(size(v2))
     poolref = Dict{promote_type(eltype(v1), eltype(v2)), DEFAULT_POOLED_REF_TYPE}()
     maxref = 0
 
