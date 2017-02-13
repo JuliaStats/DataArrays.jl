@@ -114,7 +114,7 @@ Base.getindex(t::AbstractDataArray, i::Real) =
 
 ## getindex: DataArray
 
-Base.linearindexing(x::Union{DataArray,PooledDataArray}) = Base.LinearFast()
+Base.linearindexing(::Type{<:Union{DataArray,PooledDataArray}}) = Base.LinearFast()
 
 # Scalar case
 function Base.getindex(da::DataArray, I::Real)
