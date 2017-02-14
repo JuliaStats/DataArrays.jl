@@ -20,7 +20,6 @@ rb = 1:5
 @test broadcast!(+, DataArray(Int, 2, 2), [1, 0], [1  4]) == [2 5; 1 4]
 @test broadcast!(+, DataArray(Int, 2), [1, 0], [1, 4]) == [2, 4]
 @test broadcast!(+, DataArray(Int, 2), [1, 0], 2) == [3, 2]
-# @test broadcast!(abs, @data([-1, -2])) == @data([1, 2])
 for arr in (identity, as_dataarray, as_pda, as_dataarray_bigfloat, as_pda_bigfloat)
     @test broadcast(+, arr(eye(2)), arr([1, 4])) == [2 1; 4 5]
     @test broadcast(+, arr(eye(2)), arr([1  4])) == [2 4; 1 5]
@@ -123,7 +122,6 @@ rt = Base.return_types(broadcast!, (typeof(+), DataArray{Float64, 3}, Array{Floa
 @test isequal(broadcast(|, @data([NA, false]), @data([NA true false])), @data([NA true NA; NA true false]))
 
 # Test map!
-# @test_throws DimensionMismatch map!(+, DataArray(Float64, 2, 2), @data([1 2]), @data([1 2]))
 @test map!(+, DataArray(Float64, 2), @data([1, 2]), @data([1, 2])) == @data([2, 4])
 x = @data([-1, -2])
 @test map!(abs, x, x) == @data([1, 2])

@@ -142,11 +142,11 @@ da2 = DataArray(randn(128))
 @same_behavior mean(da1, weights(da2.data); skipna=true) mean(da1.data, weights(da2.data))
 
 da1[1:3:end] = NA
-@same_behavior mean(da1, weights(da2); skipna=true) mean(dropna(da1), weights(da2.data[!da1.na]))
-@same_behavior mean(da1, weights(da2.data); skipna=true) mean(dropna(da1), weights(da2.data[!da1.na]))
+@same_behavior mean(da1, weights(da2); skipna=true) mean(dropna(da1), weights(da2.data[(!).(da1.na)]))
+@same_behavior mean(da1, weights(da2.data); skipna=true) mean(dropna(da1), weights(da2.data[(!).(da1.na)]))
 
 da2[1:2:end] = NA
-keep = !da1.na .& !da2.na
+keep = .!da1.na .& .!da2.na
 @test isna(mean(da1, weights(da2)))
 @same_behavior mean(da1, weights(da2); skipna=true) mean(da1.data[keep], weights(da2.data[keep]))
 end

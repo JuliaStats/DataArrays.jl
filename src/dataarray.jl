@@ -424,7 +424,7 @@ end
 #'
 #' dv = @data [1, 2, NA, 4]
 #' v = dropna(dv)
-dropna(dv::DataVector) = copy(dv.data[!dv.na]) # -> Vector
+dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
 
 #' @description
 #'

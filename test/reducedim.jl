@@ -109,7 +109,7 @@ macro test_da_approx_eq(da1, da2)
         v2 = $(esc(da2))
         na = isna(v1)
         @test na == isna(v2)
-        defined = !na
+        defined = (!).(na)
         if any(defined)
             @test isapprox(v1[defined], v2[defined], nans = true)
         end

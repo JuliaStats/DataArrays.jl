@@ -44,10 +44,10 @@ module TestDataMatrix
     b[1, 1] = NA
     res = a * b[1:1, :]
     @assert all(isna(res[:, 1]))
-    @assert all(!isna(res[:, 2]))
-    @assert all(!isna(res[:, 3]))
+    @assert all(.!(isna(res[:, 2])))
+    @assert all(.!(isna(res[:, 3])))
     res = a * b[2:2, :]
-    @assert all(!isna(res))
+    @assert all(.!(isna(res)))
 
     #
     # DataMatrix w NA's * DataVector
@@ -55,8 +55,8 @@ module TestDataMatrix
 
     res = b * a
     @assert isna(res[1])
-    @assert !isna(res[2])
-    @assert !isna(res[3])
+    @assert .!(isna(res[2]))
+    @assert .!(isna(res[3]))
 
     #
     # DataMatrix * DataMatrix
@@ -71,11 +71,11 @@ module TestDataMatrix
     @assert isna(res[1, 2])
     @assert isna(res[1, 3])
     @assert isna(res[2, 1])
-    @assert !isna(res[2, 2])
-    @assert !isna(res[2, 3])
+    @assert .!(isna(res[2, 2]))
+    @assert .!(isna(res[2, 3]))
     @assert isna(res[3, 1])
-    @assert !isna(res[3, 2])
-    @assert !isna(res[3, 3])
+    @assert .!(isna(res[3, 2]))
+    @assert .!(isna(res[3, 3]))
 
     res = b * @data eye(3)
     # 3x3 Float64 DataMatrix:
@@ -85,12 +85,12 @@ module TestDataMatrix
     @assert isna(res[1, 1])
     @assert isna(res[1, 2])
     @assert isna(res[1, 3])
-    @assert !isna(res[2, 1])
-    @assert !isna(res[2, 2])
-    @assert !isna(res[2, 3])
-    @assert !isna(res[3, 1])
-    @assert !isna(res[3, 2])
-    @assert !isna(res[3, 3])
+    @assert .!(isna(res[2, 1]))
+    @assert .!(isna(res[2, 2]))
+    @assert .!(isna(res[2, 3]))
+    @assert .!(isna(res[3, 1]))
+    @assert .!(isna(res[3, 2]))
+    @assert .!(isna(res[3, 3]))
 
     res = (@data eye(3)) * b
     # julia> dataeye(3) * b
@@ -99,14 +99,14 @@ module TestDataMatrix
     #  NA  1.0  0.0
     #  NA  0.0  1.0
     @assert isna(res[1, 1])
-    @assert !isna(res[1, 2])
-    @assert !isna(res[1, 3])
+    @assert .!(isna(res[1, 2]))
+    @assert .!(isna(res[1, 3]))
     @assert isna(res[2, 1])
-    @assert !isna(res[2, 2])
-    @assert !isna(res[2, 3])
+    @assert .!(isna(res[2, 2]))
+    @assert .!(isna(res[2, 3]))
     @assert isna(res[3, 1])
-    @assert !isna(res[3, 2])
-    @assert !isna(res[3, 3])
+    @assert .!(isna(res[3, 2]))
+    @assert .!(isna(res[3, 3]))
 
     # Test row operations
     dm = @data eye(6, 2)
