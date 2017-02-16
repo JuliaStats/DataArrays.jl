@@ -113,6 +113,9 @@ rt = Base.return_types(broadcast, (typeof(+), Array{Float64, 3}, DataArray{Int, 
 rt = Base.return_types(broadcast!, (typeof(+), DataArray{Float64, 3}, Array{Float64, 3}, Array{Int, 1}))
 @test length(rt) == 1 && rt[1] == DataArray{Float64, 3}
 
+# Test String broadcast
+@test broadcast(==, @data(["a", "b", "c", "d"]), "a") == @data([true,false,false,false])
+
 # Test broadcasting of functions that do something besides propagate NA
 @test isequal(broadcast(isequal, @data([NA, 1]), @data([NA 1])), @data([true false; false true]))
 @test isequal(broadcast(isequal, @pdata([NA, 1]), @data([NA 1])), @data([true false; false true]))

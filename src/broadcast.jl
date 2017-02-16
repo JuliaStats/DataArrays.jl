@@ -116,9 +116,11 @@ Base.map!{F}(f::F, B::Union{DataArray, PooledDataArray}, A0, As...) =
                 As[k] <: DataArray ? quote
                     $(Symbol("state_$(k)_")){d-1} = $(Symbol("state_$(k)_d"));
                     $(Symbol("j_$(k)_d")) = $(Symbol("skip_$(k)_d")) ? 1 : i_d
-                end : quote
+                end : (As[k] <: AbstractArray ? quote
                     $(Symbol("j_$(k)_d")) = size($(Symbol("A_$(k)")), d) == 1 ? 1 : i_d
-                end
+                end : quote
+                    $(Symbol("j_$(k)_d")) = 1
+                end)
             for k = 1:N]...))),
 
             # post
@@ -138,10 +140,16 @@ Base.map!{F}(f::F, B::Union{DataArray, PooledDataArray}, A0, As...) =
                     end : nothing
                 for k = 1:N]...))
 
-                # Extract values for ordinary AbstractArrays
+                # Extract values for other type
                 $(Expr(:block, [
-                    :(@inbounds $(Symbol("v_$(k)")) = @nref $nd $(Symbol("A_$(k)")) d->$(Symbol("j_$(k)_d")))
-                    for k = find(t -> !(t <: DataArray || t <: PooledDataArray), As)]...))
+                    As[k] <: AbstractArray  && !(As[k] <: AbstractDataArray) ? quote
+                        # ordinary AbstractArrays
+                        @inbounds $(Symbol("v_$(k)")) = @nref $nd $(Symbol("A_$(k)")) d->$(Symbol("j_$(k)_d"))
+                    end : quote
+                        # non AbstractArrays (e.g. Strings and Numbers)
+                        @inbounds $(Symbol("v_$(k)")) = $(Symbol("A_$(k)"))
+                    end
+                for k = 1:N]...))
 
                 # Compute and store return value
                 $(gen_na_conds(F, nd, As, B))
