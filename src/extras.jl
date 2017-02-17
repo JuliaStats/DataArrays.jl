@@ -20,11 +20,11 @@ function StatsBase.addcounts!{T,U,W}(cm::Dict{U,W}, x::AbstractDataArray{T}, wv:
 end
 
 function StatsBase.countmap{T}(x::AbstractDataArray{T})
-    addcounts!(Dict{(@compat Union{T, NAtype}), Int}(), x)
+    addcounts!(Dict{Union{T, NAtype}, Int}(), x)
 end
 
 function StatsBase.countmap{T,W}(x::AbstractDataArray{T}, wv::WeightVec{W})
-    addcounts!(Dict{(@compat Union{T, NAtype}), W}(), x, wv)
+    addcounts!(Dict{Union{T, NAtype}, W}(), x, wv)
 end
 
 function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})
@@ -49,7 +49,7 @@ function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})
     n = length(breaks)
     from = map(x -> sprint(showcompact, x), breaks[1:(n - 1)])
     to = map(x -> sprint(showcompact, x), breaks[2:n])
-    pool = Array(String, n - 1)
+    pool = Vector{String}(n - 1)
     if breaks[1] == min_x
         pool[1] = string("[", from[1], ",", to[1], "]")
     else

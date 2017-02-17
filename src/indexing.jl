@@ -20,9 +20,9 @@ unsafe_getindex_notna(a, extr, idx::Real) = Base.unsafe_getindex(a, idx)
 # Set NA or data portion of DataArray
 
 unsafe_bitsettrue!(chunks::Vector{UInt64}, idx::Real) =
-    chunks[Base._div64(@compat(Int(idx))-1)+1] |= (@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
+    chunks[Base._div64(Int(idx)-1)+1] |= (UInt64(1) << Base._mod64(Int(idx)-1))
 unsafe_bitsetfalse!(chunks::Vector{UInt64}, idx::Real) =
-    chunks[Base._div64(@compat(Int(idx))-1)+1] &= ~(@compat(UInt64(1)) << Base._mod64(@compat(Int(idx))-1))
+    chunks[Base._div64(Int(idx)-1)+1] &= ~(UInt64(1) << Base._mod64(Int(idx)-1))
 
 unsafe_setna!(da::DataArray, extr, idx::Real) = unsafe_bitsettrue!(extr[2], idx)
 unsafe_setna!(da::PooledDataArray, extr, idx::Real) = setindex!(extr[1], 0, idx)
@@ -62,7 +62,7 @@ function combine_pools!(pool, newpool)
     end
 
     # Find pool elements in existing array, or add them
-    poolidx = Array(Int, length(newpool))
+    poolidx = Vector{Int}(length(newpool))
     for j = 1:length(newpool)
         poolidx[j] = Base.@get!(seen, newpool[j], (push!(pool, newpool[j]); i += 1))
     end
@@ -114,6 +114,8 @@ Base.getindex(t::AbstractDataArray, i::Real) =
 
 ## getindex: DataArray
 
+Base.IndexStyle(::Type{<:AbstractDataArray}) = Base.IndexLinear()
+
 # Scalar case
 function Base.getindex(da::DataArray, I::Real)
     if getindex(da.na, I)
@@ -122,59 +124,31 @@ function Base.getindex(da::DataArray, I::Real)
         return getindex(da.data, I)
     end
 end
-@nsplat N function Base.getindex(da::DataArray, I::NTuple{N,Real}...)
-    if getindex(da.na, I...)
-        return NA
-    else
-        return getindex(da.data, I...)
-    end
-end
 
-if VERSION > v"0.5-"
-    Base.unsafe_getindex(x::Number, i::Int) = (@inbounds r = x[i]; r)
-end
+Base.unsafe_getindex(x::Number, i) = (@inbounds xi = x[i]; xi)
 
-# Vector case
-@generated function _getindex!(dest::DataArray, src::DataArray, I::Union{Real, AbstractArray, Colon}...)
+@generated function Base._unsafe_getindex!(dest::DataArray, src::DataArray, I::Union{Real, AbstractArray}...)
     N = length(I)
     quote
         $(Expr(:meta, :inline))
-        idxlens = index_lengths(src, I...) # TODO: unsplat?
+        flipbits!(dest.na) # similar initializes with NAs
+        @nexprs $N d->(J_d = I[d])
         srcextr = daextract(src)
         destextr = daextract(dest)
         srcsz = size(src)
-        k = 1
-        @nloops $N i d->(1:idxlens[d]) d->(@inbounds j_d = getindex(I[d], i_d)) begin
+        D = eachindex(dest)
+        Ds = start(D)
+        @nloops $N j d->J_d begin
             offset_0 = @ncall $N sub2ind srcsz j
+            d, Ds = next(D, Ds)
             if unsafe_isna(src, srcextr, offset_0)
-                unsafe_dasetindex!(dest, destextr, NA, k)
+                unsafe_dasetindex!(dest, destextr, NA, d)
             else
-                unsafe_dasetindex!(dest, destextr, unsafe_getindex_notna(src, srcextr, offset_0), k)
+                unsafe_dasetindex!(dest, destextr, unsafe_getindex_notna(src, srcextr, offset_0), d)
             end
-            k += 1
         end
         dest
     end
-end
-
-function _getindex{T}(A::DataArray{T}, I::@compat Tuple{Vararg{Union{Int,AbstractVector}}})
-    shape = _index_shape(A, I...)
-    _getindex!(DataArray(Array(T, shape), falses(shape)), A, I...)
-end
-
-@nsplat N function Base.getindex(A::DataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
-    checkbounds(A, I...)
-    _getindex(A, Base.to_indexes(I...))
-end
-
-# Dispatch our implementation for these cases instead of Base
-function Base.getindex(A::DataArray, I::AbstractVector)
-    checkbounds(A, I)
-    _getindex(A, (Base.to_index(I),))
-end
-function Base.getindex(A::DataArray, I::AbstractArray)
-    checkbounds(A, I)
-    _getindex(A, (Base.to_index(I),))
 end
 
 ## getindex: PooledDataArray
@@ -187,7 +161,8 @@ function Base.getindex(pda::PooledDataArray, I::Real)
         return pda.pool[getindex(pda.refs, I)]
     end
 end
-@nsplat N function Base.getindex(pda::PooledDataArray, I::NTuple{N,Real}...)
+
+@inline function Base.getindex(pda::PooledDataArray, I::Integer...)
     if getindex(pda.refs, I...) == 0
         return NA
     else
@@ -196,15 +171,9 @@ end
 end
 
 # Vector case
-@nsplat N function Base.getindex(A::PooledDataArray, I::NTuple{N,(@compat Union{Real,AbstractVector})}...)
+@inline function Base.getindex(A::PooledDataArray, I::Union{AbstractVector,Colon}...)
     PooledDataArray(RefArray(getindex(A.refs, I...)), copy(A.pool))
 end
-
-# Dispatch our implementation for these cases instead of Base
-Base.getindex(A::PooledDataArray, I::AbstractVector) =
-    PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
-Base.getindex(A::PooledDataArray, I::AbstractArray) =
-    PooledDataArray(RefArray(getindex(A.refs, I)), copy(A.pool))
 
 ## setindex!: DataArray
 
@@ -233,57 +202,59 @@ end
 
 ## setindex!: both DataArray and PooledDataArray
 
-@ngenerate N typeof(A) function Base.setindex!(A::AbstractDataArray, x,
-                                               J::NTuple{N,(@compat Union{Real,AbstractArray})}...)
-    if !isa(x, AbstractArray) && isa(A, PooledDataArray)
-        # Only perform one pool lookup when assigning a scalar value in
-        # a PooledDataArray
-        setindex!(A.refs, getpoolidx(A, x), J...)
-        return A
-    end
-
-    Aextr = daextract(A)
-    @ncall N checkbounds A J
-    @nexprs N d->(I_d = Base.to_index(J_d))
-    stride_1 = 1
-    @nexprs N d->(stride_{d+1} = stride_d*size(A,d))
-    @nexprs N d->(offset_d = 1)  # really only need offset_$N = 1
-    if !isa(x, AbstractArray)
-        @nloops N i d->(1:length(I_d)) d->(@inbounds offset_{d-1} = offset_d + (Base.unsafe_getindex(I_d, i_d)-1)*stride_d) begin
-            if isa(x, NAtype)
-                @inbounds unsafe_setna!(A, Aextr, offset_0)
-            else
-                @inbounds unsafe_setnotna!(A, Aextr, offset_0)
-                @inbounds unsafe_dasetindex!(A, Aextr, x, offset_0)
-            end
+@generated function Base.setindex!(A::AbstractDataArray, x, J::Union{Real,Colon,AbstractArray}...)
+    N = length(J)
+    quote
+        if !isa(x, AbstractArray) && isa(A, PooledDataArray)
+            # Only perform one pool lookup when assigning a scalar value in
+            # a PooledDataArray
+            setindex!(A.refs, getpoolidx(A, x), J...)
+            return A
         end
-    else
-        X = x
-        idxlens = @ncall N index_lengths A I
-        @ncall N setindex_shape_check X (d->idxlens[d])
-        k = 1
-        if isa(A, PooledDataArray) && isa(X, PooledDataArray)
-            # When putting one PDA into another, first unify the pools
-            # and then translate the references
-            poolmap = combine_pools!(A.pool, X.pool)
-            Arefs = A.refs
-            Xrefs = X.refs
-            @nloops N i d->(1:idxlens[d]) d->(@inbounds offset_{d-1} = offset_d + (Base.unsafe_getindex(I_d, i_d)-1)*stride_d) begin
-                @inbounds Arefs[offset_0] = Xrefs[k] == 0 ? 0 : poolmap[Xrefs[k]]
-                k += 1
+
+        Aextr = daextract(A)
+        @nexprs $N d->(I_d = Base.to_indices(A, J)[d])
+        @ncall $N checkbounds A I
+        stride_1 = 1
+        @nexprs $N d->(stride_{d+1} = stride_d*size(A,d))
+        @nexprs $N d->(offset_d = 1)  # really only need offset_$N = 1
+        if !isa(x, AbstractArray)
+            @nloops $N i d->I_d d->(@inbounds offset_{d-1} = offset_d + (i_d - 1)*stride_d) begin
+                if isa(x, NAtype)
+                    @inbounds unsafe_setna!(A, Aextr, offset_0)
+                else
+                    @inbounds unsafe_setnotna!(A, Aextr, offset_0)
+                    @inbounds unsafe_dasetindex!(A, Aextr, x, offset_0)
+                end
             end
         else
-            Xextr = daextract(X)
-            @nloops N i d->(1:idxlens[d]) d->(@inbounds offset_{d-1} = offset_d + (Base.unsafe_getindex(I_d, i_d)-1)*stride_d) begin
-                @inbounds if isa(X, AbstractDataArray) && unsafe_isna(X, Xextr, k)
-                    unsafe_setna!(A, Aextr, offset_0)
-                else
-                    unsafe_setnotna!(A, Aextr, offset_0)
-                    unsafe_dasetindex!(A, Aextr, unsafe_getindex_notna(X, Xextr, k), offset_0)
+            X = x
+            idxlens = @ncall $N index_lengths I
+            @ncall $N setindex_shape_check X (d->idxlens[d])
+            k = 1
+            if isa(A, PooledDataArray) && isa(X, PooledDataArray)
+                # When putting one PDA into another, first unify the pools
+                # and then translate the references
+                poolmap = combine_pools!(A.pool, X.pool)
+                Arefs = A.refs
+                Xrefs = X.refs
+                @nloops $N i d->I_d d->(@inbounds offset_{d-1} = offset_d + (i_d - 1)*stride_d) begin
+                    @inbounds Arefs[offset_0] = Xrefs[k] == 0 ? 0 : poolmap[Xrefs[k]]
+                    k += 1
                 end
-                k += 1
+            else
+                Xextr = daextract(X)
+                @nloops $N i d->I_d d->(@inbounds offset_{d-1} = offset_d + (i_d - 1)*stride_d) begin
+                    @inbounds if isa(X, AbstractDataArray) && unsafe_isna(X, Xextr, k)
+                        unsafe_setna!(A, Aextr, offset_0)
+                    else
+                        unsafe_setnotna!(A, Aextr, offset_0)
+                        unsafe_dasetindex!(A, Aextr, unsafe_getindex_notna(X, Xextr, k), offset_0)
+                    end
+                    k += 1
+                end
             end
         end
+        A
     end
-    A
 end

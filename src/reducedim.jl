@@ -5,7 +5,7 @@ using Base.check_reducedims
 # This is a substantially faster implementation of the "all" reduction
 # across dimensions for reducing a BitArray to an Array{Bool}. We use
 # this below for implementing MaxFun and MinFun with skipna=true.
-@ngenerate N typeof(R) function Base._mapreducedim!{N}(f, op::typeof(@functorize(&)), R::Array{Bool}, A::BitArray{N})
+@ngenerate N typeof(R) function Base._mapreducedim!{N}(f, op::typeof(&), R::Array{Bool}, A::BitArray{N})
     lsiz = check_reducedims(R, A)
     isempty(A) && return R
     @nextract N sizeR d->size(R, d)
@@ -167,7 +167,7 @@ _getdata(A::DataArray) = A.data
 # mapreduce across a dimension. If specified, C contains the number of
 # non-NA values reduced into each element of R.
 @ngenerate N typeof(R) function _mapreducedim_skipna_impl!{T,N}(f, op, R::AbstractArray,
-                                                                C::(@compat Union{Array{Int}, Void}),
+                                                                C::Union{Array{Int}, Void},
                                                                 A::DataArray{T,N})
     data = A.data
     na = A.na
@@ -226,11 +226,11 @@ _mapreducedim_skipna!(f, op, R::AbstractArray, A::DataArray) =
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 
 # for MinFun/MaxFun, min or max is NA if all values along a dimension are NA
-function _mapreducedim_skipna!(f, op::(@compat Union{typeof(@functorize(min)), typeof(@functorize(max))}), R::DataArray, A::DataArray)
+function _mapreducedim_skipna!(f, op::Union{typeof(min), typeof(max)}, R::DataArray, A::DataArray)
     R.na = BitArray(all!(fill(true, size(R)), A.na))
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 end
-function _mapreducedim_skipna!(f, op::(@compat Union{typeof(@functorize(min)), typeof(@functorize(max))}), R::AbstractArray, A::DataArray)
+function _mapreducedim_skipna!(f, op::Union{typeof(min), typeof(max)}, R::AbstractArray, A::DataArray)
     if any(all!(fill(true, size(R)), A.na))
         throw(NAException("all values along specified dimension are NA for one element of reduced dimension; cannot reduce to non-DataArray"))
     end
@@ -239,7 +239,7 @@ end
 
 ## general reducedim interface
 
-for op in (@functorize(+), @functorize(*), @functorize(&), @functorize(|),@functorize(scalarmin), @functorize(scalarmax), @functorize(min), @functorize(max))
+for op in (+, *, &, |, min, max)
     @eval begin
         function Base.initarray!{T}(a::DataArray{T}, op::typeof($op), init::Bool)
             if init
@@ -251,45 +251,22 @@ for op in (@functorize(+), @functorize(*), @functorize(&), @functorize(|),@funct
     end
 end
 
-# min and max defunctorize to ElementwiseMin/MaxFun which don't have initarray!
-# or reducedim_init methods on 0.4.
-if VERSION < v"0.5.0-dev+3701"
-    Base.initarray!(a::AbstractArray, ::Base.ElementwiseMaxFun, init::Bool) =
-        Base.initarray!(a, Base.MaxFun(), init)
-    Base.initarray!(a::AbstractArray, ::Base.ElementwiseMinFun, init::Bool) =
-        Base.initarray!(a, Base.MinFun(), init)
-    Base.reducedim_init(f, ::Base.ElementwiseMaxFun, a::AbstractArray, dim) = Base.reducedim_init(f, Base.MaxFun(), a, dim)
-    Base.reducedim_init(f, ::Base.ElementwiseMinFun, a::AbstractArray, dim) = Base.reducedim_init(f, Base.MinFun(), a, dim)
-end
-
 function Base.reducedim_initarray{R}(A::DataArray, region, v0, ::Type{R})
-    if VERSION < v"0.6.0-dev.1121"
-        rd = Base.reduced_dims(A.data, region)
-    else
-        rd = length.(Base.reduced_indices(A.data, region))
-    end
+    rd = length.(Base.reduced_indices(A.data, region))
     DataArray(fill!(similar(A.data, R, rd), v0), falses(rd))
 end
 function Base.reducedim_initarray0{R}(A::DataArray, region, v0, ::Type{R})
-    if VERSION < v"0.6.0-dev.1121"
-        rd = Base.reduced_dims0(A,region)
-    else
-        rd = length.(Base.reduced_indices0(A,region))
-    end
+    rd = length.(Base.reduced_indices0(A,region))
     DataArray(fill!(similar(A.data, R, rd), v0), falses(rd))
 end
 
 function Base.mapreducedim!(f::Function, op, R::AbstractArray, A::DataArray; skipna::Bool=false)
-    (op === +) ? (skipna ? _mapreducedim_skipna!(f, @functorize(+), R, A) : _mapreducedim!(f, @functorize(+), R, A)) :
-    (op === *) ? (skipna ? _mapreducedim_skipna!(f, @functorize(*), R, A) : _mapreducedim!(f, @functorize(*), R, A)) :
-    (op === &) ? (skipna ? _mapreducedim_skipna!(f, @functorize(&), R, A) : _mapreducedim!(f, @functorize(&), R, A)) :
-    (op === |) ? (skipna ? _mapreducedim_skipna!(f, @functorize(|), R, A) : _mapreducedim!(f, @functorize(|), R, A)) :
     skipna ? _mapreducedim_skipna!(f, op, R, A) : _mapreducedim!(f, op, R, A)
 end
 Base.mapreducedim!(f, op, R::AbstractArray, A::DataArray; skipna::Bool=false) =
     skipna ? _mapreducedim_skipna!(f, op, R, A) : _mapreducedim!(f, op, R, A)
 Base.reducedim!{RT}(op, R::DataArray{RT}, A::AbstractArray; skipna::Bool=false) =
-    Base.mapreducedim!(@functorize(identity), op, R, A, zero(RT); skipna=skipna)
+    Base.mapreducedim!(identity, op, R, A, zero(RT); skipna=skipna)
 
 Base.mapreducedim(f, op, A::DataArray, region, v0; skipna::Bool=false) =
     Base.mapreducedim!(f, op, Base.reducedim_initarray(A, region, v0), A; skipna=skipna)
@@ -297,35 +274,35 @@ Base.mapreducedim{T}(f, op, A::DataArray{T}, region; skipna::Bool=false) =
     Base.mapreducedim!(f, op, Base.reducedim_init(f, op, A, region), A; skipna=skipna)
 
 Base.reducedim(op, A::DataArray, region, v0; skipna::Bool=false) =
-    Base.mapreducedim(@functorize(identity), op, A, region, v0; skipna=skipna)
+    Base.mapreducedim(identity, op, A, region, v0; skipna=skipna)
 Base.reducedim(op, A::DataArray, region; skipna::Bool=false) =
-    Base.mapreducedim(@functorize(identity), op, A, region; skipna=skipna)
+    Base.mapreducedim(identity, op, A, region; skipna=skipna)
 
 ## usual reductions
 
-for (basfn, Op) in [(:sum, @functorize(+)), (:prod, @functorize(*)),
-                    (:maximum, @functorize(max)), (:minimum, @functorize(min)),
-                    (:all, @functorize(&)), (:any, @functorize(|))]
+for (basfn, Op) in [(:sum, +), (:prod, *),
+                    (:maximum, max), (:minimum, min),
+                    (:all, &), (:any, |)]
     fname = Expr(:., :Base, Base.Meta.quot(basfn))
     fname! = Expr(:., :Base, Base.Meta.quot(Symbol(string(basfn, '!'))))
     @eval begin
-        $(fname!)(f::(@compat Union{Function,$(supertype(typeof(@functorize(abs))))}), r::AbstractArray, A::DataArray;
+        $(fname!)(f::Union{Function,$(supertype(typeof(abs)))}, r::AbstractArray, A::DataArray;
                   init::Bool=true, skipna::Bool=false) =
             Base.mapreducedim!(f, $(Op), Base.initarray!(r, $(Op), init), A; skipna=skipna)
         $(fname!)(r::AbstractArray, A::DataArray; init::Bool=true, skipna::Bool=false) =
-            $(fname!)(@functorize(identity), r, A; init=init, skipna=skipna)
+            $(fname!)(identity, r, A; init=init, skipna=skipna)
 
-        $(fname)(f::(@compat Union{Function,$(supertype(typeof(@functorize(abs))))}), A::DataArray, region; skipna::Bool=false) =
+        $(fname)(f::Union{Function,$(supertype(typeof(abs)))}, A::DataArray, region; skipna::Bool=false) =
             Base.mapreducedim(f, $(Op), A, region; skipna=skipna)
         $(fname)(A::DataArray, region; skipna::Bool=false) =
-            $(fname)(@functorize(identity), A, region; skipna=skipna)
+            $(fname)(identity, A, region; skipna=skipna)
     end
 end
 
-for (basfn, fbase, Fun) in [(:sumabs, :sum, @functorize(abs)),
-                            (:sumabs2, :sum, @functorize(abs2)),
-                            (:maxabs, :maximum, @functorize(abs)),
-                            (:minabs, :minimum, @functorize(abs))]
+for (basfn, fbase, Fun) in [(:sumabs, :sum, abs),
+                            (:sumabs2, :sum, abs2),
+                            (:maxabs, :maximum, abs),
+                            (:minabs, :minimum, abs)]
     fname = Expr(:., :Base, Base.Meta.quot(basfn))
     fname! = Expr(:., :Base, Base.Meta.quot(Symbol(string(basfn, '!'))))
     fbase! = Expr(:., :Base, Base.Meta.quot(Symbol(string(fbase, '!'))))
@@ -343,8 +320,8 @@ function Base.mean!{T}(R::AbstractArray{T}, A::DataArray; skipna::Bool=false,
                        init::Bool=true)
     init && fill!(R, zero(eltype(R)))
     if skipna
-        C = Array(Int, size(R))
-        _mapreducedim_skipna_impl!(@functorize(identity), @functorize(+), R, C, A)
+        C = Array{Int}(size(R))
+        _mapreducedim_skipna_impl!(identity, +, R, C, A)
         broadcast!(/, R, R, C)
     else
         sum!(R, A; skipna=false)
@@ -363,7 +340,7 @@ immutable MapReduceDim2ArgHelperFun{F,T}
     f::F
     val::T
 end
-@compat (f::MapReduceDim2ArgHelperFun)(x) = f.f(x, f.val)
+(f::MapReduceDim2ArgHelperFun)(x) = f.f(x, f.val)
 
 # A version of _mapreducedim! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
@@ -429,7 +406,7 @@ end
 # A version of _mapreducedim_skipna! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
 @ngenerate N typeof(R) function _mapreducedim_skipna_2arg!{T,N}(f, op, R::AbstractArray,
-                                                                C::(@compat Union{Array{Int}, Void}),
+                                                                C::Union{Array{Int}, Void},
                                                                 A::DataArray{T,N}, S::AbstractArray)
     data = A.data
     na = A.na
@@ -502,7 +479,7 @@ end
 end
 
 immutable Abs2MinusFun end
-@compat (::Abs2MinusFun)(x, m) = abs2(x - m)
+(::Abs2MinusFun)(x, m) = abs2(x - m)
 
 function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected::Bool=true,
                     skipna::Bool=false, init::Bool=true)
@@ -511,10 +488,10 @@ function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected:
     else
         init && fill!(R, zero(eltype(R)))
         if skipna
-            C = Array(Int, size(R))
+            C = Array{Int}(size(R))
 
             # Compute R = abs2(A-m)
-            _mapreducedim_skipna_2arg!(Abs2MinusFun(), @functorize(+), R, C, A, m)
+            _mapreducedim_skipna_2arg!(Abs2MinusFun(), +, R, C, A, m)
 
             # Divide by number of non-NA values
             if corrected
@@ -525,10 +502,10 @@ function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected:
             broadcast!(/, R, R, C)
         else
             # Compute R = abs2(A-m)
-            _mapreducedim_2arg!(Abs2MinusFun(), @functorize(+), R, A, m)
+            _mapreducedim_2arg!(Abs2MinusFun(), +, R, A, m)
 
             # Divide by number of values
-            broadcast!(/, R, R, div(length(A), length(R)) - @compat(Int(corrected)))
+            broadcast!(/, R, R, div(length(A), length(R)) - corrected)
         end
     end
 end
@@ -538,7 +515,7 @@ Base.varm{T}(A::DataArray{T}, m::AbstractArray, region; corrected::Bool=true,
     Base.varm!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A, m;
                corrected=corrected, skipna=skipna, init=false)
 
-function Base.var{T}(A::DataArray{T}, region::(@compat Union{Integer, AbstractArray, Tuple});
+function Base.var{T}(A::DataArray{T}, region::Union{Integer, AbstractArray, Tuple};
                      corrected::Bool=true, mean=nothing, skipna::Bool=false)
     if mean == 0
         Base.varm(A, Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), region;
@@ -546,11 +523,7 @@ function Base.var{T}(A::DataArray{T}, region::(@compat Union{Integer, AbstractAr
     elseif mean == nothing
         if skipna
             # Can reduce mean into ordinary array
-            if VERSION < v"0.6.0-dev.1121"
-                m = zeros(Base.momenttype(T), Base.reduced_dims(A, region))
-            else
-                m = zeros(Base.momenttype(T), length.(Base.reduced_indices(A, region)))
-            end
+            m = zeros(Base.momenttype(T), length.(Base.reduced_indices(A, region)))
             Base.varm(A, Base.mean!(m, A; skipna=skipna), region;
                  corrected=corrected, skipna=skipna)
         else

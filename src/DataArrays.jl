@@ -1,14 +1,14 @@
 __precompile__()
 
 module DataArrays
+    using Base: promote_op
     using Base.Cartesian, Compat, Reexport
-    import Compat.String
     @reexport using StatsBase
+    using SpecialFunctions
 
     const DEFAULT_POOLED_REF_TYPE = UInt32
 
-    import Base: ==, !=, >, <, >=, <=, +, -, *, !, &, |, $, ^, /,
-      .==, .!=, .>, .<, .>=, .<=, .+, .-, .*, .%, ./, .\, .^
+    import Base: ==, !=, >, <, >=, <=, +, -, *, !, &, |, $, ^, /
 
     import StatsBase: autocor, inverse_rle, rle
 
@@ -80,10 +80,4 @@ module DataArrays
     include("predicates.jl")
     include("literals.jl")
     include("deprecated.jl")
-
-    Base.@deprecate removeNA dropna
-    Base.@deprecate each_failNA each_failna
-    Base.@deprecate each_replaceNA each_replacena
-    Base.@deprecate set_levels setlevels
-    Base.@deprecate set_levels! setlevels!
 end

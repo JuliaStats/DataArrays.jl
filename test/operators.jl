@@ -2,6 +2,47 @@ module TestOperators
     using Base.Test
     using DataArrays, StatsBase
 
+    const bit_operators = [:(&),:(|),:(⊻)]
+
+    const arithmetic_operators = [:(+),:(-),:(*),:(/), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem)]
+
+    const comparison_operators = [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
+
+    const elementary_functions = [:(abs),
+                                  :(abs2),
+                                  :(sign),
+                                  :(acos),
+                                  :(acosh),
+                                  :(asin),
+                                  :(asinh),
+                                  :(atan),
+                                  :(atanh),
+                                  :(sin),
+                                  :(sinh),
+                                  :(conj),
+                                  :(cos),
+                                  :(cosh),
+                                  :(tan),
+                                  :(tanh),
+                                  :(ceil),
+                                  :(floor),
+                                  :(round),
+                                  :(trunc),
+                                  :(exp),
+                                  :(exp2),
+                                  :(expm1),
+                                  :(log),
+                                  :(log10),
+                                  :(log1p),
+                                  :(log2),
+                                  :(exponent),
+                                  :(sqrt),
+                                  :(gamma),
+                                  :(lgamma),
+                                  :(digamma),
+                                  :(erf),
+                                  :(erfc)]
+
     macro test_da_pda(da, code)
         esc(quote
             let $da = copy($da)
@@ -14,47 +55,47 @@ module TestOperators
     end
 
     # All unary operators return NA when evaluating NA
-    for f in map(eval, DataArrays.unary_operators)
+    for f in [+,-,*,/]
         @assert isna(f(NA))
     end
 
     # All elementary functions return NA when evaluating NA
-    for f in map(eval, DataArrays.elementary_functions)
-        @assert isna(f(NA))
+    for f in elementary_functions
+        @assert @eval isna(($f)(NA))
     end
 
     # All comparison operators return NA when comparing NA with NA
     # All comparison operators return NA when comparing scalars with NA
     # All comparison operators return NA when comparing NA with scalars
-    for f in map(eval, DataArrays.comparison_operators)
-        @assert isna(f(NA, NA))
-        @assert isna(f(NA, 1))
-        @assert isna(f(1, NA))
+    for f in comparison_operators
+        @assert @eval isna(($f)(NA, NA))
+        @assert @eval isna(($f)(NA, 1))
+        @assert @eval isna(($f)(1, NA))
     end
 
     # All arithmetic operators7 return NA when operating on two NA's
     # All arithmetic operators return NA when operating on a scalar and an NA
     # All arithmetic operators return NA when operating on an NA and a scalar
-    for f in map(eval, DataArrays.arithmetic_operators)
-        @assert isna(f(NA, NA))
-        @assert isna(f(1, NA))
-        @assert isna(f(NA, 1))
+    for f in arithmetic_operators
+        @assert @eval isna(($f)(NA, NA))
+        @assert @eval isna(($f)(1, NA))
+        @assert @eval isna(($f)(NA, 1))
     end
 
     # All bit operators return NA when operating on two NA's
     # All bit operators return NA when operating on a scalar and an NA
     # All bit operators return NA when operating on an NA and a scalar
-    for f in map(eval, DataArrays.bit_operators)
-        @assert isna(f(NA, NA))
-        @assert isna(f(1, NA))
-        @assert isna(f(NA, 1))
+    for f in bit_operators
+        @assert @eval isna(($f)(NA, NA))
+        @assert @eval isna(($f)(1, NA))
+        @assert @eval isna(($f)(NA, 1))
     end
 
     # Unary operators on DataVector's should be equivalent to elementwise
     # application of those same operators
     dv = @data ones(5)
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.numeric_unary_operators)
+        for f in [+,-]
             for i in 1:length(dv)
                 @assert f(dv)[i] == f(dv[i])
             end
@@ -62,7 +103,7 @@ module TestOperators
     end
     dv = convert(DataArray, trues(5))
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.logical_unary_operators)
+        for f in [!]
             for i in 1:length(dv)
                 @assert f(dv)[i] == f(dv[i])
             end
@@ -99,9 +140,9 @@ module TestOperators
     # Elementary functions on DataVector's
     dv = convert(DataArray, ones(5))
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.elementary_functions)
+        for f in elementary_functions
             for i in 1:length(dv)
-                @assert f(dv)[i] == f(dv[i])
+                @assert @eval ($f).(dv)[$i] == ($f)(dv[$i])
             end
         end
     end
@@ -109,23 +150,20 @@ module TestOperators
     # Broadcasting operations between NA's and DataVector's
     dv = convert(DataArray, ones(5))
     @test_da_pda dv begin
-        for f in map(eval, [:(.+),
-                            :(+),
-                            :(.-),
-                            :(-),
-                            :(*),
-                            :(.*),
-                            :(./),
-                            :(.^),
-                            :(Base.div),
-                            :(Base.mod),
-                            :(Base.fld),
-                            :(Base.rem)])
+        for f in [+, *, Base.div, Base.mod, Base.fld, Base.rem]
             for i in 1:length(dv)
                 @assert isna(f(dv, NA)[i])
                 @assert isna(f(NA, dv)[i])
                 @assert f(dv, 1)[i] == f(dv[i], 1)
                 @assert f(1, dv)[i] == f(1, dv[i])
+            end
+        end
+        for f in arithmetic_operators
+            for i in 1:length(dv)
+                @assert @eval isna(($f).(dv, NA)[$i])
+                @assert @eval isna(($f).(NA, dv)[$i])
+                @assert @eval ($f).(dv, 1)[$i] == ($f)(dv[$i], 1)
+                @assert @eval ($f).(1, dv)[$i] == ($f)(1, dv[$i])
             end
         end
     end
@@ -138,10 +176,10 @@ module TestOperators
     end
 
     dv = @data([false, true, false, true, false])
-    for f in map(eval, DataArrays.bit_operators)
+    for f in bit_operators
         for i in 1:length(dv)
-            @assert f(dv, true)[i] == f(dv[i], true)
-            @assert f(true, dv)[i] == f(true, dv[i])
+            @assert @eval $(f).(dv, true)[$i] == ($f).(dv[$i], true)
+            @assert @eval $(f).(true, dv)[$i] == ($f).(true, dv[$i])
         end
     end
 
@@ -153,20 +191,20 @@ module TestOperators
     bbv = BitArray([true, false, false, true, true])
     bdv = @data [false, true, false, false, true]
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.array_arithmetic_operators)
+        for f in [:(+),:(-),:(*),:(^)]
             for i in 1:length(dv)
-                @assert isna(f(v, dv)[i]) && isna(dv[i]) ||
-                        f(v, dv)[i] == f(v[i], dv[i])
-                @assert isna(f(dv, v)[i]) && isna(dv[i]) ||
-                        f(dv, v)[i] == f(dv[i], v[i])
+                @assert @eval isna(($f).(v, dv)[$i]) && isna(dv[$i]) ||
+                        ($f).(v, dv)[$i] == ($f)(v[$i], dv[$i])
+                @assert @eval isna(($f).(dv, v)[$i]) && isna(dv[$i]) ||
+                        ($f).(dv, v)[$i] == ($f)(dv[$i], v[$i])
             end
         end
-        for f in map(eval, DataArrays.bit_operators)
+        for f in bit_operators
             for i in 1:length(bdv)
-                @assert f(bv, bdv)[i] == f(bv[i], bdv[i])
-                @assert f(bdv, bv)[i] == f(bdv[i], bv[i])
-                @assert f(bbv, bdv)[i] == f(bbv[i], bdv[i])
-                @assert f(bdv, bbv)[i] == f(bdv[i], bbv[i])
+                @assert @eval ($f).(bv, bdv)[$i]  == ($f).(bv[$i], bdv[$i])
+                @assert @eval ($f).(bdv, bv)[$i]  == ($f).(bdv[$i], bv[$i])
+                @assert @eval ($f).(bbv, bdv)[$i] == ($f).(bbv[$i], bdv[$i])
+                @assert @eval ($f).(bdv, bbv)[$i] == ($f).(bdv[$i], bbv[$i])
             end
         end
     end
@@ -177,15 +215,21 @@ module TestOperators
     dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
     dv[1] = dvd[1] = NA
     @test_da_pda dv begin
-        for f in map(eval, DataArrays.array_arithmetic_operators)
+        for f in [:(+),:(-),:(*),:(^)]
             for i in 1:length(dv)
-                @assert isna(f(dv, dv)[i]) && isna(dv[i]) ||
-                        f(dv, dv)[i] == f(dv[i], dv[i])
+                @assert @eval isna(($f).(dv, dv)[$i]) && isna(dv[$i]) ||
+                        ($f).(dv, dv)[$i] == ($f)(dv[$i], dv[$i])
             end
         end
-        for f in map(eval, DataArrays.bit_operators)
+        for f in [+,-]
+            for i in 1:length(dv)
+                @assert isna((f)(dv, dv)[i]) && isna(dv[i]) ||
+                        (f)(dv, dv)[i] == (f)(dv[i], dv[i])
+            end
+        end
+        for f in bit_operators
             for i in 1:length(bv)
-                @assert f(bv, bv)[i] == f(bv[i], bv[i])
+                @assert @eval ($f).(bv, bv)[$i] == ($f).(bv[$i], bv[$i])
             end
         end
         for i in 1:length(dvd)
@@ -233,16 +277,18 @@ module TestOperators
     end
 
     # Pairwise vector operators on DataVector's
+    const pairwise_vector_operators = [diff]
+
     dv = @data([911, 269, 835.0, 448, 772])
     # Dates are an example of type for which operations return a different type from their inputs
     dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
-    for f in map(eval, DataArrays.pairwise_vector_operators)
+    for f in pairwise_vector_operators
         @assert isequal(f(dv), f(dv.data))
         @assert isequal(f(dvd), f(dvd.data))
     end
     dv = @data([NA, 269, 835.0, 448, 772])
     dvd = @data([NA, Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
-    for f in map(eval, DataArrays.pairwise_vector_operators)
+    for f in pairwise_vector_operators
         v = f(dv)
         @assert isna(v[1])
         @assert isequal(v[2:4], f(dv.data)[2:4])
@@ -253,7 +299,7 @@ module TestOperators
     end
     dv = @data([911, NA, 835.0, 448, 772])
     dvd = @data([Base.Date("2000-01-01"), NA, Base.Date("2010-01-01"), Base.Date("2010-01-05")])
-    for f in map(eval, DataArrays.pairwise_vector_operators)
+    for f in pairwise_vector_operators
         v = f(dv)
         @assert isna(v[1])
         @assert isna(v[2])
@@ -266,7 +312,7 @@ module TestOperators
     end
     dv = @data([911, 269, 835.0, 448, NA])
     dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05"), NA])
-    for f in map(eval, DataArrays.pairwise_vector_operators)
+    for f in pairwise_vector_operators
         v = f(dv)
         @assert isna(v[4])
         @assert isequal(v[1:3], f(dv.data)[1:3])
@@ -278,13 +324,13 @@ module TestOperators
 
     # Cumulative vector operators on DataVector's
     dv = convert(DataArray, ones(5))
-    for f in map(eval, DataArrays.cumulative_vector_operators)
+    for f in [Base.cumprod, Base.cumsum, t -> accumulate(min, t), t -> accumulate(max, t)]
         for i in 1:length(dv)
             @assert f(dv)[i] == f(dv.data)[i]
         end
     end
     dv[4] = NA
-    for f in map(eval, DataArrays.cumulative_vector_operators)
+    for f in [Base.cumprod, Base.cumsum]
         for i in 1:3
             @assert f(dv)[i] == f(dv.data)[i]
         end
@@ -445,10 +491,10 @@ module TestOperators
     @assert isequal(dv, rdv)
 
     # Issue #90
-    a = @data([false, true, false, true]);
-    b = @data([false, false, true, true]);
-    a[:] = NA;
-    b[:] = NA;
-    @test allna(a & b)
-    @test allna(a | b)
+    a = @data([false, true, false, true])
+    b = @data([false, false, true, true])
+    a[:] = NA
+    b[:] = NA
+    @test allna(a .& b)
+    @test allna(a .| b)
 end

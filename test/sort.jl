@@ -15,9 +15,9 @@ for T in (Float64, BigFloat)
     n = 1000
     na = bitrand(n)
     nna = sum(na)
-    a = Array(T, n)
+    a = Vector{T}(n)
     ra = randn(n-nna)
-    a[!na] = ra
+    a[.!na] = ra
     for da in (DataArray(a, na), PooledDataArray(a, na), (pda = PooledDataArray(a, na); setlevels!(pda, shuffle!(pda.pool))))
         @test isequal(sort(da), [DataArray(sort(dropna(da))); DataArray(T, nna)])
         @test isequal(sort(da; lt=(x,y)->isless(x,y)), [DataArray(sort(dropna(da))); DataArray(T, nna)])

@@ -6,37 +6,20 @@ srand(1337)
 ## extended test of sum
 
 for skipna in (true, false)
-    if VERSION < v"0.5-"
-        @test sum(@data(Int8[]); skipna=skipna) === 0
-        @test sum(@data(Int[]); skipna=skipna) === 0
-        @test sum(@data(Float64[]); skipna=skipna) === 0.0
+    @test sum(@data(Int8[]); skipna=skipna) === Int32(0)
+    @test sum(@data(Int[]); skipna=skipna) === 0
+    @test sum(@data(Float64[]); skipna=skipna) === 0.0
 
-        @test sum(@data([@compat(Int8(3))]); skipna=skipna) === 3
-        @test sum(@data([3]); skipna=skipna) === 3
-        @test sum(@data([3.0]); skipna=skipna) === 3.0
+    @test sum(@data([Int8(3)]); skipna=skipna) === Int32(3)
+    @test sum(@data([3]); skipna=skipna) === 3
+    @test sum(@data([3.0]); skipna=skipna) === 3.0
 
-        z = DataArray(reshape(1:16, (2,2,2,2)))
-        fz = convert(DataArray{Float64}, z)
-        bfz = convert(DataArray{BigFloat}, z)
-        @test sum(z) === 136
-        @test sum(fz) === 136.0
-        @test sum(bfz) == 136
-    else
-        @test sum(@data(Int8[]); skipna=skipna) === Int32(0)
-        @test sum(@data(Int[]); skipna=skipna) === 0
-        @test sum(@data(Float64[]); skipna=skipna) === 0.0
-
-        @test sum(@data([@compat(Int8(3))]); skipna=skipna) === Int32(3)
-        @test sum(@data([3]); skipna=skipna) === 3
-        @test sum(@data([3.0]); skipna=skipna) === 3.0
-
-        z = DataArray(reshape(1:16, (2,2,2,2)))
-        fz = convert(DataArray{Float64}, z)
-        bfz = convert(DataArray{BigFloat}, z)
-        @test sum(z) === 136
-        @test sum(fz) === 136.0
-        @test sum(bfz) == 136
-    end
+    z = DataArray(reshape(1:16, (2,2,2,2)))
+    fz = convert(DataArray{Float64}, z)
+    bfz = convert(DataArray{BigFloat}, z)
+    @test sum(z) === 136
+    @test sum(fz) === 136.0
+    @test sum(bfz) == 136
 end
 
 @test sum(@data(Int[NA])) === NA
@@ -58,30 +41,30 @@ bfz = convert(DataArray{BigFloat}, z)
 @test sum(fz; skipna=true) === 130.0
 @test sum(bfz; skipna=true) == 130
 
-bs = DataArrays.sum_pairwise_blocksize(@functorize(identity))
+bs = DataArrays.sum_pairwise_blocksize(identity)
 for n in [bs-64, bs-1, bs, bs+1, bs+2, 2*bs-2:2*bs+3..., 4*bs-2:4*bs+3...]
     da = DataArray(randn(n))
     s = sum(da.data)
-    @test_approx_eq sum(da) s
-    @test_approx_eq sum(da; skipna=true) s
+    @test sum(da) ≈ s
+    @test sum(da; skipna=true) ≈ s
 
     da2 = copy(da)
     da2[1:2:end] = NA
     @test isna(sum(da2))
-    @test_approx_eq sum(da2; skipna=true) sum(dropna(da2))
+    @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
     da2 = convert(DataArray{BigFloat}, da2)
     @test isna(sum(da2))
-    @test_approx_eq sum(da2; skipna=true) sum(dropna(da2))
+    @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
     da2 = copy(da)
     da2[2:2:end] = NA
     @test isna(sum(da2))
-    @test_approx_eq sum(da2; skipna=true) sum(dropna(da2))
+    @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
     da2 = convert(DataArray{BigFloat}, da2)
     @test isna(sum(da2))
-    @test_approx_eq sum(da2; skipna=true) sum(dropna(da2))
+    @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 end
 
 ## other reductions
@@ -93,7 +76,7 @@ macro same_behavior(ex1, ex2)
         catch e
             e
         end
-        isa(v, Exception) ? @test_throws(typeof(v), $ex1) : @test_approx_eq($ex1, v)
+        isa(v, Exception) ? @test_throws(typeof(v), $ex1) : @test isapprox($ex1, v)
     end
 end
 
@@ -137,9 +120,9 @@ end
 for fn in (+, *, |, &)
     da = convert(DataArray, bitrand(10))
 
-    s = mapreduce(@functorize(identity), fn, da.data)
-    @test mapreduce(@functorize(identity), fn, da) == s
-    @test mapreduce(@functorize(identity), fn, da; skipna=true) == s
+    s = mapreduce(identity, fn, da.data)
+    @test mapreduce(identity, fn, da) == s
+    @test mapreduce(identity, fn, da; skipna=true) == s
     @test reduce(fn, da) == s
     @test reduce(fn, da; skipna=true) == s
 end
@@ -159,11 +142,11 @@ da2 = DataArray(randn(128))
 @same_behavior mean(da1, weights(da2.data); skipna=true) mean(da1.data, weights(da2.data))
 
 da1[1:3:end] = NA
-@same_behavior mean(da1, weights(da2); skipna=true) mean(dropna(da1), weights(da2.data[!da1.na]))
-@same_behavior mean(da1, weights(da2.data); skipna=true) mean(dropna(da1), weights(da2.data[!da1.na]))
+@same_behavior mean(da1, weights(da2); skipna=true) mean(dropna(da1), weights(da2.data[(!).(da1.na)]))
+@same_behavior mean(da1, weights(da2.data); skipna=true) mean(dropna(da1), weights(da2.data[(!).(da1.na)]))
 
 da2[1:2:end] = NA
-keep = !da1.na & !da2.na
+keep = .!da1.na .& .!da2.na
 @test isna(mean(da1, weights(da2)))
 @same_behavior mean(da1, weights(da2); skipna=true) mean(da1.data[keep], weights(da2.data[keep]))
 end

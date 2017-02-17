@@ -240,19 +240,19 @@ module TestDataArrays
     da[[1, 2]] = 5
 
     # isna(a::AbstractArray)
-    isna([1, 2])
-    isna(repeat([1, 2], outer = [1, 2]))
-    isna(repeat([1, 2], outer = [1, 2, 2]))
+    isna.([1, 2])
+    isna.(repeat([1, 2], outer = [1, 2]))
+    isna.(repeat([1, 2], outer = [1, 2, 2]))
 
     # isna(da::DataArray)
-    isna(DataArray([1, 2], falses(2)))
-    isna(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    isna(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
+    isna.(DataArray([1, 2], falses(2)))
+    isna.(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    isna.(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # Base.isnan(da::DataArray)
-    isnan(DataArray([1, 2], falses(2)))
-    isnan(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    isnan(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
+    isnan.(DataArray([1, 2], falses(2)))
+    isnan.(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    isnan.(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # Base.isfinite(da::DataArray)
     isfinite(DataArray([1, 2], falses(2)))
@@ -312,19 +312,19 @@ module TestDataArrays
     convert(DataArray, DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # round(Int, da::DataArray)
-    round(Int, DataArray([1, 2], falses(2)))
-    round(Int, DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    round(Int, DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
+    round.(Int, DataArray([1, 2], falses(2)))
+    round.(Int, DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    round.(Int, DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # float(da::DataArray)
-    float(DataArray([1, 2], falses(2)))
-    float(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    float(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
+    float.(DataArray([1, 2], falses(2)))
+    float.(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    float.(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # map(Bool, da::DataArray)
-    @compat map(Bool, DataArray([1, 0], falses(2)))
-    @compat map(Bool, DataArray(repeat([1, 0], outer = [1, 2]), falses(2, 2)))
-    @compat map(Bool, DataArray(repeat([1, 0], outer = [1, 2, 2]), falses(2, 2, 2)))
+    map(Bool, DataArray([1, 0], falses(2)))
+    map(Bool, DataArray(repeat([1, 0], outer = [1, 2]), falses(2, 2)))
+    map(Bool, DataArray(repeat([1, 0], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # Base.hash(a::AbstractDataArray)
     hash(DataArray([1, 2], falses(2)))

@@ -105,13 +105,13 @@ end
 
 macro test_da_approx_eq(da1, da2)
     quote
-        v1 = $da1
-        v2 = $da2
+        v1 = $(esc(da1))
+        v2 = $(esc(da2))
         na = isna(v1)
         @test na == isna(v2)
-        defined = !na
+        defined = (!).(na)
         if any(defined)
-            @test_approx_eq v1[defined] v2[defined]
+            @test isapprox(v1[defined], v2[defined], nans = true)
         end
     end
 end
@@ -127,11 +127,7 @@ for Areduc in (DataArray(rand(3, 4, 5, 6)),
             (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)]
             # println("region = $region, skipna = $skipna")
 
-            if VERSION < v"0.6.0-dev.1121"
-                outputs = Any[DataArray(fill(NaN, Base.reduced_dims(size(Areduc), region)))]
-            else
-                outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
-            end
+            outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
             has_na = anyna(Areduc)
             if has_na && !skipna
                 # Should throw an error reducing to non-DataArray
