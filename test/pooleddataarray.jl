@@ -31,16 +31,20 @@ module TestPDA
     @assert levels(setlevels!(@pdata([1.0, 2.0]), [3,4])) == [3.0, 4.0]
 
     y = @pdata [1, NA, -2, 1, NA, 4, NA]
-    @assert isequal(unique(y), @pdata [1, NA, -2, 4])
-    @assert isequal(unique(reverse(y)), @data [NA, 4, 1, -2])
-    @assert isequal(unique(dropna(y)), @data [1, -2, 4])
-    @assert isequal(unique(reverse(dropna(y))), @data [4, 1, -2])
+    @assert isequal(unique(y), @pdata [-2, 1, 4, NA])
+    @assert isequal(unique(reverse(y)), @data [-2, 1, 4, NA])
+    @assert isequal(unique(dropna(y)), @data levels(dropna(y)))
+    @assert isequal(unique(reverse(dropna(y))), @data levels(reverse(dropna(y))))
 
     z = @pdata ["frank", NA, "gertrude", "frank", NA, "herbert", NA]
-    @assert isequal(unique(z), @pdata ["frank", NA, "gertrude", "herbert"])
-    @assert isequal(unique(reverse(z)), @pdata [NA, "herbert", "frank", "gertrude"])
-    @assert isequal(unique(dropna(z)), @pdata ["frank", "gertrude", "herbert"])
-    @assert isequal(unique(reverse(dropna(z))), @pdata ["herbert", "frank", "gertrude"])
+    @assert isequal(unique(z), @pdata ["frank", "gertrude", "herbert",  NA])
+    @assert isequal(unique(reverse(z)), @pdata ["frank", "gertrude", "herbert",  NA])
+    @assert isequal(unique(dropna(z)), @data levels(dropna(z)))
+    @assert isequal(unique(reverse(dropna(z))), @data levels(reverse(dropna(z))))
+
+    # check case where some levels are not present in data
+    z[3] = "frank"
+    @assert isequal(unique(z), @pdata ["frank", "herbert",  NA])
 
     # check case where only NA occurs in final position
     @assert isequal(unique(@pdata [1, 2, 1, NA]), @pdata [1, 2, NA])

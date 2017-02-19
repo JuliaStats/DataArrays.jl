@@ -271,9 +271,9 @@ end
 #' @description
 #'
 #' Return a DataVector containing the unique values of a `PooledDataArray`,
-#' in the order they appear in the data, including `NA` if any missing entries
+#' in the order of `levels`, including `NA` if any missing entries
 #' are encountered. For `PooledDataArray`s, this function is much less efficient
-#' than `levels`, which does not return the values in the same order.
+#' than `levels`.
 #'
 #' @param da::DataArray{T} `DataArray` whose unique values are desired.
 #'
@@ -286,50 +286,24 @@ end
 #' pdv = @pdata [1, -2, 1, NA, 4]
 #' distinct_values = unique(pdv)
 function Base.unique{T}(pda::PooledDataArray{T})
-    n = length(pda)
     nlevels = length(pda.pool)
-    unique_values = Vector{T}(0)
-    sizehint!(unique_values, nlevels)
-    seen = Set{eltype(pda.refs)}()
-
-    firstna = 0
-    for i in 1:n
-        if isna(pda, i)
-            if firstna == 0
-                firstna = length(unique_values) + 1
-            end
-        elseif !in(pda.refs[i], seen)
-            push!(seen, pda.refs[i])
-            push!(unique_values, pda.pool[pda.refs[i]])
-        else
-            continue
-        end
-
-        if firstna > 0 && length(unique_values) == nlevels
-            break
+    seen = fill(false, nlevels + 1)
+    batch = 0
+    @inbounds for i in pda.refs
+        seen[i + 1] = true
+        # Only do a costly short-circuit check periodically
+        batch += 1
+        if batch > 1000
+            all(seen) && break
+            batch = 0
         end
     end
-
-    if firstna > 0
-        res = DataArray(Vector{T}(nlevels + 1))
-        i = 0
-        for val in unique_values
-            i += 1
-            if i == firstna
-                res.na[i] = true
-                i += 1
-            end
-            res.data[i] = val
-        end
-
-        if firstna == nlevels + 1
-            res.na[nlevels + 1] = true
-        end
-
-        return res
-    else
-        return DataArray(unique_values)
+    seenna = shift!(seen)
+    res = DataArray(levels(pda)[seen])
+    if seenna
+        push!(res, NA)
     end
+    res
 end
 
 #' @description
