@@ -1,23 +1,35 @@
 # TODO: Remove some T's from output type signatures
 
-#' @description
-#'
-#' A type that extends the normal Julia Array{T} type by allowing
-#' the entries to be missing (i.e. NULL or NA) in addition to
-#' taking on values of type `T`.
-#'
-#' @field data::Array{T, N} The elements of the DataArray are stored here,
-#'        unless the given element is missing. In this case, the contents
-#'        of the corresponding entry in `data` can be any arbitrary value.
-#' @field na::BitArray{N} A 1-bit per entry Boolean mask specifying,
-#'        for each entry of the DataArray, whether that entry is `NA`
-#'        or not.
-#'
-#' @examples
-#'
-#' dv = DataArray([1, 2, 3], [false, false, true])
-#'
-#' dm = DataArray([1 2; 3 4], [false false; true false])
+"""
+    DataArray{T,N}(d::Array{T,N}, m::BitArray{N} = falses(size(d)))
+    DataArray{T,N}(d::Array{T,N}, m::Array{Bool})
+
+Construct a `DataArray`, an `N`-dimensional array with element type `T` that allows missing
+values. The resulting array uses the data in `d` with `m` as a bitmask to signify missingness.
+That is, for each index `i` in `d`, if `m[i]` is `true`, the array contains `NA` at index `i`,
+otherwise it contains `d[i]`.
+
+    DataArray(T::Type, dims...)
+
+Construct a `DataArray` with element type `T` and dimensions specified by `dims`. All elements
+default to `NA`.
+
+# Examples
+
+```jldoctest
+julia> DataArray([1, 2, 3], [true, false, true])
+3-element DataArrays.DataArray{Int64,1}:
+  NA
+ 2
+  NA
+
+julia> DataArray(Float64, 3, 3)
+3×3 DataArrays.DataArray{Float64,2}:
+ NA  NA  NA
+ NA  NA  NA
+ NA  NA  NA
+```
+"""
 mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
     na::BitArray{N}
@@ -42,104 +54,37 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     end
 end
 
-#' @description
-#'
-#' An DataVector is an DataArray of order 1.
-const DataVector{T} = DataArray{T, 1}
-
-#' @description
-#'
-#' An DataMatrix is an DataArray of order 2.
-const DataMatrix{T} = DataArray{T, 2}
-
-#' @description
-#'
-#' Create a DataArray from a set of data values and missingness
-#' mask as an `Array{Bool}`.
-#'
-#' NB: This definition exists because Julia requires that we redefine
-#' inner DataArray constructor as an outer constuctor.
-#'
-#' @param d::Array The non-NA values of the DataArray being constructed.
-#' @param m::BitArray A Boolean mask indicating whether each element of
-#'        the DataArray is missing or not.
-#'
-#' @returns out::DataArray A DataArray based on the input data and
-#'          missingness mask.
-#'
-#' @examples
-#'
-#' da = DataArray([1, 2, 3], falses(3))
 function DataArray{T, N}(d::Array{T, N},
                          m::BitArray{N} = falses(size(d))) # -> DataArray{T}
     return DataArray{T, N}(d, m)
 end
 
-#' @description
-#'
-#' Create a DataArray from a set of data values and missingness
-#' mask as an `Array{Bool}`.
-#'
-#' @param d::Array The non-NA values of the DataArray being constructed.
-#' @param m::Array{Bool} A Boolean mask indicating whether each element of
-#'        the DataArray is missing or not.
-#'
-#' @returns out::DataArray A DataArray based on the input data and
-#'          missingness mask.
-#'
-#' @examples
-#'
-#' da = DataArray([1, 2, 3], [false, false, true])
 function DataArray(d::Array, m::Array{Bool}) # -> DataArray{T}
     return DataArray(d, BitArray(m))
 end
 
-#' @description
-#'
-#' Create a DataArray of a given type and dimensionality. All
-#' entries will be set to `NA` by default.
-#'
-#' @param T::Type The type of the output DataArray.
-#' @param dims::Integer... The size of the output DataArray.
-#'
-#' @returns out::DataArray A DataArray of the desired type and size.
-#'
-#' @examples
-#'
-#' da = DataArray(Int, 2, 2)
 function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
     return DataArray(Array{T}(dims...), trues(dims...))
 end
 
-#' @description
-#'
-#' Create a DataArray of a given type and dimensionality. All
-#' entries will be set to `NA` by default.
-#'
-#' @param T::Type The type of the output DataArray.
-#' @param dims::NTuple{N, Int} The size of the output DataArray.
-#'
-#' @returns out::DataArray A DataArray of the desired type and size.
-#'
-#' @examples
-#'
-#' da = DataArray(Int, (2, 2))
 function DataArray{N}(T::Type, dims::NTuple{N, Int}) # -> DataArray{T}
     return DataArray(Array{T}(dims...), trues(dims...))
 end
 
-#' @description
-#'
-#' Create a copy of a DataArray.
-#'
-#' @param da::DataArray The DataArray that will be copied.
-#'
-#' @returns out::DataArray A copy of `da`.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' dv_new = copy(dv)
+"""
+    DataVector{T}
+
+A `DataArray` of order 1 with element type `T`.
+"""
+const DataVector{T} = DataArray{T, 1}
+
+"""
+    DataMatrix{T}
+
+A `DataArray` of order 2 with element type `T`.
+"""
+const DataMatrix{T} = DataArray{T, 2}
+
 Base.copy(d::DataArray) = Base.copy!(similar(d), d) # -> DataArray{T}
 
 function Base.copy!(dest::DataArray, src::DataArray) # -> DataArray{T}
@@ -205,18 +150,6 @@ end
 Base.fill!(A::DataArray, ::NAtype) = (fill!(A.na, true); A)
 Base.fill!(A::DataArray, v) = (fill!(A.data, v); fill!(A.na, false); A)
 
-#' @description
-#'
-#' Create a deep copy of a DataArray.
-#'
-#' @param da::DataArray The DataArray that will be deep copied.
-#'
-#' @returns out::DataArray A deep-copy of `da`.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' dv_new = deepcopy(dv)
 function Base.deepcopy(d::DataArray) # -> DataArray{T}
     return DataArray(deepcopy(d.data), deepcopy(d.na))
 end
@@ -229,96 +162,15 @@ function Base.resize!{T}(da::DataArray{T,1}, n::Int)
     da
 end
 
-#' @description
-#'
-#' Create a new DataArray{T} that is similar to an existing DataArray.
-#'
-#' @param da::DataArray DataArray based on which a new DataArray
-#'        will be created.
-#' @param T::Type The element type of the output DataArray.
-#' @param dims::Dims The dimensionality of the output DataArray.
-#'
-#' @returns out::DataArray{T} A new DataArray with the desired type and
-#'          dimensionality.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' dv_new = similar(dv, Float64, 2, 2, 2)
 function Base.similar(da::DataArray, T::Type, dims::Dims) #-> DataArray{T}
     return DataArray(Array{T}(dims), trues(dims))
 end
 
-#' @description
-#'
-#' Find the sizes along each dimension of the DataArray.
-#'
-#' @param da::DataArray{Bool} DataArray whose size is desired.
-#'
-#' @returns a::Array{Int} Array containing the indices of all `true` values
-#'          in `da`.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' inds = find(dv)
 Base.size(d::DataArray) = size(d.data) # -> (Int...)
-
-#' @description
-#'
-#' Determine the number of dimensions (i.e. order) of a DataArray.
-#'
-#' @param da::DataArray{Bool} DataArray whose dimensionality is desired.
-#'
-#' @returns d::Int The number of dimensions of `da`.
-#'
-#' @examples
-#'
-#' dm = @data [false false; true false]
-#' inds = ndims(dm)
 Base.ndims(da::DataArray) = ndims(da.data) # -> Int
-
-#' @description
-#'
-#' Determine the length (e.g. number of elements) of a DataArray.
-#'
-#' @param da::DataArray The DataArray whose length is desired.
-#'
-#' @returns n::Int The length of `da`.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' i = length(dv)
 Base.length(d::DataArray) = length(d.data) # -> Int
-
-#' @description
-#'
-#' Find the index of the last element of `da`.
-#'
-#' @param da::DataArray The DataArray whose final element's index is desired.
-#'
-#' @returns i::Int The index of the final element of `da`.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' i = endof(dv)
 Base.endof(da::DataArray) = endof(da.data) # -> Int
 
-#' @description
-#'
-#' Find the indices of all `true` values in a `DataArray{Bool}`.
-#'
-#' @param da::DataArray{Bool} DataArray whose `true` values will be found.
-#'
-#' @returns a::Array{Int} Array containing the indices of all `true` values
-#'          in `da`.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' inds = find(dv)
 function Base.find(da::DataArray{Bool}) # -> Array{Int}
     data = da.data
     ntrue = 0
@@ -336,23 +188,6 @@ function Base.find(da::DataArray{Bool}) # -> Array{Int}
     return res
 end
 
-#' @description
-#'
-#' Convert a DataArray{T} to an Array{S}. Throws an `NAException`
-#' if the input contains `NA` values that prohibit conversion.
-#'
-#' @param da::DataArray{T} The DataArray that will be converted.
-#'
-#' @returns a::Array{S} The (possibly type-converted) elements of
-#'         `da` if none were `NA`.
-#'
-#' @examples
-#'
-#' da = @data [1 2; 3 NA]
-#' a = convert(Array{Float64}, da)
-#'
-#' da = @data [1 2; 3 4]
-#' a = convert(Array{Float64}, da)
 function Base.convert{S, T, N}(::Type{Array{S, N}},
                                x::DataArray{T, N}) # -> Array{S, N}
     if anyna(x)
@@ -408,105 +243,17 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
     return convert(Array{T, N}, da, replacement)
 end
 
-#' @description
-#'
-#' Turn a DataVector into a Vector. Drop any NA's.
-#'
-#' NB: Because NA's are dropped instead of replaced, this function only
-#'     works on DataVector's and will not work on DataArray's of higher
-#'     order.
-#'
-#' @param dv::DataVector{T} DataArray that will be converted to an Array.
-#'
-#' @returns v::Array{T} Array containing only the non-NA values of `dv`.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' v = dropna(dv)
 dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
-
-#' @description
-#'
-#' Determine if the entries of an DataArray are `NA`.
-#'
-#' @param a::DataArray{T, N} The DataArray whose missingness will
-#'        be assessed.
-#'
-#' @returns na::BitArray{N} Elementwise Boolean whether entry is missing.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' isna(da)
 isna(da::DataArray) = copy(da.na) # -> BitArray
-
-#' @description
-#'
-#' Safe and type-stable way to determine if element `i` of an
-#' DataArray is `NA`.
-#'
-#' @param a::DataArray The DataArray whose missingness will
-#'        be assessed.
-#' @param inds::Any The indices of the elements to be checked for `NA`.
-#'
-#' @returns na::Any Are the indexed elements `NA` or not?
-#'
-#' @examples
-#'
-#' a = @data([1, 2, 3])
-#' isna(a, 1)
-#' isna(a, 1:2)
 isna(da::DataArray, I::Real) = getindex(da.na, I)
 
 @nsplat N function isna(da::DataArray, I::NTuple{N,Real}...)
     getindex(da.na, I...)
 end
 
-#' @description
-#'
-#' Determine if any of the entries of an DataArray are `NA`.
-#'
-#' @param da::DataArray{T, N} The DataArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are any of the elements of `da` an `NA` value?
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' anyna(da)
 anyna(da::DataArray) = any(da.na) # -> Bool
-
-#' @description
-#'
-#' Determine if all of the entries of an DataArray are `NA`.
-#'
-#' @param da::DataArray{T, N} The DataArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are all of the elements of `da` an `NA` value?
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' allna(da)
 allna(da::DataArray) = all(da.na) # -> Bool
 
-#' @description
-#'
-#' Determine if the entries of an DataArray are finite, which means
-#' neither `+/-NaN` nor `+/-Inf`.
-#'
-#' @param da::DataArray{T, N} The DataArray whose elements will
-#'        be assessed.
-#'
-#' @returns na::DataArray{Bool} Elementwise Boolean whether entry is finite.
-#'
-#' @examples
-#'
-#' da = @data([1, 2, 3])
-#' isfinite(da)
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
     n = length(da)
     res = Array{Bool}(size(da))
@@ -526,19 +273,6 @@ end
 #                    ::Type{T}) = promote_rule(S, T)
 # promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
 
-#' @description
-#'
-#' Convert an Array{T} to a DataArray{S}.
-#'
-#' @param a::Array{T} The Array that will be converted.
-#'
-#' @returns da::DataArray{S} The converted DataArray with potential
-#'          type-conversion of the elements of `a`.
-#'
-#' @examples
-#'
-#' a = [1 2; 3 4]
-#' da = convert(DataArray{Float64}, a)
 function Base.convert{S, T, N}(::Type{DataArray{S, N}},
                                a::AbstractArray{T, N}) # -> DataArray{S, N}
     return DataArray(convert(Array{S, N}, a), falses(size(a)))
@@ -548,18 +282,6 @@ Base.convert{S,T,N}(::Type{DataArray{S}}, x::AbstractArray{T,N}) =
 Base.convert{T, N}(::Type{DataArray}, x::AbstractArray{T, N}) =
     convert(DataArray{T,N}, x)
 
-#' @description
-#'
-#' Convert a DataArray{T} to a DataArray{S}.
-#'
-#' @param da::DataArray{T} The DataArray that will be converted.
-#'
-#' @returns out::DataArray{S} The converted DataArray.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' dv_alt = convert(DataVector{Float64}, dv)
 function Base.convert{S, T, N}(::Type{DataArray{S, N}},
                                x::DataArray{T, N}) # -> DataArray{S, N}
     v = similar(x.data, S)
@@ -571,38 +293,29 @@ function Base.convert{S, T, N}(::Type{DataArray{S, N}},
     return DataArray(v, x.na)
 end
 
-#' @description
-#'
-#' Convert an AbstractArray to a DataArray.
-#'
-#' @param a::AbstractArray{T} The AbstractArray that will be converted to
-#'        a DataArray.
-#'
-#' @returns da::DataArray{T} `a` after conversion to a DataArray.
-#'
-#' @examples
-#'
-#' dv = data([1, 2, 3, 4])
-#' dm = data([1 2; 3 4])
-#' dv = data(1:10)
-#' dv = data(falses(3))
+"""
+    data(a::AbstractArray) -> DataArray
 
+Convert `a` to a `DataArray`.
+
+# Examples
+
+```jldoctest
+julia> data([1, 2, 3])
+3-element DataArrays.DataArray{Int64,1}:
+ 1
+ 2
+ 3
+
+julia> data(@data [1, 2, NA])
+3-element DataArrays.DataArray{Int64,1}:
+ 1
+ 2
+  NA
+```
+"""
 data(a::AbstractArray) = convert(DataArray, a)
 
-#' @description
-#'
-#' Convert a DataArray to an Array of float type.
-#'
-#' @param da::DataArray{T} The DataArray that will be converted.
-#'
-#' @returns a::Array{Float64} An Array containing the
-#'          type-converted values of `da`.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' v = float(dv)
-#
 # TODO: Make sure these handle copying correctly
 # TODO: Remove these? They have odd behavior, because they convert to Array's.
 # TODO: Rethink multi-item documentation approach
@@ -619,22 +332,12 @@ for f in (:(Base.float),)
     end
 end
 
-#' @internal
-#' @description
-#'
-#' Find the unique values in a DataArray, noting if `NA` occurs in the
-#' `DataArray`.
-#'
-#' @param da::DataArray{T} `DataArray` whose unique values are desired.
-#'
-#' @returns v::Vector{T} `Vector` containing the unique values from `da`.
-#' @returns firstna::Int The index of the first `NA` value, or 0 if
-#'          none is present.
-#'
-#' @examples
-#'
-#' dv = @data [1, 2, NA, 4]
-#' distinct_values, firstna = finduniques(dv)
+"""
+    finduniques(da::DataArray) -> (Vector, Int)
+
+Get the unique values in `da` as well as the index of the first `NA` value
+in `da` if present, or 0 otherwise.
+"""
 function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Int
     out = Vector{T}(0)
     seen = Set{T}()
@@ -655,22 +358,6 @@ function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Int
     return out, firstna
 end
 
-#' @description
-#'
-#' Return a DataVector containing the unique values of a `DataArray`,
-#' in the order they appear in the data, including `NA` if any missing entries
-#' are encountered.
-#'
-#' @param da::DataArray{T} `DataArray` whose unique values are desired.
-#'
-#' @returns dv::DataVector{T} `DataVector` containing the unique values
-#'          from `da`, in the order they appear, including `NA` if there are
-#'          any missing entries in `da`.
-#'
-#' @examples
-#'
-#' dv = @data [1, -2, 1, NA, 4]
-#' distinct_values = unique(dv)
 function Base.unique{T}(da::DataArray{T}) # -> DataVector{T}
     unique_values, firstna = finduniques(da)
     n = length(unique_values)
@@ -696,41 +383,29 @@ function Base.unique{T}(da::DataArray{T}) # -> DataVector{T}
     end
 end
 
-#' @description
-#'
-#' Return a DataVector containing the unique values of a `DataArray`,
-#' excluding `NA`.
-#'
-#'
-#' @param da::DataArray{T} `DataArray` whose unique values are desired.
-#'
-#' @returns dv::DataVector{T} `DataVector` containing the unique values
-#'          from `da`, excluding `NA`.
-#'
-#' @examples
-#'
-#' dv = @data [1, -2, 1, NA, 4]
-#' distinct_values = levels(dv)
+"""
+    levels(da::DataArray) -> DataVector
+
+Return a vector of the unique values in `da`, excluding any `NA`s.
+
+    levels(a::AbstractArray) -> Vector
+
+Equivalent to `unique(a)`.
+
+# Examples
+
+```jldoctest
+julia> levels(@data [1, 2, NA])
+2-element DataArrays.DataArray{Int64,1}:
+ 1
+ 2
+```
+"""
 function levels(da::DataArray) # -> DataVector{T}
     unique_values, firstna = finduniques(da)
     return DataArray(unique_values)
 end
 
-#' @description
-#'
-#' Return a Vector containing the unique values of an `Array`. This
-#' function is identical to `unique` and is only defined for consistency
-#' with `DataArray`s and `PooledDataArray`s.
-#'
-#'
-#' @param a::Array{T} `Array` whose unique values are desired.
-#'
-#' @returns v::Vector{T} `Vector` containing the unique values from `da`.
-#'
-#' @examples
-#'
-#' v = [1, -2, 1, 4]
-#' distinct_values = levels(v)
 function levels(a::AbstractArray) # -> Vector{T}
     return unique(a)
 end

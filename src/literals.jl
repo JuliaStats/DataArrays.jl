@@ -100,6 +100,27 @@ function parsedata(ex::Expr)
     end
 end
 
+"""
+    @data expr
+
+Create a [`DataArray`](@ref) based on the given expression.
+
+# Examples
+
+```jldoctest
+julia> @data [1, NA, 3]
+3-element DataArrays.DataArray{Int64,1}:
+ 1
+  NA
+ 3
+
+julia> @data hcat(1:3, 4:6)
+3×2 DataArrays.DataArray{Int64,2}:
+ 1  4
+ 2  5
+ 3  6
+```
+"""
 macro data(ex)
     if !(ex.head in (:vect, :vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
@@ -111,6 +132,21 @@ macro data(ex)
     return Expr(:call, :DataArray, esc(dataexpr), esc(naexpr))
 end
 
+"""
+    @pdata expr
+
+Create a [`PooledDataArray`](@ref) based on the given expression.
+
+# Examples
+
+```jldoctest
+julia> @pdata ["Hello", NA, "World"]
+3-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "Hello"
+ NA
+ "World"
+```
+"""
 macro pdata(ex)
     if !(ex.head in (:vect, :vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote

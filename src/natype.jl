@@ -14,9 +14,19 @@
 ##
 ##############################################################################
 
+"""
+    NAtype
+
+The data type of a missing value, `NA`.
+"""
 struct NAtype
 end
 
+"""
+    NA
+
+The sentinel value representing missingness.
+"""
 const NA = NAtype()
 
 Base.show(io::IO, x::NAtype) = print(io, "NA")
