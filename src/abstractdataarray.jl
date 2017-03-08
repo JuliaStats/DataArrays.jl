@@ -1,7 +1,7 @@
 """
     AbstractDataArray{T, N}
 
-An `AbstractArray` of order `N` whose entries can take on values of type
+An `N`-dimensional `AbstractArray` whose entries can take on values of type
 `T` or the value `NA`.
 """
 abstract type AbstractDataArray{T, N} <: AbstractArray{T, N} end
@@ -9,14 +9,14 @@ abstract type AbstractDataArray{T, N} <: AbstractArray{T, N} end
 """
     AbstractDataVector{T}
 
-An [`AbstractDataArray`](@ref) of order 1.
+A 1-dimensional [`AbstractDataArray`](@ref).
 """
 const AbstractDataVector{T} = AbstractDataArray{T, 1}
 
 """
     AbstractDataMatrix{T}
 
-An [`AbstractDataArray`](@ref) of order 2.
+A 2-dimensional [`AbstractDataArray`](@ref).
 """
 const AbstractDataMatrix{T} = AbstractDataArray{T, 2}
 

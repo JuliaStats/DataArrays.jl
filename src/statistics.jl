@@ -1,4 +1,19 @@
 # This is multiplicative analog of diff
+"""
+    reldiff(v::Vector) -> Vector
+
+For each element in `v`, compute the relative difference from the previous element.
+
+# Examples
+
+```jldoctest
+julia> reldiff([1.0, 2.0, 3.0, 4.0])
+3-element Array{Float64,1}:
+ 2.0
+ 1.5
+ 1.33333
+```
+"""
 function reldiff{T}(v::Vector{T})
     n = length(v)
     res = Array(T, n - 1)
@@ -9,6 +24,21 @@ function reldiff{T}(v::Vector{T})
 end
 
 # Diff scaled by previous value
+"""
+    percent_change(v::Vector) -> Vector
+
+For each element in `v`, compute the percent change from the previous element.
+
+# Examples
+
+```jldoctest
+julia> percent_change([1.0, 2.0, 3.0, 4.0])
+3-element Array{Float64,1}:
+ 1.0
+ 0.5
+ 0.333333
+```
+"""
 function percent_change{T}(v::Vector{T})
     n = length(v)
     res = Array(T, n - 1)
@@ -21,7 +51,28 @@ end
 autocor{T}(dv::DataVector{T}, lag::Int) = cor(dv[1:(end - lag)], dv[(1 + lag):end])
 autocor{T}(dv::DataVector{T}) = autocor(dv, 1)
 
-# Generate levels - see the R documentation for gl
+"""
+    gl(n::Integer, k::Integer, l::Integer = n*k) -> PooledDataArray
+
+Generate a [`PooledDataArray`](@ref) with `n` levels and `k` replications, optionally
+specifying an output length `l`. If specified, `l` must be a multiple of `n*k`.
+
+# Examples
+
+```jldoctest
+julia> gl(2, 1)
+2-element DataArrays.PooledDataArray{Int64,UInt8,1}:
+ 1
+ 2
+
+julia> gl(2, 1, 4)
+4-element DataArrays.PooledDataArray{Int64,UInt8,1}:
+ 1
+ 2
+ 1
+ 2
+```
+"""
 function gl(n::Integer, k::Integer, l::Integer)
     nk = n * k
     d, r = divrem(l, nk)
@@ -35,7 +86,12 @@ end
 
 gl(n::Integer, k::Integer) = gl(n, k, n*k)
 
-# A cross-tabulation type. Currently just a one-way table
+"""
+    xtab(x::AbstractArray) -> xtab
+
+Construct a cross-tabulation table from the unique values in `x`.
+Currently only one-way tables are supported. Returns an `xtab` object.
+"""
 type xtab{T}
     vals::Array{T}
     counts::Vector{Int}
@@ -54,8 +110,12 @@ function xtab{T}(x::AbstractArray{T})
     return xtab(kk, cc)
 end
 
-# Another cross-tabulation function, this one leaves the result as a Dict
-# Again, this is currently just for one-way tables.
+"""
+    xtabs(x::AbstractArray) -> Dict
+
+Construct a cross-tabulation table from the unique values in `x`,
+returning a `Dict`. Currently only one-way tables are supported.
+"""
 function xtabs{T}(x::AbstractArray{T})
     d = Dict{T, Int}()
     for el in x

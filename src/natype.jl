@@ -17,7 +17,7 @@
 """
     NAtype
 
-The data type of a missing value, `NA`.
+The type of a missing value, `NA`.
 """
 struct NAtype
 end
@@ -25,7 +25,7 @@ end
 """
     NA
 
-The sentinel value representing missingness.
+A value denoting missingness within the domain of any type.
 """
 const NA = NAtype()
 

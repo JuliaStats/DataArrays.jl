@@ -1,8 +1,7 @@
 # TODO: Remove some T's from output type signatures
 
 """
-    DataArray{T,N}(d::Array{T,N}, m::BitArray{N} = falses(size(d)))
-    DataArray{T,N}(d::Array{T,N}, m::Array{Bool})
+    DataArray{T,N}(d::Array{T,N}, m::AbstractArray{Bool} = falses(size(d)))
 
 Construct a `DataArray`, an `N`-dimensional array with element type `T` that allows missing
 values. The resulting array uses the data in `d` with `m` as a bitmask to signify missingness.
@@ -59,7 +58,7 @@ function DataArray{T, N}(d::Array{T, N},
     return DataArray{T, N}(d, m)
 end
 
-function DataArray(d::Array, m::Array{Bool}) # -> DataArray{T}
+function DataArray(d::Array, m::AbstractArray{Bool}) # -> DataArray{T}
     return DataArray(d, BitArray(m))
 end
 
@@ -74,14 +73,14 @@ end
 """
     DataVector{T}
 
-A `DataArray` of order 1 with element type `T`.
+A 1-dimensional `DataArray` with element type `T`.
 """
 const DataVector{T} = DataArray{T, 1}
 
 """
     DataMatrix{T}
 
-A `DataArray` of order 2 with element type `T`.
+A 2-dimensional `DataArray` with element type `T`.
 """
 const DataMatrix{T} = DataArray{T, 2}
 
