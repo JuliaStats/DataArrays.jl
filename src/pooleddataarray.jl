@@ -542,6 +542,13 @@ Base.find(pdv::PooledDataVector{Bool}) = find(convert(Vector{Bool}, pdv, false))
 ##
 ##############################################################################
 
+"""
+    getpoolidx(pda::PooledDataArray, val)
+
+Return the index of the first occurrence of `val` in the value pool for `pda`.
+If `val` is not already in the value pool, `pda` is modified to include it in
+the pool.
+"""
 function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
     val::T = convert(T,val)
     pool_idx = findfirst(pda.pool, val)
@@ -587,6 +594,11 @@ end
 ##
 ##############################################################################
 
+"""
+    replace!(x::PooledDataArray, from, to)
+
+Replace all occurrences of `from` in `x` with `to`, modifying `x` in place.
+"""
 function replace!(x::PooledDataArray{NAtype}, fromval::NAtype, toval::NAtype)
     NA # no-op to deal with warning
 end
@@ -676,7 +688,12 @@ Perm{O<:Base.Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
 ##
 ##############################################################################
 
+"""
+    PooledDataVecs(v1, v2) -> (pda1, pda2)
 
+Return a tuple of `PooledDataArray`s created from the data in `v1` and `v2`,
+respectively, but sharing a common value pool.
+"""
 function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
                                                    v2::PooledDataArray{S,R,N})
     pool = sort(unique([v1.pool; v2.pool]))
