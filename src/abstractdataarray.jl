@@ -9,14 +9,14 @@ abstract type AbstractDataArray{T, N} <: AbstractArray{T, N} end
 """
     AbstractDataVector{T}
 
-A 1-dimensional [`AbstractDataArray`](@ref).
+A 1-dimensional [`AbstractDataArray`](@ref) with element type `T`.
 """
 const AbstractDataVector{T} = AbstractDataArray{T, 1}
 
 """
     AbstractDataMatrix{T}
 
-A 2-dimensional [`AbstractDataArray`](@ref).
+A 2-dimensional [`AbstractDataArray`](@ref) with element type `T`.
 """
 const AbstractDataMatrix{T} = AbstractDataArray{T, 2}
 

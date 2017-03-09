@@ -23,20 +23,15 @@ end
     PooledDataArray(data::AbstractArray{T}, [pool::Vector{T}], [m::AbstractArray{Bool}], [r::Type])
 
 Construct a `PooledDataArray` based on the unique values in the given array. `PooledDataArray`s are
-useful for efficient storage of categorical data with a limited set of unique values.
+useful for efficient storage of categorical data with a limited set of unique values. Rather than
+storing all `length(data)` values, it stores a smaller set of values (typically `unique(data)`) and
+an array of references to the stored values.
 
 ### Optional arguments
 
 * `pool`: The possible values of `data`. Defaults to `unique(data)`.
 * `m`: A missingness indicator akin to that of [`DataArray`](@ref). Defaults to `falses(size(d))`.
 * `r`: The integer subtype used to store pool references. Defaults to `$DEFAULT_POOLED_REF_TYPE`.
-
----
-
-    PooledDataArray(T::Type, [R::Type=$DEFAULT_POOLED_REF_TYPE], [dims...])
-
-Construct a `PooledDataArray` with element type `T`, reference storage type `R`, and dimensions
-`dims`. If the dimensions are specified and nonzero, the array is filled with `NA` values.
 
 # Examples
 
@@ -55,8 +50,12 @@ julia> p = PooledDataArray(d)
  "B"
 ```
 
-Rather than storing 8 distinct strings, `p` stores 8 references to 2 distinct
-strings.
+    PooledDataArray(T::Type, [R::Type=$DEFAULT_POOLED_REF_TYPE], [dims...])
+
+Construct a `PooledDataArray` with element type `T`, reference storage type `R`, and dimensions
+`dims`. If the dimensions are specified and nonzero, the array is filled with `NA` values.
+
+# Examples
 
 ```jldoctest
 julia> PooledDataArray(Int, 2, 2)
@@ -230,37 +229,8 @@ function Base.isfinite(pda::PooledDataArray)
 end
 
 isna(pda::PooledDataArray) = pda.refs .== 0
-
-#' @description
-#'
-#' Safe and type-stable way to determine if element `i` of an
-#' PooledDataArray is `NA`.
-#'
-#' @param pda::PooledDataArray The PooledDataArray whose missingness will
-#'        be assessed.
-#' @param i::Integer The index of the element to be checked for `NA`.
-#'
-#' @returns na::Bool Is the element `NA` or not?
-#'
-#' @examples
-#'
-#' a = @pdata([1, 2, 3])
-#' isna(a, 1)
 isna(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
 
-#' @description
-#'
-#' Determine if any of the entries of an PooledDataArray are `NA`.
-#'
-#' @param pda::PooledDataArray The PooledDataArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are any of the elements of `pda` an `NA` value?
-#'
-#' @examples
-#'
-#' pda = @pdata([1, 2, 3])
-#' anyna(pda)
 function anyna(pda::PooledDataArray)
     for ref in pda.refs
         ref == 0 && return true
@@ -268,19 +238,6 @@ function anyna(pda::PooledDataArray)
     return false
 end
 
-#' @description
-#'
-#' Determine if all of the entries of an PooledDataArray are `NA`.
-#'
-#' @param pda::PooledDataArray The PooledDataArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are all of the elements of `pda` an `NA` value?
-#'
-#' @examples
-#'
-#' pda = @pdata([1, 2, 3])
-#' allna(pda)
 function allna(pda::PooledDataArray)
     for ref in pda.refs
         ref == 0 || return false
@@ -328,7 +285,7 @@ julia> p = @pdata(repeat(["A", "B"], outer=4))
  "A"
  "B"
 
-julia> compact(p)
+julia> compact(p) # second type parameter compacts to UInt8 (only need 2 unique values)
 8-element DataArrays.PooledDataArray{String,UInt8,1}:
  "A"
  "B"
@@ -339,9 +296,6 @@ julia> compact(p)
  "A"
  "B"
 ```
-
-Notice how the second type parameter is compacted from `$DEFAULT_POOLED_REF_TYPE` to
-`UInt8`, since there are only two values which need references.
 """
 function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
     REFTYPE = compactreftype(length(d.pool))
@@ -422,8 +376,48 @@ myunique(x::AbstractDataVector) = unique(dropna(x))
 """
     setlevels(x::PooledDataArray, newpool::Union{AbstractVector, Dict})
 
-Create a new [`PooledDataArray`](@ref) using the data in `x` with the value pool
-specified by `newpool`.
+Create a new [`PooledDataArray`](@ref) based on `x` but with the new value pool
+specified by `newpool`. The values can be replaced using a mapping specified in a
+`Dict` or with an array, since the order of the levels is used to identify values.
+The pool can be enlarged to contain values not present in the data, but it cannot
+be reduced to exclude present values.
+
+# Examples
+
+```jldoctest
+julia> p = @pdata repeat(["A", "B"], inner=3)
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "A"
+ "A"
+ "A"
+ "B"
+ "B"
+ "B"
+
+julia> p2 = setlevels(p, ["C", "D"]) # could also be Dict("A"=>"C", "B"=>"D")
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "C"
+ "C"
+ "C"
+ "D"
+ "D"
+ "D"
+
+julia> p3 = setlevels(p2, ["C", "D", "E"])
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "C"
+ "C"
+ "C"
+ "D"
+ "D"
+ "D"
+
+julia> p3.pool # the pool can contain values not in the array
+3-element Array{String,1}:
+ "C"
+ "D"
+ "E"
+```
 """
 function setlevels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     pool = myunique(newpool)
@@ -442,7 +436,34 @@ end
     setlevels!(x::PooledDataArray, newpool::Union{AbstractVector, Dict})
 
 Set the value pool for the [`PooledDataArray`](@ref) `x` to `newpool`, modifying
-`x` in place.
+`x` in place. The values can be replaced using a mapping specified in a `Dict` or
+with an array, since the order of the levels is used to identify values. The pool
+can be enlarged to contain values not present in the data, but it cannot be reduced
+to exclude present values.
+
+# Examples
+
+```jldoctest
+julia> p = @pdata repeat(["A", "B"], inner=3)
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "A"
+ "A"
+ "A"
+ "B"
+ "B"
+ "B"
+
+julia> setlevels!(p, Dict("A"=>"C"));
+
+julia> p # has been modified
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "C"
+ "C"
+ "C"
+ "B"
+ "B"
+ "B"
+```
 """
 function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
     if newpool == myunique(newpool) # no NAs or duplicates
@@ -551,9 +572,8 @@ Base.find(pdv::PooledDataVector{Bool}) = find(convert(Vector{Bool}, pdv, false))
 """
     getpoolidx(pda::PooledDataArray, val)
 
-Return the index of the first occurrence of `val` in the value pool for `pda`.
-If `val` is not already in the value pool, `pda` is modified to include it in
-the pool.
+Return the index of `val` in the value pool for `pda`. If `val` is not already
+in the value pool, `pda` is modified to include it in the pool.
 """
 function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
     val::T = convert(T,val)

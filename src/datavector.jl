@@ -171,7 +171,8 @@ Base.sizehint!(pda::PooledDataVector, newsz::Integer) =
 """
     padNA(dv::AbstractDataVector, front::Integer, back::Integer) -> DataVector
 
-Pad `dv` with `NA` values, `front` at the beginning of the array and `back` at the end.
+Pad `dv` with `NA` values. `front` is an integer number of `NA`s to add at the
+beginning of the array and `back` is the number of `NA`s to add at the end.
 
 # Examples
 

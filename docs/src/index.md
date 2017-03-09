@@ -11,16 +11,10 @@ In particular, it provides the following:
 
 ## Installation
 
-This package is available for Julia versions 0.6 and up.
-To install it, run
-
-```julia
-Pkg.add("DataArrays")
-```
-
-from the Julia REPL.
+To install the package, run `Pkg.add("DataArrays")` from the Julia REPL, then run `using DataArrays` to load it.
 
 ## Contents
 
 ```@contents
+Pages = ["da.md", "util.md"]
 ```
