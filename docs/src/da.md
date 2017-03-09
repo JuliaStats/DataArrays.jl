@@ -23,6 +23,7 @@ isna
 allna
 anyna
 dropna
+padNA
 levels
 ```
 
@@ -37,4 +38,5 @@ setlevels!
 replace!
 PooledDataVecs
 getpoolidx
+reorder
 ```

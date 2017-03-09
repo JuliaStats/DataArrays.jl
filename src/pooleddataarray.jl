@@ -498,9 +498,15 @@ function setlevels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this version
     setlevels!(x, newpool)
 end
 
+"""
+    reorder(x::PooledDataArray) -> PooledDataArray
+
+Return a `PooledDataArray` containing the same data as `x` but with the value pool sorted.
+"""
 reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
-reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
+### FIXME: this calls a method that doesn't exist
+# reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
 ### FIXME: this can't work because we don't know about DataFrames
 # reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
