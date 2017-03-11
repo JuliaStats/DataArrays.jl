@@ -36,13 +36,13 @@ unsafe_setnotna!(da::PooledDataArray, extr, idx::Real) = nothing
 #
 # - For DataArrays, da.na should be falses
 # - For PooledDataArrays, pda.refs should be zeros
-unsafe_dasetindex!(data::Array, na_chunks::Vector{UInt64}, val::NAtype, idx::Real) =
+unsafe_dasetindex!(data::Array, na_chunks::Vector{UInt64}, val::NAType, idx::Real) =
     unsafe_bitsettrue!(na_chunks, idx)
 unsafe_dasetindex!(data::Array, na_chunks::Vector{UInt64}, val, idx::Real) =
     setindex!(data, val, idx)
-unsafe_dasetindex!(da::DataArray, extr, val::NAtype, idx::Real) =
+unsafe_dasetindex!(da::DataArray, extr, val::NAType, idx::Real) =
     unsafe_setna!(da, extr, idx)
-unsafe_dasetindex!(da::PooledDataArray, extr, val::NAtype, idx::Real) = nothing
+unsafe_dasetindex!(da::PooledDataArray, extr, val::NAType, idx::Real) = nothing
 unsafe_dasetindex!(da::DataArray, extr, val, idx::Real) = setindex!(extr[1], val, idx)
 unsafe_dasetindex!(pda::PooledDataArray, extr, val, idx::Real) =
     setindex!(extr[1], getpoolidx(pda, val), idx)
@@ -79,15 +79,15 @@ end
 
 
 if isdefined(Base, :checkindex) && isdefined(Base, :AbstractUnitRange)
-    Base.checkindex(::Type{Bool}, ::AbstractUnitRange, ::NAtype) =
+    Base.checkindex(::Type{Bool}, ::AbstractUnitRange, ::NAType) =
         throw(NAException("cannot index an array with a DataArray containing NA values"))
 elseif isdefined(Base, :checkindex)
-    Base.checkindex(::Type{Bool}, ::UnitRange, ::NAtype) =
+    Base.checkindex(::Type{Bool}, ::UnitRange, ::NAType) =
         throw(NAException("cannot index an array with a DataArray containing NA values"))
 else
     Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
     function Base.checkbounds{T<:Real}(::Type{Bool}, sz::Int, I::AbstractDataArray{T})
-        anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
+        any(isna, I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
         extr = daextract(I)
         b = true
         for i = 1:length(I)
@@ -175,7 +175,7 @@ end
 
 ## setindex!: DataArray
 
-function Base.setindex!(da::DataArray, val::NAtype, i::Real)
+function Base.setindex!(da::DataArray, val::NAType, i::Real)
     da.na[i] = true
     return da
 end
@@ -188,7 +188,7 @@ end
 
 ## setindex!: PooledDataArray
 
-function Base.setindex!(pda::PooledDataArray, val::NAtype, ind::Real)
+function Base.setindex!(pda::PooledDataArray, val::NAType, ind::Real)
     pda.refs[ind] = 0
     return pda
 end
@@ -218,7 +218,7 @@ end
         @nexprs $N d->(offset_d = 1)  # really only need offset_$N = 1
         if !isa(x, AbstractArray)
             @nloops $N i d->I_d d->(@inbounds offset_{d-1} = offset_d + (i_d - 1)*stride_d) begin
-                if isa(x, NAtype)
+                if isa(x, NAType)
                     @inbounds unsafe_setna!(A, Aextr, offset_0)
                 else
                     @inbounds unsafe_setnotna!(A, Aextr, offset_0)

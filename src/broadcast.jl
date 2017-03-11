@@ -7,7 +7,7 @@ _broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_indices(x...))
 
 # Get ref for value for a PooledDataArray, adding to the pool if
 # necessary
-_unsafe_pdaref!(Bpool, Brefdict::Dict, val::NAtype) = 0
+_unsafe_pdaref!(Bpool, Brefdict::Dict, val::NAType) = 0
 function _unsafe_pdaref!(Bpool, Brefdict::Dict, val)
     @get! Brefdict val begin
         push!(Bpool, val)
@@ -194,6 +194,6 @@ Base.Broadcast.broadcast_indices(::Type{T}, A) where T<:AbstractDataArray = indi
 @inline function Base.Broadcast.broadcast_c{S<:AbstractDataArray}(f, ::Type{S}, A, Bs...)
     T     = Base.Broadcast._broadcast_eltype(f, A, Bs...)
     shape = Base.Broadcast.broadcast_indices(A, Bs...)
-    dest = S(T, Base.index_lengths(shape...))
+    dest = S{T}(Base.index_lengths(shape...))
     return broadcast!(f, dest, A, Bs...)
 end

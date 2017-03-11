@@ -191,7 +191,7 @@ module TestDataArrays
     inds = [1, 2, 2]
     da[inds]
 
-    # Base.setindex!(da::DataArray, val::NAtype, i::SingleIndex)
+    # Base.setindex!(da::DataArray, val::NAType, i::SingleIndex)
     da = @data([1.0, 2.0, NA, 4.0])
     da[1] = NA
 
@@ -199,19 +199,19 @@ module TestDataArrays
     da = @data([1.0, 2.0, NA, 4.0])
     da[1] = 3.0
 
-    # Base.setindex!(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector{Bool})
+    # Base.setindex!(da::DataArray{NAType}, val::NAType, inds::AbstractVector{Bool})
     # da = DataArray([NA, NA], falses(2))
     # da[[true, false]] = NA
 
-    # Base.setindex!(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector)
+    # Base.setindex!(da::DataArray{NAType}, val::NAType, inds::AbstractVector)
     # da = DataArray([NA, NA], falses(2))
     # da[[1, 2]] = NA
 
-    # Base.setindex!(da::DataArray, val::NAtype, inds::AbstractVector{Bool})
+    # Base.setindex!(da::DataArray, val::NAType, inds::AbstractVector{Bool})
     da = @data([1, 2])
     da[[true, false]] = NA
 
-    # Base.setindex!(da::DataArray, val::NAtype, inds::AbstractVector)
+    # Base.setindex!(da::DataArray, val::NAType, inds::AbstractVector)
     da = @data([1, 2])
     da[[1, 2]] = NA
 

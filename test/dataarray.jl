@@ -1,7 +1,4 @@
-module TestDataArray
-    using Base.Test
-    using DataArrays
-
+@testset "DataArray" begin
     v = [1, 2, 3, 4]
     dv = DataArray(v, falses(size(v)))
 
@@ -33,11 +30,11 @@ module TestDataArray
 
     x = DataArray([9, 9, 8])
     y = DataArray([1, 9, 3, 2, 2])
-    @assert append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
+    @test append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
 
     x = DataArray([9, 9, 8])
     y = [1, 9, 3, 2, 2]
-    @assert append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
+    @test append!(x, y) == [9, 9, 8, 1, 9, 3, 2, 2]
 
     x = @data [1, 2, NA]
     y = @data [3, NA, 5]
@@ -45,15 +42,15 @@ module TestDataArray
     @test isequal(copy!(y, x), x)
 
     x = @data [1, NA, -2, 1, NA, 4]
-    @assert isequal(unique(x), @data [1, NA, -2, 4])
-    @assert isequal(unique(reverse(x)), @data [4, NA, 1, -2])
-    @assert isequal(unique(dropna(x)), @data [1, -2, 4])
-    @assert isequal(unique(reverse(dropna(x))), @data [4, 1, -2])
-    @assert isequal(levels(x), @data [1, -2, 4])
-    @assert isequal(levels(reverse(x)), @data [4, 1, -2])
+    @test isequal(unique(x), @data [1, NA, -2, 4])
+    @test isequal(unique(reverse(x)), @data [4, NA, 1, -2])
+    @test isequal(unique(dropna(x)), @data [1, -2, 4])
+    @test isequal(unique(reverse(dropna(x))), @data [4, 1, -2])
+    @test isequal(levels(x), @data [1, -2, 4])
+    @test isequal(levels(reverse(x)), @data [4, 1, -2])
 
     # check case where only NA occurs in final position
-    @assert isequal(unique(@data [1, 2, 1, NA]), @data [1, 2, NA])
+    @test isequal(unique(@data [1, 2, 1, NA]), @data [1, 2, NA])
 
     # Test copy!
     function nonbits(dv)
@@ -72,7 +69,6 @@ module TestDataArray
     set3 = map(pdata, set1)
 
     for (dest, src, bigsrc, emptysrc, res1, res2) in Any[set1, set2, set3]
-
         @test isequal(copy!(copy(dest), src), res1)
         @test isequal(copy!(copy(dest), 1, src), res1)
 
@@ -101,5 +97,4 @@ module TestDataArray
         @test_throws BoundsError copy!(dest, 3, src, 1, 2)
         @test_throws BoundsError copy!(dest, 1, src, 2, 2)
     end
-
 end

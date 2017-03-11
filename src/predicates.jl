@@ -7,12 +7,12 @@ container_predicates = (:(Base.isempty),)
 
 for p in numeric_predicates
   @eval begin
-    ($p)(v::NAtype) = NA
+    ($p)(v::NAType) = NA
   end
 end
 
 for p in type_predicates
   @eval begin
-    ($p)(v::NAtype) = NA
+    ($p)(v::NAType) = NA
   end
 end

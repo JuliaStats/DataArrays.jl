@@ -66,7 +66,7 @@ module TestDataMatrixs
     dm = @data([1 2; NA 4])
     dm[[1, 2], [1, 2]]
 
-    # Base.setindex!(dm::DataMatrix, val::NAtype, i::SingleIndex, j::SingleIndex)
+    # Base.setindex!(dm::DataMatrix, val::NAType, i::SingleIndex, j::SingleIndex)
     dm = @data([1 2; NA 4])
     dm[1, 1] = NA
 
@@ -74,7 +74,7 @@ module TestDataMatrixs
     dm = @data([1 2; NA 4])
     dm[1, 1] = 3
 
-    # Base.setindex!(dm::DataMatrix, val::NAtype, row_inds::MultiIndex, j::SingleIndex)
+    # Base.setindex!(dm::DataMatrix, val::NAType, row_inds::MultiIndex, j::SingleIndex)
     dm = @data([1 2; NA 4])
     dm[[1, 2], 1] = 3
 
@@ -86,7 +86,7 @@ module TestDataMatrixs
     dm = @data([1 2; NA 4])
     dm[[1, 2], 1] = 3
 
-    # Base.setindex!(dm::DataMatrix, val::NAtype, i::SingleIndex, col_inds::MultiIndex)
+    # Base.setindex!(dm::DataMatrix, val::NAType, i::SingleIndex, col_inds::MultiIndex)
     dm = @data([1 2; NA 4])
     dm[[1, 2], 1] = NA
 
@@ -98,7 +98,7 @@ module TestDataMatrixs
     dm = @data([1 2; NA 4])
     dm[1, [1, 2]] = 3
 
-    # Base.setindex!(dm::DataMatrix, val::NAtype, row_inds::MultiIndex, col_inds::MultiIndex)
+    # Base.setindex!(dm::DataMatrix, val::NAType, row_inds::MultiIndex, col_inds::MultiIndex)
     dm = @data([1 2; NA 4])
     dm[[1, 2], [1, 2]] = NA
 

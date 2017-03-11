@@ -2,7 +2,7 @@
 
 # TODO: Macroize these definitions
 
-function Base.push!(dv::DataVector, v::NAtype)
+function Base.push!(dv::DataVector, v::NAType)
     resize!(dv.data, length(dv.data) + 1)
     push!(dv.na, true)
     return v
@@ -23,7 +23,7 @@ function Base.pop!(dv::DataVector)
     end
 end
 
-function Base.unshift!{T}(dv::DataVector{T}, v::NAtype)
+function Base.unshift!{T}(dv::DataVector{T}, v::NAType)
     ccall(:jl_array_grow_beg, Void, (Any, UInt), dv.data, 1)
     unshift!(dv.na, true)
     return v
@@ -110,7 +110,7 @@ function Base.map(f::Function, dv::DataVector)
     return res
 end
 
-function Base.push!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
+function Base.push!{T,R}(pdv::PooledDataVector{T,R}, v::NAType)
     push!(pdv.refs, zero(R))
     return v
 end
@@ -123,7 +123,7 @@ end
 
 Base.pop!(pdv::PooledDataVector) = pdv.pool[pop!(pdv.refs)]
 
-function Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
+function Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAType)
     unshift!(pdv.refs, zero(R))
     return v
 end
@@ -169,7 +169,7 @@ Base.sizehint!(pda::PooledDataVector, newsz::Integer) =
 
 # Pad a vector with NA's
 """
-    padNA(dv::AbstractDataVector, front::Integer, back::Integer) -> DataVector
+    padna(dv::AbstractDataVector, front::Integer, back::Integer) -> DataVector
 
 Pad `dv` with `NA` values. `front` is an integer number of `NA`s to add at the
 beginning of the array and `back` is the number of `NA`s to add at the end.
@@ -177,7 +177,7 @@ beginning of the array and `back` is the number of `NA`s to add at the end.
 # Examples
 
 ```jldoctest
-julia> padNA(@data([1, 2, 3]), 1, 2)
+julia> padna(@data([1, 2, 3]), 1, 2)
 6-element DataArrays.DataArray{Int64,1}:
   NA
  1
@@ -187,7 +187,7 @@ julia> padNA(@data([1, 2, 3]), 1, 2)
   NA
 ```
 """
-function padNA(dv::AbstractDataVector,
+function padna(dv::AbstractDataVector,
                front::Integer,
                back::Integer)
     n = length(dv)

@@ -28,23 +28,8 @@ Base.start(x::AbstractDataArray) = 1
 Base.next(x::AbstractDataArray, state::Integer) = (x[state], state + 1)
 Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 
-"""
-    isna(a::AbstractArray) -> BitArray
-
-Determine whether each element of `a` is missing, i.e. `NA`.
-
-# Examples
-
-```jldoctest
-julia> isna(@data [1, 2, NA])
-3-element BitArray{1}:
- false
- false
-  true
-```
-"""
-isna{T}(a::AbstractArray{T}) =
-    NAtype <: T ? BitArray(map(x->isa(x, NAtype), a)) : falses(size(a)) # -> BitArray
+Base.broadcast{T}(::typeof(isna), a::AbstractArray{T}) =
+    NAType <: T ? broadcast(x->isa(x, NAType), a) : falses(size(a)) # -> BitArray
 
 """
     isna(a::AbstractArray, i) -> Bool
@@ -63,41 +48,7 @@ julia> isna(X, 3)
 true
 ```
 """
-isna{T}(a::AbstractArray{T}, i::Real) = NAtype <: T ? isa(a[i], NAtype) : false # -> Bool
-
-"""
-    anyna(a::AbstractArray) -> Bool
-
-Determine whether any of the entries of `a` are `NA`.
-
-# Examples
-
-```jldoctest
-julia> anyna([1, 2, 3])
-false
-
-julia> anyna(@data [1, 2, NA])
-true
-```
-"""
-anyna(a::AbstractArray) = any(isna(a)) # -> Bool
-
-"""
-    allna(a::AbstractArray) -> Bool
-
-Determine whether all elements of `a` are `NA`.
-
-# Examples
-
-```jldoctest
-julia> allna(@data [NA, NA])
-true
-
-julia> allna(@data [1, 2, NA])
-false
-```
-"""
-allna(a::AbstractArray) = all(isna(a)) # -> Bool
+isna{T}(a::AbstractArray{T}, i::Integer) = NAType <: T ? isa(a[i], NAType) : false # -> Bool
 
 """
     dropna(v::AbstractVector) -> AbstractVector

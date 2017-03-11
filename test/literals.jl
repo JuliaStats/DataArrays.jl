@@ -1,8 +1,4 @@
-module TestLiterals
-    using Base.Test
-    using DataArrays
-    using Compat
-
+@testset "Literals" begin
     dv = @data []
     @test isequal(dv, DataArray([], Bool[]))
     @test typeof(dv) == DataVector{Any}

@@ -8,7 +8,7 @@ module TestDataVectors
     da[2, 1]
     # da[1, 2]
 
-    # Base.push!{T}(dv::DataVector{T}, v::NAtype)
+    # Base.push!{T}(dv::DataVector{T}, v::NAType)
     push!(da, NA)
 
     # Base.push!{S, T}(dv::DataVector{S}, v::T)
@@ -17,7 +17,7 @@ module TestDataVectors
     # Base.pop!(dv::DataVector)
     pop!(da)
 
-    # Base.unshift!{T}(dv::DataVector{T}, v::NAtype)
+    # Base.unshift!{T}(dv::DataVector{T}, v::NAType)
     unshift!(da, NA)
 
     # Base.unshift!{S, T}(dv::DataVector{S}, v::T)
@@ -29,7 +29,7 @@ module TestDataVectors
     # Base.map(f::Function, dv::DataVector)
     map(sin, da)
 
-    # Base.push!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
+    # Base.push!{T,R}(pdv::PooledDataVector{T,R}, v::NAType)
     pda = @pdata([1, 2, NA, 4])
     push!(pda, NA)
 
@@ -39,7 +39,7 @@ module TestDataVectors
     # Base.pop!(pdv::PooledDataVector) = pdv.pool[pop!(pdv.refs)]
     pop!(pda)
 
-    # Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
+    # Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAType)
     unshift!(pda, NA)
 
     # Base.unshift!{S,R,T}(pdv::PooledDataVector{S,R}, v::T)
@@ -52,7 +52,7 @@ module TestDataVectors
     reverse(da)
     reverse(pda)
 
-    # padNA(dv::AbstractDataVector, front::Integer, back::Integer)
-    padNA(da, 5, 5)
-    padNA(pda, 5, 5)
+    # padna(dv::AbstractDataVector, front::Integer, back::Integer)
+    padna(da, 5, 5)
+    padna(pda, 5, 5)
 end

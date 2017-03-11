@@ -157,12 +157,12 @@ function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::
         Base.varm(A.data, m; corrected=corrected)
     end
 end
-Base.varm{T}(A::DataArray{T}, m::NAtype; corrected::Bool=true, skipna::Bool=false) = NA
+Base.varm{T}(A::DataArray{T}, m::NAType; corrected::Bool=true, skipna::Bool=false) = NA
 
 function Base.var(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false)
     mean == 0 ? Base.varm(A, 0; corrected=corrected, skipna=skipna) :
     mean == nothing ? varm(A, Base.mean(A; skipna=skipna); corrected=corrected, skipna=skipna) :
-    isa(mean, Union{Number, NAtype}) ?
+    isa(mean, Union{Number, NAType}) ?
         varm(A, mean; corrected=corrected, skipna=skipna) :
         throw(ErrorException("Invalid value of mean."))
 end
@@ -180,7 +180,7 @@ function Base.mean(a::DataArray, w::WeightVec; skipna::Bool=false)
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values, v.na); skipna=true)
     else
-        anyna(a) ? NA : mean(a.data, w)
+        any(isna, a) ? NA : mean(a.data, w)
     end
 end
 
@@ -189,6 +189,6 @@ function Base.mean{W,V<:DataArray}(a::DataArray, w::WeightVec{W,V}; skipna::Bool
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values.data, v.na); skipna=true)
     else
-        anyna(a) || anyna(w.values) ? NA : wsum(a.data, w.values.data) / w.sum
+        any(isna, a) || any(isna, w.values) ? NA : wsum(a.data, w.values.data) / w.sum
     end
 end
