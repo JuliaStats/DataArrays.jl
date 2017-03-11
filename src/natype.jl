@@ -14,9 +14,19 @@
 ##
 ##############################################################################
 
+"""
+    NAtype
+
+The type of a missing value, `NA`.
+"""
 struct NAtype
 end
 
+"""
+    NA
+
+A value denoting missingness within the domain of any type.
+"""
 const NA = NAtype()
 
 Base.show(io::IO, x::NAtype) = print(io, "NA")

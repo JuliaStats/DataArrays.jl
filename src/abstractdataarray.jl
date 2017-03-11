@@ -1,120 +1,124 @@
-#' @description
-#'
-#' An AbstractDataArray is an Array whose entries can take on
-#' values of type `T` or the value `NA`.
+"""
+    AbstractDataArray{T, N}
+
+An `N`-dimensional `AbstractArray` whose entries can take on values of type
+`T` or the value `NA`.
+"""
 abstract type AbstractDataArray{T, N} <: AbstractArray{T, N} end
 
-#' @description
-#'
-#' An AbstractDataVector is an AbstractDataArray of order 1.
+"""
+    AbstractDataVector{T}
+
+A 1-dimensional [`AbstractDataArray`](@ref) with element type `T`.
+"""
 const AbstractDataVector{T} = AbstractDataArray{T, 1}
 
-#' @description
-#'
-#' An AbstractDataMatrix is an AbstractDataArray of order 2.
+"""
+    AbstractDataMatrix{T}
+
+A 2-dimensional [`AbstractDataArray`](@ref) with element type `T`.
+"""
 const AbstractDataMatrix{T} = AbstractDataArray{T, 2}
 
-#' @description
-#' Determine the type of the elements of an AbstractDataArray.
-#'
-#' @param ada::AbstractDataArray{T} The AbstractDataArray whose
-#'        element type is desired.
-#'
-#' @returns T::DataType The type of the non-NA elements of `ada`.
-#'
-#' @examples
-#'
-#' dv = @data [false, false, true, false]
-#' T = eltype(dv)
 Base.eltype{T, N}(d::AbstractDataArray{T, N}) = T
 
 # Generic iteration over AbstractDataArray's
 
-# TODO: Document
 Base.start(x::AbstractDataArray) = 1
-
-# TODO: Document
 Base.next(x::AbstractDataArray, state::Integer) = (x[state], state + 1)
-
-# TODO: Document
 Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 
-#' @description
-#'
-#' Determine if the values of an AbstractArray are `NA`.
-#'
-#' @param a::AbstractArray{T, N} The AbstractArray whose missingness will
-#'        be assessed.
-#'
-#' @returns na::BitArray{N} Elementwise Boolean whether entry is missing.
-#'
-#' @examples
-#'
-#' a = [1, 2, 3]
-#' isna(a)
+"""
+    isna(a::AbstractArray) -> BitArray
+
+Determine whether each element of `a` is missing, i.e. `NA`.
+
+# Examples
+
+```jldoctest
+julia> isna(@data [1, 2, NA])
+3-element BitArray{1}:
+ false
+ false
+  true
+```
+"""
 isna{T}(a::AbstractArray{T}) =
     NAtype <: T ? BitArray(map(x->isa(x, NAtype), a)) : falses(size(a)) # -> BitArray
 
-#' @description
-#'
-#' Safe and type-stable way to determine if element `i` of an
-#' AbstractArray is `NA`.
-#'
-#' @param a::AbstractArray The AbstractArray whose missingness will
-#'        be assessed.
-#' @param i::Integer The index of the element to be checked for `NA`.
-#'
-#' @returns na::Bool Is the element `NA` or not?
-#'
-#' @examples
-#'
-#' a = [1, 2, 3]
-#' isna(a, 1)
+"""
+    isna(a::AbstractArray, i) -> Bool
+
+Determine whether the element of `a` at index `i` is missing, i.e. `NA`.
+
+# Examples
+
+```jldoctest
+julia> X = @data [1, 2, NA];
+
+julia> isna(X, 2)
+false
+
+julia> isna(X, 3)
+true
+```
+"""
 isna{T}(a::AbstractArray{T}, i::Real) = NAtype <: T ? isa(a[i], NAtype) : false # -> Bool
 
-#' @description
-#'
-#' Determine if any of the entries of an AbstractArray are `NA`.
-#'
-#' @param a::AbstractArray{T, N} The AbstractArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are any of the elements of `a` an `NA` value?
-#'
-#' @examples
-#'
-#' a = [1, 2, 3]
-#' anyna(a)
+"""
+    anyna(a::AbstractArray) -> Bool
+
+Determine whether any of the entries of `a` are `NA`.
+
+# Examples
+
+```jldoctest
+julia> anyna([1, 2, 3])
+false
+
+julia> anyna(@data [1, 2, NA])
+true
+```
+"""
 anyna(a::AbstractArray) = any(isna(a)) # -> Bool
 
-#' @description
-#'
-#' Determine if all of the entries of an AbstractArray are `NA`.
-#'
-#' @param a::AbstractArray{T, N} The AbstractArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are all of the elements of `a` an `NA` value?
-#'
-#' @examples
-#'
-#' a = [1, 2, 3]
-#' allna(a)
+"""
+    allna(a::AbstractArray) -> Bool
+
+Determine whether all elements of `a` are `NA`.
+
+# Examples
+
+```jldoctest
+julia> allna(@data [NA, NA])
+true
+
+julia> allna(@data [1, 2, NA])
+false
+```
+"""
 allna(a::AbstractArray) = all(isna(a)) # -> Bool
 
-#' @description
-#'
-#' NO-OP: Turn a Vector into a Vector. See dropna(dv::DataVector) for
-#'        rationale.
-#'
-#' @param v::Vector{T} Vector that will be converted to a Vector.
-#'
-#' @returns v::Vector{T} Vector containing all of the values of `v`.
-#'
-#' @examples
-#'
-#' v = [1, 2, 3, 4]
-#' v = dropna(v)
+"""
+    dropna(v::AbstractVector) -> AbstractVector
+
+Return a copy of `v` with all `NA` elements removed.
+
+# Examples
+
+```jldoctest
+julia> dropna(@data [NA, 1, NA, 2])
+2-element Array{Int64,1}:
+ 1
+ 2
+
+julia> dropna([4, 5, 6])
+3-element Array{Int64,1}:
+ 4
+ 5
+ 6
+```
+"""
 dropna(v::AbstractVector) = copy(v) # -> AbstractVector
 
 # Iterators

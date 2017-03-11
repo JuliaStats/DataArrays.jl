@@ -27,6 +27,24 @@ function StatsBase.countmap{T,W}(x::AbstractDataArray{T}, wv::WeightVec{W})
     addcounts!(Dict{Union{T, NAtype}, W}(), x, wv)
 end
 
+"""
+    cut(x::AbstractVector, breaks::Vector) -> PooledDataArray
+    cut(x::AbstractVector, ngroups::Integer) -> PooledDataArray
+
+Divide the range of `x` into intervals based on the cut points specified in `breaks`,
+or into `ngroups` intervals of approximately equal length.
+
+# Examples
+
+```jldoctest
+julia> cut([1, 2, 3, 4], [1, 3])
+4-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "[1,3]"
+ "[1,3]"
+ "[1,3]"
+ "(3,4]"
+```
+"""
 function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})
     if !issorted(breaks)
         sort!(breaks)

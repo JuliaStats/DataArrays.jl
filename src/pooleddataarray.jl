@@ -19,6 +19,51 @@ struct RefArray{R<:Integer,N}
     a::Array{R,N}
 end
 
+"""
+    PooledDataArray(data::AbstractArray{T}, [pool::Vector{T}], [m::AbstractArray{Bool}], [r::Type])
+
+Construct a `PooledDataArray` based on the unique values in the given array. `PooledDataArray`s are
+useful for efficient storage of categorical data with a limited set of unique values. Rather than
+storing all `length(data)` values, it stores a smaller set of values (typically `unique(data)`) and
+an array of references to the stored values.
+
+### Optional arguments
+
+* `pool`: The possible values of `data`. Defaults to `unique(data)`.
+* `m`: A missingness indicator akin to that of [`DataArray`](@ref). Defaults to `falses(size(d))`.
+* `r`: The integer subtype used to store pool references. Defaults to `$DEFAULT_POOLED_REF_TYPE`.
+
+# Examples
+
+```jldoctest
+julia> d = repeat(["A", "B"], outer=4);
+
+julia> p = PooledDataArray(d)
+8-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "A"
+ "B"
+ "A"
+ "B"
+ "A"
+ "B"
+ "A"
+ "B"
+```
+
+    PooledDataArray(T::Type, [R::Type=$DEFAULT_POOLED_REF_TYPE], [dims...])
+
+Construct a `PooledDataArray` with element type `T`, reference storage type `R`, and dimensions
+`dims`. If the dimensions are specified and nonzero, the array is filled with `NA` values.
+
+# Examples
+
+```jldoctest
+julia> PooledDataArray(Int, 2, 2)
+2×2 DataArrays.PooledDataArray{Int64,UInt32,2}:
+ NA  NA
+ NA  NA
+```
+"""
 mutable struct PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
     refs::Array{R, N}
     pool::Vector{T}
@@ -184,37 +229,8 @@ function Base.isfinite(pda::PooledDataArray)
 end
 
 isna(pda::PooledDataArray) = pda.refs .== 0
-
-#' @description
-#'
-#' Safe and type-stable way to determine if element `i` of an
-#' PooledDataArray is `NA`.
-#'
-#' @param pda::PooledDataArray The PooledDataArray whose missingness will
-#'        be assessed.
-#' @param i::Integer The index of the element to be checked for `NA`.
-#'
-#' @returns na::Bool Is the element `NA` or not?
-#'
-#' @examples
-#'
-#' a = @pdata([1, 2, 3])
-#' isna(a, 1)
 isna(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
 
-#' @description
-#'
-#' Determine if any of the entries of an PooledDataArray are `NA`.
-#'
-#' @param pda::PooledDataArray The PooledDataArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are any of the elements of `pda` an `NA` value?
-#'
-#' @examples
-#'
-#' pda = @pdata([1, 2, 3])
-#' anyna(pda)
 function anyna(pda::PooledDataArray)
     for ref in pda.refs
         ref == 0 && return true
@@ -222,19 +238,6 @@ function anyna(pda::PooledDataArray)
     return false
 end
 
-#' @description
-#'
-#' Determine if all of the entries of an PooledDataArray are `NA`.
-#'
-#' @param pda::PooledDataArray The PooledDataArray whose elements will
-#'        be assessed.
-#'
-#' @returns out::Bool Are all of the elements of `pda` an `NA` value?
-#'
-#' @examples
-#'
-#' pda = @pdata([1, 2, 3])
-#' allna(pda)
 function allna(pda::PooledDataArray)
     for ref in pda.refs
         ref == 0 || return false
@@ -257,6 +260,43 @@ function compactreftype(sz)
                                       UInt64
 end
 
+"""
+    compact(d::PooledDataArray)
+
+Return a [`PooledDataArray`](@ref) with the smallest possible reference type for the
+data in `d`.
+
+!!! note
+
+    If the reference type is already the smallest possible for the data, the input
+    array is returned, i.e. the function *aliases* the input.
+
+# Examples
+
+```jldoctest
+julia> p = @pdata(repeat(["A", "B"], outer=4))
+8-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "A"
+ "B"
+ "A"
+ "B"
+ "A"
+ "B"
+ "A"
+ "B"
+
+julia> compact(p) # second type parameter compacts to UInt8 (only need 2 unique values)
+8-element DataArrays.PooledDataArray{String,UInt8,1}:
+ "A"
+ "B"
+ "A"
+ "B"
+ "A"
+ "B"
+ "A"
+ "B"
+```
+"""
 function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
     REFTYPE = compactreftype(length(d.pool))
 
@@ -268,23 +308,6 @@ function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
     PooledDataArray(RefArray(newrefs), d.pool)
 end
 
-#' @description
-#'
-#' Return a DataVector containing the unique values of a `PooledDataArray`,
-#' in the order they appear in the data, including `NA` if any missing entries
-#' are encountered. For `PooledDataArray`s, this function is much less efficient
-#' than `levels`, which does not return the values in the same order.
-#'
-#' @param da::DataArray{T} `DataArray` whose unique values are desired.
-#'
-#' @returns dv::DataVector{T} `DataVector` containing the unique values
-#'          from `pda`, in the order they appear, including `NA` if there are
-#'          any missing entries in `pda`.
-#'
-#' @examples
-#'
-#' pdv = @pdata [1, -2, 1, NA, 4]
-#' distinct_values = unique(pdv)
 function Base.unique{T}(pda::PooledDataArray{T})
     n = length(pda)
     nlevels = length(pda.pool)
@@ -332,26 +355,6 @@ function Base.unique{T}(pda::PooledDataArray{T})
     end
 end
 
-#' @description
-#'
-#' Return a DataVector containing the levels of a `PooledDataArray`,
-#' excluding `NA`. For `PooledDataArray`s, this function is much more
-#' efficient than `unique`, and it returns the levels in the order used
-#' when calling `setlevels!` rather than in the order of appearance.
-#' Contrary to `unique`, it also returns levels which are not present in
-#' the vector.
-#'
-#'
-#' @param pda::PooledDataArray{T} PooledDataArray whose levels values are
-#' desired.
-#'
-#' @returns dv::DataVector{T} DataVector containing the levels
-#'          of `da`, excluding `NA`.
-#'
-#' @examples
-#'
-#' pdv = @pdata [1, -2, 1, NA, 4]
-#' distinct_values = levels(pdv)
 levels{T}(pda::PooledDataArray{T}) = copy(pda.pool)
 
 function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
@@ -370,6 +373,52 @@ end
 myunique(x::AbstractVector) = unique(x)
 myunique(x::AbstractDataVector) = unique(dropna(x))
 
+"""
+    setlevels(x::PooledDataArray, newpool::Union{AbstractVector, Dict})
+
+Create a new [`PooledDataArray`](@ref) based on `x` but with the new value pool
+specified by `newpool`. The values can be replaced using a mapping specified in a
+`Dict` or with an array, since the order of the levels is used to identify values.
+The pool can be enlarged to contain values not present in the data, but it cannot
+be reduced to exclude present values.
+
+# Examples
+
+```jldoctest
+julia> p = @pdata repeat(["A", "B"], inner=3)
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "A"
+ "A"
+ "A"
+ "B"
+ "B"
+ "B"
+
+julia> p2 = setlevels(p, ["C", "D"]) # could also be Dict("A"=>"C", "B"=>"D")
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "C"
+ "C"
+ "C"
+ "D"
+ "D"
+ "D"
+
+julia> p3 = setlevels(p2, ["C", "D", "E"])
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "C"
+ "C"
+ "C"
+ "D"
+ "D"
+ "D"
+
+julia> p3.pool # the pool can contain values not in the array
+3-element Array{String,1}:
+ "C"
+ "D"
+ "E"
+```
+"""
 function setlevels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     pool = myunique(newpool)
     refs = zeros(R, length(x))
@@ -383,6 +432,39 @@ function setlevels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     return PooledDataArray(RefArray(refs), pool)
 end
 
+"""
+    setlevels!(x::PooledDataArray, newpool::Union{AbstractVector, Dict})
+
+Set the value pool for the [`PooledDataArray`](@ref) `x` to `newpool`, modifying
+`x` in place. The values can be replaced using a mapping specified in a `Dict` or
+with an array, since the order of the levels is used to identify values. The pool
+can be enlarged to contain values not present in the data, but it cannot be reduced
+to exclude present values.
+
+# Examples
+
+```jldoctest
+julia> p = @pdata repeat(["A", "B"], inner=3)
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "A"
+ "A"
+ "A"
+ "B"
+ "B"
+ "B"
+
+julia> setlevels!(p, Dict("A"=>"C"));
+
+julia> p # has been modified
+6-element DataArrays.PooledDataArray{String,UInt32,1}:
+ "C"
+ "C"
+ "C"
+ "B"
+ "B"
+ "B"
+```
+"""
 function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
     if newpool == myunique(newpool) # no NAs or duplicates
         x.pool = newpool
@@ -437,9 +519,15 @@ function setlevels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this version
     setlevels!(x, newpool)
 end
 
+"""
+    reorder(x::PooledDataArray) -> PooledDataArray
+
+Return a `PooledDataArray` containing the same data as `x` but with the value pool sorted.
+"""
 reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
-reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
+### FIXME: this calls a method that doesn't exist
+# reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
 ### FIXME: this can't work because we don't know about DataFrames
 # reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
@@ -481,6 +569,12 @@ Base.find(pdv::PooledDataVector{Bool}) = find(convert(Vector{Bool}, pdv, false))
 ##
 ##############################################################################
 
+"""
+    getpoolidx(pda::PooledDataArray, val)
+
+Return the index of `val` in the value pool for `pda`. If `val` is not already
+in the value pool, `pda` is modified to include it in the pool.
+"""
 function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
     val::T = convert(T,val)
     pool_idx = findfirst(pda.pool, val)
@@ -526,6 +620,11 @@ end
 ##
 ##############################################################################
 
+"""
+    replace!(x::PooledDataArray, from, to)
+
+Replace all occurrences of `from` in `x` with `to`, modifying `x` in place.
+"""
 function replace!(x::PooledDataArray{NAtype}, fromval::NAtype, toval::NAtype)
     NA # no-op to deal with warning
 end
@@ -615,7 +714,12 @@ Perm{O<:Base.Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
 ##
 ##############################################################################
 
+"""
+    PooledDataVecs(v1, v2) -> (pda1, pda2)
 
+Return a tuple of `PooledDataArray`s created from the data in `v1` and `v2`,
+respectively, but sharing a common value pool.
+"""
 function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
                                                    v2::PooledDataArray{S,R,N})
     pool = sort(unique([v1.pool; v2.pool]))

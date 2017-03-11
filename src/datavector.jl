@@ -168,7 +168,25 @@ Base.sizehint!(pda::PooledDataVector, newsz::Integer) =
     sizehint!(pda.refs, newsz)
 
 # Pad a vector with NA's
+"""
+    padNA(dv::AbstractDataVector, front::Integer, back::Integer) -> DataVector
 
+Pad `dv` with `NA` values. `front` is an integer number of `NA`s to add at the
+beginning of the array and `back` is the number of `NA`s to add at the end.
+
+# Examples
+
+```jldoctest
+julia> padNA(@data([1, 2, 3]), 1, 2)
+6-element DataArrays.DataArray{Int64,1}:
+  NA
+ 1
+ 2
+ 3
+  NA
+  NA
+```
+"""
 function padNA(dv::AbstractDataVector,
                front::Integer,
                back::Integer)
