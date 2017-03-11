@@ -5,8 +5,6 @@ DataArrays.jl
 [![Coverage Status](https://coveralls.io/repos/JuliaStats/DataArrays.jl/badge.svg?branch=master)](https://coveralls.io/r/JuliaStats/DataArrays.jl?branch=master)
 
 Latest release:
-[![DataArrays](http://pkg.julialang.org/badges/DataArrays_0.4.svg)](http://pkg.julialang.org/?pkg=DataArrays)
-[![DataArrays](http://pkg.julialang.org/badges/DataArrays_0.5.svg)](http://pkg.julialang.org/?pkg=DataArrays)
 [![DataArrays](http://pkg.julialang.org/badges/DataArrays_0.6.svg)](http://pkg.julialang.org/?pkg=DataArrays)
 
 Documentation:
