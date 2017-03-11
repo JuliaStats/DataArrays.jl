@@ -125,8 +125,6 @@ function Base.getindex(da::DataArray, I::Real)
     end
 end
 
-Base.unsafe_getindex(x::Number, i) = (@inbounds xi = x[i]; xi)
-
 @generated function Base._unsafe_getindex!(dest::DataArray, src::DataArray, I::Union{Real, AbstractArray}...)
     N = length(I)
     quote
