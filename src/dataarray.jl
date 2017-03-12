@@ -55,7 +55,7 @@ end
 
 (::Type{DataArray{T,N} where {T,N}})(d::Array, m::AbstractArray{Bool}) = DataArray{eltype(d), ndims(d)}(d, BitArray(m))
 (::Type{DataArray{T,N} where N}){T}(dims::Integer...) = DataArray(Array{T}(dims), trues(dims))
-(::Type{DataArray{T,N} where N}){T}(dims::Tuple) = DataArray(Array{T}(dims), trues(dims))
+(::Type{DataArray{T,N} where N}){T}(dims::Tuple{Vararg{Int}}) = DataArray(Array{T}(dims), trues(dims))
 
 
 """
