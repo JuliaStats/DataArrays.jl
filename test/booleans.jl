@@ -1,26 +1,23 @@
-module TestBooleans
-    using Base.Test
-    using DataArrays
+@testset "Booleans" begin
+    @test NA | true == true
+    @test isna(NA | false)
+    @test isna(NA | NA)
+    @test true | NA == true
+    @test isna(false | NA)
 
-    @assert NA | true == true
-    @assert isna(NA | false)
-    @assert isna(NA | NA)
-    @assert true | NA == true
-    @assert isna(false | NA)
+    @test isna(NA & true)
+    @test NA & false == false
+    @test isna(NA & NA)
+    @test isna(true & NA)
+    @test false & NA == false
 
-    @assert isna(NA & true)
-    @assert NA & false == false
-    @assert isna(NA & NA)
-    @assert isna(true & NA)
-    @assert false & NA == false
+    @test any((@data [1, 2, NA]) .== 1) == true
+    @test any((@data [NA, 1, 2]) .== 1) == true
+    @test isna(any((@data [1, 2, NA]) .== 3))
+    @test any((@data [1, 2, 3] ).== 4) == false
 
-    @assert any((@data [1, 2, NA]) .== 1) == true
-    @assert any((@data [NA, 1, 2]) .== 1) == true
-    @assert isna(any((@data [1, 2, NA]) .== 3))
-    @assert any((@data [1, 2, 3] ).== 4) == false
-
-    @assert isna(all((@data [1, 1, NA]) .== 1))
-    @assert isna(all((@data [NA, 1, 1]) .== 1))
-    @assert all((@data [1, 1, 1]) .== 1) == true
-    @assert all((@data [1, 2, 1]) .== 1) == false
+    @test isna(all((@data [1, 1, NA]) .== 1))
+    @test isna(all((@data [NA, 1, 1]) .== 1))
+    @test all((@data [1, 1, 1]) .== 1) == true
+    @test all((@data [1, 2, 1]) .== 1) == false
 end

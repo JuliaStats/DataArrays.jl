@@ -17,10 +17,6 @@ module DataArrays
            AbstractDataArray,
            AbstractDataMatrix,
            AbstractDataVector,
-           allna,
-           anyna,
-           array,
-           autocor,
            compact,
            cut,
            data,
@@ -43,22 +39,18 @@ module DataArrays
            NA,
            NAException,
            NAtype,
-           padNA,
+           padna,
            pdata,
-           percent_change,
            PooledDataArray,
            PooledDataMatrix,
            PooledDataVecs,
            PooledDataVector,
-           reldiff,
            reorder,
            rep,
            replace!,
            setlevels!,
            setlevels,
-           tail,
-           xtab,
-           xtabs
+           tail
 
     include("utils.jl")
     include("natype.jl")

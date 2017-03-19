@@ -33,7 +33,7 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
     na::BitArray{N}
 
-    function DataArray{T,N}(d::Array{T, N}, m::BitArray{N}) where {T, N}
+    function DataArray{T,N}(d::Array{T, N}, m::BitArray{N}=falses(size(d))) where {T, N}
         # Ensure data values and missingness metadata match
         if size(d) != size(m)
             msg = "Data and missingness arrays must be the same size"
@@ -53,22 +53,10 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     end
 end
 
-function DataArray{T, N}(d::Array{T, N},
-                         m::BitArray{N} = falses(size(d))) # -> DataArray{T}
-    return DataArray{T, N}(d, m)
-end
+(::Type{DataArray{T,N} where {T,N}})(d::Array, m::AbstractArray{Bool}) = DataArray{eltype(d), ndims(d)}(d, BitArray(m))
+(::Type{DataArray{T,N} where N}){T}(dims::Integer...) = DataArray(Array{T}(dims), trues(dims))
+(::Type{DataArray{T,N} where N}){T}(dims::Tuple{Vararg{Int}}) = DataArray(Array{T}(dims), trues(dims))
 
-function DataArray(d::Array, m::AbstractArray{Bool}) # -> DataArray{T}
-    return DataArray(d, BitArray(m))
-end
-
-function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
-    return DataArray(Array{T}(dims...), trues(dims...))
-end
-
-function DataArray{N}(T::Type, dims::NTuple{N, Int}) # -> DataArray{T}
-    return DataArray(Array{T}(dims...), trues(dims...))
-end
 
 """
     DataVector{T}
@@ -189,7 +177,7 @@ end
 
 function Base.convert{S, T, N}(::Type{Array{S, N}},
                                x::DataArray{T, N}) # -> Array{S, N}
-    if anyna(x)
+    if any(isna, x)
         err = "Cannot convert DataArray with NA's to desired type"
         throw(NAException(err))
     else
@@ -243,15 +231,11 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
 end
 
 dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
-isna(da::DataArray) = copy(da.na) # -> BitArray
-isna(da::DataArray, I::Real) = getindex(da.na, I)
+isna(da::DataArray, I::Integer...) = getindex(da.na, I...)
+Base.broadcast(::typeof(isna), da::DataArray) = copy(da.na)
 
-@nsplat N function isna(da::DataArray, I::NTuple{N,Real}...)
-    getindex(da.na, I...)
-end
-
-anyna(da::DataArray) = any(da.na) # -> Bool
-allna(da::DataArray) = all(da.na) # -> Bool
+Base.any(::typeof(isna), da::DataArray) = any(da.na)
+Base.all(::typeof(isna), da::DataArray) = all(da.na)
 
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
     n = length(da)
@@ -321,7 +305,7 @@ data(a::AbstractArray) = convert(DataArray, a)
 for f in (:(Base.float),)
     @eval begin
         function ($f)(da::DataArray) # -> DataArray
-            if anyna(da)
+            if any(isna, da)
                 err = "Cannot convert DataArray with NA's to desired type"
                 throw(NAException(err))
             else

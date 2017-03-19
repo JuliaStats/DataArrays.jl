@@ -1,9 +1,4 @@
-module TestExtras
-    using Base.Test
-    using DataArrays
-    using StatsBase
-    using Compat
-
+@testset "Extras" begin
     ##########
     ## countmap
     ##########
@@ -12,20 +7,20 @@ module TestExtras
     w = weights([1.1,2.2,3.3])
     cm = Dict{Union{Int, NAtype}, Int}([(NA, 1), (3, 2)])
     cmw = Dict{Union{Int, NAtype}, Real}([(NA, 1.1), (3, 5.5)])
-    @assert isequal(countmap(d), cm)
-    @assert isequal(countmap(d, w), cmw)
+    @test isequal(countmap(d), cm)
+    @test isequal(countmap(d, w), cmw)
 
     ##########
     ## cut
     ##########
 
-    @assert isequal(cut([2, 3, 5], [1, 3, 6]), PooledDataArray(["(1,3]", "(1,3]", "(3,6]"]))
-    @assert isequal(cut([2, 3, 5], [3, 6]), PooledDataArray(["[2,3]", "[2,3]", "(3,6]"]))
-    @assert isequal(cut([2, 3, 5, 6], [3, 6]), PooledDataArray(["[2,3]", "[2,3]", "(3,6]", "(3,6]"]))
-    @assert isequal(cut([1, 2, 4], [1, 3, 6]), PooledDataArray(["[1,3]", "[1,3]", "(3,6]"]))
-    @assert isequal(cut([1, 2, 4], [3, 6]), PooledDataArray(["[1,3]", "[1,3]", "(3,6]"]))
-    @assert isequal(cut([1, 2, 4], [3]), PooledDataArray(["[1,3]", "[1,3]", "(3,4]"]))
-    @assert isequal(cut([1, 5, 7], [3, 6]), PooledDataArray(["[1,3]", "(3,6]", "(6,7]"]))
+    @test isequal(cut([2, 3, 5], [1, 3, 6]), PooledDataArray(["(1,3]", "(1,3]", "(3,6]"]))
+    @test isequal(cut([2, 3, 5], [3, 6]), PooledDataArray(["[2,3]", "[2,3]", "(3,6]"]))
+    @test isequal(cut([2, 3, 5, 6], [3, 6]), PooledDataArray(["[2,3]", "[2,3]", "(3,6]", "(3,6]"]))
+    @test isequal(cut([1, 2, 4], [1, 3, 6]), PooledDataArray(["[1,3]", "[1,3]", "(3,6]"]))
+    @test isequal(cut([1, 2, 4], [3, 6]), PooledDataArray(["[1,3]", "[1,3]", "(3,6]"]))
+    @test isequal(cut([1, 2, 4], [3]), PooledDataArray(["[1,3]", "[1,3]", "(3,4]"]))
+    @test isequal(cut([1, 5, 7], [3, 6]), PooledDataArray(["[1,3]", "(3,6]", "(6,7]"]))
 
     ages = [20, 22, 25, 27, 21, 23, 37, 31, 61, 45, 41, 32]
     bins = [18, 25, 35, 60, 100]
@@ -34,7 +29,7 @@ module TestExtras
                            "(25,35]", "(18,25]", "(18,25]",
                            "(35,60]", "(25,35]", "(60,100]",
                            "(35,60]", "(35,60]", "(25,35]"])
-    @assert isequal(cats, pdv)
+    @test isequal(cats, pdv)
 
     ##########
     ## repeat

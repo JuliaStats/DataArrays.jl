@@ -96,29 +96,21 @@ const PooledDataMatrix{T,R} = PooledDataArray{T,R,2}
 #   * If value is new, add it to the pool, then set refs
 ##############################################################################
 
-# Echo inner constructor as an outer constructor
-function PooledDataArray{T,R<:Integer,N}(refs::RefArray{R, N},
-                                         pool::Vector{T})
-    PooledDataArray{T,R,N}(refs, pool)
-end
-
-# A no-op constructor
-PooledDataArray(d::PooledDataArray) = d
-
 # Constructor from array, w/ pool, missingness, and ref type
-function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
-                                         pool::Vector{T},
-                                         m::AbstractArray{Bool, N},
-                                         r::Type{R} = DEFAULT_POOLED_REF_TYPE)
-    if length(pool) > typemax(R)
-        throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))"))
+function (::Type{PooledDataArray{T,R<:Integer,N}}){T,R,N}(d::AbstractArray{T, N},
+                                                          pool::Vector{T},
+                                                          m::AbstractArray{Bool, N},
+                                                          r::Type{R} = DEFAULT_POOLED_REF_TYPE)
+    n = length(pool)
+    if n > typemax(R)
+        throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $n"))
     end
 
     newrefs = Array{R,N}(size(d))
     poolref = Dict{T, R}()
 
     # loop through once to fill the poolref dict
-    for i = 1:length(pool)
+    for i = 1:n
         poolref[pool[i]] = i
     end
 
@@ -133,50 +125,58 @@ function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
     return PooledDataArray(RefArray(newrefs), pool)
 end
 
+function (::Type{PooledDataArray{T,R<:Integer}}){T,R}(d::AbstractArray{T},
+                                                      pool::Vector{T},
+                                                      m::AbstractArray{Bool},
+                                                      r::Type{R} = DEFAULT_POOLED_REF_TYPE)
+    return PooledDataArray{T,R,ndims(d)}(d, pool, m, r)
+end
+
 # Constructor from array, w/ missingness and ref type
-function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
-                                         m::AbstractArray{Bool, N},
-                                         r::Type{R} = DEFAULT_POOLED_REF_TYPE)
+function (::Type{PooledDataArray{T,R<:Integer,N}}){T,R,N}(d::AbstractArray{T, N},
+                                                          m::AbstractArray{Bool, N},
+                                                          r::Type{R} = DEFAULT_POOLED_REF_TYPE)
     pool = convert(Array, unique(d[.!m]))
     if method_exists(isless, (T, T))
         sort!(pool)
     end
-    PooledDataArray(d, pool, m, r)
+    PooledDataArray{T,R,N}(d, pool, m, r)
+end
+
+function (::Type{PooledDataArray{T,R<:Integer}}){T,R}(d::AbstractArray{T},
+                                                      m::AbstractArray{Bool},
+                                                      r::Type{R} = DEFAULT_POOLED_REF_TYPE)
+    return PooledDataArray{T,R,ndims(d)}(d, m, r)
 end
 
 # Construct an all-NA PooledDataVector of a specific type
-PooledDataArray(t::Type, dims::Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims))
-PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array{t}(dims), trues(dims))
-PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims), r)
-PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::Int...) = PooledDataArray(Array(t, dims), trues(dims), r)
+(::Type{PooledDataArray{T}}){T}(dims::Tuple{Vararg{Int}}) = PooledDataArray(Array{T}(dims), trues(dims))
+(::Type{PooledDataArray{T}}){T}(dims::Integer...) = PooledDataArray(Array{T}(dims), trues(dims))
+(::Type{PooledDataArray{T,R<:Integer}}){T,R}(dims::Tuple{Vararg{Int}}) = PooledDataArray(Array{T}(dims), trues(dims), R)
+(::Type{PooledDataArray{T,R<:Integer}}){T,R}(dims::Integer...) = PooledDataArray(Array{T}(dims), trues(dims), R)
 
 # Construct an empty PooledDataVector of a specific type
-PooledDataArray(t::Type) = PooledDataArray(similar(Vector{t}(1),0), trues(0))
-PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Vector{t}(1),0), trues(0), r)
+(::Type{PooledDataArray{T}}){T}() = PooledDataArray(Vector{T}(0), trues(0))
+(::Type{PooledDataArray{T,R}}){T,R}() = PooledDataArray(Vector{T}(0), trues(0), R)
 
 # Convert a BitArray to an Array{Bool} (m = missingness)
 # For some reason an additional method is needed but even that doesn't work
 # For a BitArray a refs type of UInt8 will always be sufficient as the size of the pool is 0, 1 or 2
-PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(Array(d), falses(size(d)), UInt8)
-PooledDataArray{N}(d::BitArray{N}, m::AbstractArray{Bool, N}) = PooledDataArray(Array(d), m, UInt8)
+(::Type{PooledDataArray})(d::BitArray) = PooledDataArray{Bool,UInt8}(Array(d), falses(size(d)))
+(::Type{PooledDataArray})(d::BitArray, m::AbstractArray{Bool}) = PooledDataArray{Bool,UInt8}(Array(d), m)
 
 # Convert a DataArray to a PooledDataArray
-PooledDataArray{T,R<:Integer}(da::DataArray{T},
-                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(da.data, da.na, r)
-PooledDataArray{T,R<:Integer}(da::DataArray{T},
-                              pool::Vector{T},
-                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(da.data, pool, da.na, r)
+(::Type{PooledDataArray{T,R<:Integer}}){T,R}(da::DataArray{T}) = PooledDataArray{T,R}(da.data, da.na)
+(::Type{PooledDataArray{T}}){T}(da::DataArray{T}) = PooledDataArray{T,DEFAULT_POOLED_REF_TYPE}(da.data, da.na)
+(::Type{PooledDataArray})(da::DataArray) = PooledDataArray{eltype(d),DEFAULT_POOLED_REF_TYPE}(da.data, da.na)
 
 # Convert a Array{T} to a PooledDataArray
-PooledDataArray{T,R<:Integer}(d::Array{T},
-                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(d, falses(size(d)), r)
-PooledDataArray{T,R<:Integer}(d::Array{T},
-                              pool::Vector{T},
-                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(d, pool, falses(size(d)), r)
+(::Type{PooledDataArray{T,R<:Integer}}){T,R}(d::Array{T}) = PooledDataArray{T,R}(d, falses(size(d)))
+(::Type{PooledDataArray})(d::Array) = PooledDataArray{eltype(d),DEFAULT_POOLED_REF_TYPE}(d)
 
 # Explicitly convert Ranges into a PooledDataVector
-PooledDataArray{R<:Integer}(rs::Range,
-                            r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(collect(rs), falses(length(rs)), r)
+(::Type{PooledDataArray{T,R<:Integer}}){T,R}(rs::Range{T}) = PooledDataArray{T,R}(collect(rs), falses(length(rs)))
+(::Type{PooledDataArray})(rs::Range) = PooledDataArray{eltype(rs),DEFAULT_POOLED_REF_TYPE}(collect(rs), falses(length(rs)))
 
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:pdatazeros, :zeros), (:pdataones, :ones))
@@ -231,19 +231,8 @@ end
 isna(pda::PooledDataArray) = pda.refs .== 0
 isna(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
 
-function anyna(pda::PooledDataArray)
-    for ref in pda.refs
-        ref == 0 && return true
-    end
-    return false
-end
-
-function allna(pda::PooledDataArray)
-    for ref in pda.refs
-        ref == 0 || return false
-    end
-    return true
-end
+Base.any(::typeof(isna), pda::PooledDataArray) = any(iszero, pda.refs)
+Base.all(::typeof(isna), pda::PooledDataArray) = all(iszero, pda.refs)
 
 ##############################################################################
 ##

@@ -1,61 +1,57 @@
-module TestNAs
-    using Base.Test
-    using DataArrays
+@testset "NAs" begin
+    @testset "any(isna, x)" begin
+        # any(isna, a::AbstractArray)
+        @test any(isna, Any[NA, 1])
+        @test !any(isna, [1, 2])
+        @test any(isna, repeat([1, 2], outer = [1, 2]))
+        @test !any(isna, repeat([1, 2], outer = [1, 2, 2]))
 
+        # any(isna, da::DataArray)
+        @test any(isna, DataArray([1, 2], falses(2)))
+        @test any(isna, DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+        da = DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
+        @test !any(isna, da)
+        da[2] = NA
+        @test any(isna, da)
 
-    # anyna(a::AbstractArray)
-    @test anyna(Any[NA, 1])
-    @test !anyna([1, 2])
-    anyna(repeat([1, 2], outer = [1, 2]))
-    @test !anyna(repeat([1, 2], outer = [1, 2, 2]))
+        # any(isna, pda::PooledDataArray)
+        @test any(isna, PooledDataArray([1, 2], falses(2)))
+        @test any(isna, PooledDataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+        pda = PooledDataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
+        @test !any(isna, pda)
+        pda[2] = NA
+        @test any(isna, pda)
+    end
 
-    # anyna(da::DataArray)
-    anyna(DataArray([1, 2], falses(2)))
-    anyna(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    da = DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
-    @test !anyna(da)
-    da[2] = NA
-    @test anyna(da)
+    @testset "all(isna, x)" begin
+        # all(isna, a::AbstractArray)
+        @test all(isna, Any[NA, NA])
+        @test !all(isna, Any[NA, 1])
+        @test !all(isna, [1, 2])
+        all(isna, repeat([1, 2], outer = [1, 2]))
+        @test !all(isna, repeat([1, 2], outer = [1, 2, 2]))
 
-    # anyna(pda::PooledDataArray)
-    anyna(PooledDataArray([1, 2], falses(2)))
-    anyna(PooledDataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    pda = PooledDataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
-    @test !anyna(pda)
-    pda[2] = NA
-    @test anyna(pda)
+        # all(isna, da::DataArray)
+        @test all(isna, DataArray([1, 2], falses(2)))
+        @test all(isna, DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+        da = DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
+        da[1] = NA
+        @test !all(isna, da)
+        da[:] = NA
+        @test all(isna, da)
 
-    # allna(a::AbstractArray)
-    @test allna(Any[NA, NA])
-    @test !allna(Any[NA, 1])
-    @test !allna([1, 2])
-    allna(repeat([1, 2], outer = [1, 2]))
-    @test !allna(repeat([1, 2], outer = [1, 2, 2]))
-
-    # allna(da::DataArray)
-    allna(DataArray([1, 2], falses(2)))
-    allna(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    da = DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
-    da[1] = NA
-    @test !allna(da)
-    da[:] = NA
-    @test allna(da)
-
-    # allna(da::PooledDataArray)
-    allna(PooledDataArray([1, 2], falses(2)))
-    allna(PooledDataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    pda = PooledDataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
-    pda[1] = NA
-    @test !allna(pda)
-    pda[:] = NA
-    @test allna(pda)
-
-    dv = DataArray([1, 2, 3], BitArray([false, false, false]))
+        # all(isna, da::PooledDataArray)
+        @test all(isna, PooledDataArray([1, 2], falses(2)))
+        @test all(isna, PooledDataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+        pda = PooledDataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2))
+        pda[1] = NA
+        @test !all(isna, pda)
+        pda[:] = NA
+        @test all(isna, pda)
+    end
 
     dv = DataArray(collect(1:6), fill(false, 6))
-
     a = dropna(dv)
-    for v in each_failna(dv); end
     @test collect(each_failna(dv)) == a
     @test collect(each_dropna(dv)) == a
     @test collect(each_replacena(dv, 4)) == a
