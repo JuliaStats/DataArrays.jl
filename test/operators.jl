@@ -1,3 +1,14 @@
+macro test_da_pda(da, code)
+    esc(quote
+        let $da = copy($da)
+            $code
+        end
+        let $da = PooledDataArray($da)
+            $code
+        end
+    end)
+end
+
 @testset "Operators" begin
     const bit_operators = [:(&),:(|),:(⊻)]
 
@@ -36,17 +47,6 @@
                                   :(sqrt),
                                   :(gamma),
                                   :(lgamma)]
-
-    macro test_da_pda(da, code)
-        esc(quote
-            let $da = copy($da)
-                $code
-            end
-            let $da = PooledDataArray($da)
-                $code
-            end
-        end)
-    end
 
     # All unary operators return NA when evaluating NA
     for f in [+, -]
