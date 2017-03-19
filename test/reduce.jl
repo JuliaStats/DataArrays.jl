@@ -1,3 +1,14 @@
+macro same_behavior(ex1, ex2)
+    quote
+        v = try
+            $ex2
+        catch e
+            e
+        end
+        isa(v, Exception) ? @test_throws(typeof(v), $ex1) : @test isapprox($ex1, v)
+    end
+end
+
 @testset "Reduce" begin
     srand(1337)
 
@@ -66,17 +77,6 @@
     end
 
     ## other reductions
-
-    macro same_behavior(ex1, ex2)
-        quote
-            v = try
-                $ex2
-            catch e
-                e
-            end
-            isa(v, Exception) ? @test_throws(typeof(v), $ex1) : @test isapprox($ex1, v)
-        end
-    end
 
     _varuc(x; kw...) = var(x; corrected=false, kw...)
     _varzm(x; kw...) = var(x; mean=0, kw...)
