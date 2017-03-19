@@ -46,7 +46,7 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
                     m[i] = true
                 end
             end
-        elseif eltype(d) <: NAType
+        elseif eltype(d) <: NAtype
             m = trues(m)
         end
         new(d, m)
@@ -134,7 +134,7 @@ function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Inte
     dest
 end
 
-Base.fill!(A::DataArray, ::NAType) = (fill!(A.na, true); A)
+Base.fill!(A::DataArray, ::NAtype) = (fill!(A.na, true); A)
 Base.fill!(A::DataArray, v) = (fill!(A.data, v); fill!(A.na, false); A)
 
 function Base.deepcopy(d::DataArray) # -> DataArray{T}

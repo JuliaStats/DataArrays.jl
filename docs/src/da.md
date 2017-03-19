@@ -6,7 +6,7 @@ CurrentModule = DataArrays
 
 ```@docs
 NA
-NAType
+NAtype
 ```
 
 ## Arrays with possibly missing data

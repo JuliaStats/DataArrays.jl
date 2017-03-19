@@ -582,7 +582,7 @@ function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
     return pool_idx
 end
 
-getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::NAType) = zero(R)
+getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::NAtype) = zero(R)
 
 ##############################################################################
 ##
@@ -614,13 +614,13 @@ end
 
 Replace all occurrences of `from` in `x` with `to`, modifying `x` in place.
 """
-function replace!(x::PooledDataArray{NAType}, fromval::NAType, toval::NAType)
+function replace!(x::PooledDataArray{NAtype}, fromval::NAtype, toval::NAtype)
     NA # no-op to deal with warning
 end
-function replace!(x::PooledDataArray, fromval::NAType, toval::NAType)
+function replace!(x::PooledDataArray, fromval::NAtype, toval::NAtype)
     NA # no-op to deal with warning
 end
-function replace!{S, T}(x::PooledDataArray{S}, fromval::T, toval::NAType)
+function replace!{S, T}(x::PooledDataArray{S}, fromval::T, toval::NAtype)
     fromidx = findfirst(x.pool, fromval)
     if fromidx == 0
         throw(ErrorException("can't replace a value not in the pool in a PooledDataVector!"))
@@ -630,7 +630,7 @@ function replace!{S, T}(x::PooledDataArray{S}, fromval::T, toval::NAType)
 
     return NA
 end
-function replace!{S, T}(x::PooledDataArray{S}, fromval::NAType, toval::T)
+function replace!{S, T}(x::PooledDataArray{S}, fromval::NAtype, toval::T)
     toidx = findfirst(x.pool, toval)
     # if toval is in the pool, just do the assignment
     if toidx != 0

@@ -19,7 +19,7 @@ Julia's parser rewrites both of these literals as calls to the `vcat`
 function. The `vcat` function computes the tightest type that would
 enclose all of the values in the literal array. (REVISE)
 
-Because of the strange place occupied by `NAType` in Julia's type
+Because of the strange place occupied by `NAtype` in Julia's type
 hierarchy, the tightest type that would enclose any literal array
 containing a single `NA` would be `Any`, which is not very useful.
 As such, the DataArrays package needs to provide an alternative

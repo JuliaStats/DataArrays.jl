@@ -200,7 +200,7 @@ end
 
 # Unary operators, NA
 for f in [:+,:-,:*,:/]
-    @eval $(f)(d::NAType) = NA
+    @eval $(f)(d::NAtype) = NA
 end
 
 # Unary operators, DataArrays.
@@ -211,7 +211,7 @@ end
 # Treat ctranspose and * in a special way
 for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
     @eval begin
-        $(f)(::NAType) = NA
+        $(f)(::NAtype) = NA
         function $(f){T}(d::DataMatrix{T})
             # (c)transpose in Base uses a cache-friendly algorithm for
             # numeric arrays, which is faster than our naive algorithm,
@@ -297,7 +297,7 @@ end
 # inputs
 for f in (:(Base.abs), :(Base.abs2), :(Base.conj), :(Base.sign))
     @eval begin
-        $(f)(::NAType) = NA
+        $(f)(::NAtype) = NA
         @dataarray_unary $(f) Number T
     end
 end
@@ -309,7 +309,7 @@ for f in (:(Base.acos), :(Base.acosh), :(Base.asin), :(Base.asinh), :(Base.atan)
           :(Base.exp), :(Base.exp2), :(Base.expm1), :(Base.log), :(Base.log10), :(Base.log1p),
           :(Base.log2), :(Base.exponent), :(Base.sqrt), :(Base.gamma), :(Base.lgamma))
     @eval begin
-        ($f)(::NAType) = NA
+        ($f)(::NAtype) = NA
         @dataarray_unary $(f) AbstractFloat T
         @dataarray_unary $(f) Real Float64
     end
@@ -317,7 +317,7 @@ end
 ## SpecialFunctions (should be a conditional module when supported)
 for f in (:(SpecialFunctions.digamma), :(SpecialFunctions.erf), :(SpecialFunctions.erfc))
     @eval begin
-        ($f)(::NAType) = NA
+        ($f)(::NAtype) = NA
         @dataarray_unary $(f) AbstractFloat T
         @dataarray_unary $(f) Real Float64
     end
@@ -326,7 +326,7 @@ end
 # Elementary functions that take varargs
 for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
     @eval begin
-        ($f)(::NAType, args::Integer...) = NA
+        ($f)(::NAtype, args::Integer...) = NA
 
         # ambiguity
         @dataarray_unary $(f) Real T 1
@@ -356,18 +356,18 @@ end
 # Bit operators
 #
 
-@swappable (&)(a::NAType, b::Bool) = b ? NA : false
-@swappable (|)(a::NAType, b::Bool) = b ? true : NA
-@swappable ($)(a::NAType, b::Bool) = NA
+@swappable (&)(a::NAtype, b::Bool) = b ? NA : false
+@swappable (|)(a::NAtype, b::Bool) = b ? true : NA
+@swappable ($)(a::NAtype, b::Bool) = NA
 
 # To avoid ambiguity warning
-@swappable (|)(a::NAType, b::Function) = NA
+@swappable (|)(a::NAtype, b::Function) = NA
 
 for f in (:(&), :(|), :(Base.xor))
     @eval begin
         # Scalar with NA
-        ($f)(::NAType, ::NAType) = NA
-        @swappable ($f)(::NAType, b::Integer) = NA
+        ($f)(::NAtype, ::NAtype) = NA
+        @swappable ($f)(::NAtype, b::Integer) = NA
     end
 end
 
@@ -393,12 +393,12 @@ end
 # Comparison operators
 #
 
-Base.isequal(::NAType, ::NAType) = true
-Base.isequal(::NAType, b) = false
-Base.isequal(a, ::NAType) = false
-Base.isless(::NAType, ::NAType) = false
-Base.isless(::NAType, b) = false
-Base.isless(a, ::NAType) = true
+Base.isequal(::NAtype, ::NAtype) = true
+Base.isequal(::NAtype, b) = false
+Base.isequal(a, ::NAtype) = false
+Base.isless(::NAtype, ::NAtype) = false
+Base.isless(::NAtype, b) = false
+Base.isless(a, ::NAtype) = true
 
 # This is for performance only; the definition in Base is sufficient
 # for AbstractDataArrays
@@ -485,13 +485,13 @@ end
 end
 
 # ambiguity
-@swappable (==)(::NAType, ::WeakRef) = NA
+@swappable (==)(::NAtype, ::WeakRef) = NA
 
 for sf in [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
     @eval begin
         # Scalar with NA
-        ($(sf))(::NAType, ::NAType) = NA
-        @swappable ($(sf))(::NAType, b) = NA
+        ($(sf))(::NAtype, ::NAtype) = NA
+        @swappable ($(sf))(::NAtype, b) = NA
     end
 end
 
@@ -503,8 +503,8 @@ for f in (:(+), :(-), :(*), :(/),
           :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem), :(Base.min), :(Base.max))
     @eval begin
         # Scalar with NA
-        ($f)(::NAType, ::NAType) = NA
-        @swappable ($f)(d::NAType, x::Number) = NA
+        ($f)(::NAtype, ::NAtype) = NA
+        @swappable ($f)(d::NAtype, x::Number) = NA
     end
 end
 
@@ -579,7 +579,7 @@ end # if isdefined(Base, :UniformScaling)
 for f in (:(*), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
         # Array with NA
-        @swappable $(f){T,N}(::NAType, b::AbstractArray{T,N}) =
+        @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
             DataArray(Array{T,N}(size(b)), trues(size(b)))
 
         # DataArray with scalar
@@ -589,14 +589,14 @@ end
 
 for f in (:(+), :(-))
     # Array with NA
-    @eval @swappable $(f){T,N}(::NAType, b::AbstractArray{T,N}) =
+    @eval @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
         DataArray(Array{T,N}(size(b)), trues(size(b)))
 end
 
-(^)(::NAType, ::NAType) = NA
-(^)(a, ::NAType) = NA
-(^)(::NAType, ::Integer) = NA
-(^)(::NAType, ::Number) = NA
+(^)(::NAtype, ::NAtype) = NA
+(^)(a, ::NAtype) = NA
+(^)(::NAtype, ::Integer) = NA
+(^)(::NAtype, ::Number) = NA
 
 for f in (:(+), :(-))
     @eval begin
@@ -609,14 +609,14 @@ for f in (:(+), :(-))
 end
 
 # / is defined separately since it is not swappable
-(/){T,N}(b::AbstractArray{T,N}, ::NAType) =
+(/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
     DataArray(Array{T,N}(size(b)), trues(size(b)))
 @dataarray_binary_scalar(/, /, nothing, false)
 
 for f in [:(Base.maximum), :(Base.minimum)]
     @eval begin
-        ($f)(::NAType, ::NAType) = NA
-        @swappable $(f)(::Number, ::NAType) = NA
+        ($f)(::NAtype, ::NAtype) = NA
+        @swappable $(f)(::Number, ::NAtype) = NA
     end
 end
 

@@ -157,12 +157,12 @@ function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::
         Base.varm(A.data, m; corrected=corrected)
     end
 end
-Base.varm{T}(A::DataArray{T}, m::NAType; corrected::Bool=true, skipna::Bool=false) = NA
+Base.varm{T}(A::DataArray{T}, m::NAtype; corrected::Bool=true, skipna::Bool=false) = NA
 
 function Base.var(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false)
     mean == 0 ? Base.varm(A, 0; corrected=corrected, skipna=skipna) :
     mean == nothing ? varm(A, Base.mean(A; skipna=skipna); corrected=corrected, skipna=skipna) :
-    isa(mean, Union{Number, NAType}) ?
+    isa(mean, Union{Number, NAtype}) ?
         varm(A, mean; corrected=corrected, skipna=skipna) :
         throw(ErrorException("Invalid value of mean."))
 end

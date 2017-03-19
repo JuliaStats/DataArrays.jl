@@ -2,7 +2,7 @@
 
 # TODO: Macroize these definitions
 
-function Base.push!(dv::DataVector, v::NAType)
+function Base.push!(dv::DataVector, v::NAtype)
     resize!(dv.data, length(dv.data) + 1)
     push!(dv.na, true)
     return v
@@ -23,7 +23,7 @@ function Base.pop!(dv::DataVector)
     end
 end
 
-function Base.unshift!{T}(dv::DataVector{T}, v::NAType)
+function Base.unshift!{T}(dv::DataVector{T}, v::NAtype)
     ccall(:jl_array_grow_beg, Void, (Any, UInt), dv.data, 1)
     unshift!(dv.na, true)
     return v
@@ -110,7 +110,7 @@ function Base.map(f::Function, dv::DataVector)
     return res
 end
 
-function Base.push!{T,R}(pdv::PooledDataVector{T,R}, v::NAType)
+function Base.push!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
     push!(pdv.refs, zero(R))
     return v
 end
@@ -123,7 +123,7 @@ end
 
 Base.pop!(pdv::PooledDataVector) = pdv.pool[pop!(pdv.refs)]
 
-function Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAType)
+function Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
     unshift!(pdv.refs, zero(R))
     return v
 end

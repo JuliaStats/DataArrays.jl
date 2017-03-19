@@ -12,7 +12,7 @@ end
 
 @deprecate_binding padNA padna
 
-@deprecate_binding NAtype NAType
+@deprecate_binding NAtype NAtype
 
 # Old-style array constructors
 @deprecate DataArray{T,N}(::Type{T}, dims::NTuple{N,Int}) DataArray{T,N}(dims)

@@ -20,11 +20,11 @@ function StatsBase.addcounts!{T,U,W}(cm::Dict{U,W}, x::AbstractDataArray{T}, wv:
 end
 
 function StatsBase.countmap{T}(x::AbstractDataArray{T})
-    addcounts!(Dict{Union{T, NAType}, Int}(), x)
+    addcounts!(Dict{Union{T, NAtype}, Int}(), x)
 end
 
 function StatsBase.countmap{T,W}(x::AbstractDataArray{T}, wv::WeightVec{W})
-    addcounts!(Dict{Union{T, NAType}, W}(), x, wv)
+    addcounts!(Dict{Union{T, NAtype}, W}(), x, wv)
 end
 
 """

@@ -7,7 +7,7 @@ _broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_indices(x...))
 
 # Get ref for value for a PooledDataArray, adding to the pool if
 # necessary
-_unsafe_pdaref!(Bpool, Brefdict::Dict, val::NAType) = 0
+_unsafe_pdaref!(Bpool, Brefdict::Dict, val::NAtype) = 0
 function _unsafe_pdaref!(Bpool, Brefdict::Dict, val)
     @get! Brefdict val begin
         push!(Bpool, val)

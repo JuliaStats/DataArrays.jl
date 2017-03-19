@@ -38,7 +38,7 @@ module DataArrays
            levels,
            NA,
            NAException,
-           NAType,
+           NAtype,
            padna,
            pdata,
            PooledDataArray,

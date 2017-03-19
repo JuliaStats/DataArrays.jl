@@ -29,7 +29,7 @@ Base.next(x::AbstractDataArray, state::Integer) = (x[state], state + 1)
 Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 
 Base.broadcast{T}(::typeof(isna), a::AbstractArray{T}) =
-    NAType <: T ? broadcast(x->isa(x, NAType), a) : falses(size(a)) # -> BitArray
+    NAtype <: T ? broadcast(x->isa(x, NAtype), a) : falses(size(a)) # -> BitArray
 
 """
     isna(a::AbstractArray, i) -> Bool
@@ -48,7 +48,7 @@ julia> isna(X, 3)
 true
 ```
 """
-isna{T}(a::AbstractArray{T}, i::Integer) = NAType <: T ? isa(a[i], NAType) : false # -> Bool
+isna{T}(a::AbstractArray{T}, i::Integer) = NAtype <: T ? isa(a[i], NAtype) : false # -> Bool
 
 """
     dropna(v::AbstractVector) -> AbstractVector

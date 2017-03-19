@@ -3,7 +3,7 @@
     # NA's
     #
 
-    @test isna(NAType())
+    @test isna(NAtype())
     @test isna(NA)
 
     #
