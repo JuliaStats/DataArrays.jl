@@ -10,43 +10,43 @@ macro test_da_pda(da, code)
 end
 
 @testset "Operators" begin
-    const bit_operators = [:(&),:(|),:(⊻)]
+    const bit_operators = [&, |, ⊻]
 
-    const arithmetic_operators = [:(+),:(-),:(*),:(/), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem)]
+    const arithmetic_operators = [+, -, *, /, Base.div, Base.mod, Base.fld, Base.rem]
 
-    const comparison_operators = [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
+    const comparison_operators = [==, !=, >, >=, <, <=]
 
-    const elementary_functions = [:(abs),
-                                  :(abs2),
-                                  :(sign),
-                                  :(acos),
-                                  :(acosh),
-                                  :(asin),
-                                  :(asinh),
-                                  :(atan),
-                                  :(atanh),
-                                  :(sin),
-                                  :(sinh),
-                                  :(conj),
-                                  :(cos),
-                                  :(cosh),
-                                  :(tan),
-                                  :(tanh),
-                                  :(ceil),
-                                  :(floor),
-                                  :(round),
-                                  :(trunc),
-                                  :(exp),
-                                  :(exp2),
-                                  :(expm1),
-                                  :(log),
-                                  :(log10),
-                                  :(log1p),
-                                  :(log2),
-                                  :(exponent),
-                                  :(sqrt),
-                                  :(gamma),
-                                  :(lgamma)]
+    const elementary_functions = [abs,
+                                  abs2,
+                                  sign,
+                                  acos,
+                                  acosh,
+                                  asin,
+                                  asinh,
+                                  atan,
+                                  atanh,
+                                  sin,
+                                  sinh,
+                                  conj,
+                                  cos,
+                                  cosh,
+                                  tan,
+                                  tanh,
+                                  ceil,
+                                  floor,
+                                  round,
+                                  trunc,
+                                  exp,
+                                  exp2,
+                                  expm1,
+                                  log,
+                                  log10,
+                                  log1p,
+                                  log2,
+                                  exponent,
+                                  sqrt,
+                                  gamma,
+                                  lgamma]
 
     # All unary operators return NA when evaluating NA
     for f in [+, -]
@@ -55,34 +55,34 @@ end
 
     # All elementary functions return NA when evaluating NA
     for f in elementary_functions
-        @test @eval isna(($f)(NA))
+        @test isna(f(NA))
     end
 
     # All comparison operators return NA when comparing NA with NA
     # All comparison operators return NA when comparing scalars with NA
     # All comparison operators return NA when comparing NA with scalars
     for f in comparison_operators
-        @test @eval isna(($f)(NA, NA))
-        @test @eval isna(($f)(NA, 1))
-        @test @eval isna(($f)(1, NA))
+        @test isna(f(NA, NA))
+        @test isna(f(NA, 1))
+        @test isna(f(1, NA))
     end
 
-    # All arithmetic operators7 return NA when operating on two NA's
+    # All arithmetic operators return NA when operating on two NA's
     # All arithmetic operators return NA when operating on a scalar and an NA
     # All arithmetic operators return NA when operating on an NA and a scalar
     for f in arithmetic_operators
-        @test @eval isna(($f)(NA, NA))
-        @test @eval isna(($f)(1, NA))
-        @test @eval isna(($f)(NA, 1))
+        @test isna(f(NA, NA))
+        @test isna(f(1, NA))
+        @test isna(f(NA, 1))
     end
 
     # All bit operators return NA when operating on two NA's
     # All bit operators return NA when operating on a scalar and an NA
     # All bit operators return NA when operating on an NA and a scalar
     for f in bit_operators
-        @test @eval isna(($f)(NA, NA))
-        @test @eval isna(($f)(1, NA))
-        @test @eval isna(($f)(NA, 1))
+        @test isna(f(NA, NA))
+        @test isna(f(1, NA))
+        @test isna(f(NA, 1))
     end
 
     # Unary operators on DataVector's should be equivalent to elementwise
@@ -136,7 +136,7 @@ end
     @test_da_pda dv begin
         for f in elementary_functions
             for i in 1:length(dv)
-                @test @eval ($f).(dv)[$i] == ($f)(dv[$i])
+                @test f.(dv)[i] == f(dv[i])
             end
         end
     end
@@ -154,10 +154,10 @@ end
         end
         for f in arithmetic_operators
             for i in 1:length(dv)
-                @test @eval isna(($f).(dv, NA)[$i])
-                @test @eval isna(($f).(NA, dv)[$i])
-                @test @eval ($f).(dv, 1)[$i] == ($f)(dv[$i], 1)
-                @test @eval ($f).(1, dv)[$i] == ($f)(1, dv[$i])
+                @test isna(f.(dv, NA)[i])
+                @test isna(f.(NA, dv)[i])
+                @test f.(dv, 1)[i] == f(dv[i], 1)
+                @test f.(1, dv)[i] == f(1, dv[i])
             end
         end
     end
@@ -172,8 +172,8 @@ end
     dv = @data([false, true, false, true, false])
     for f in bit_operators
         for i in 1:length(dv)
-            @test @eval $(f).(dv, true)[$i] == ($f).(dv[$i], true)
-            @test @eval $(f).(true, dv)[$i] == ($f).(true, dv[$i])
+            @test f.(dv, true)[i] == f.(dv[i], true)
+            @test f.(true, dv)[i] == f.(true, dv[i])
         end
     end
 
@@ -185,20 +185,18 @@ end
     bbv = BitArray([true, false, false, true, true])
     bdv = @data [false, true, false, false, true]
     @test_da_pda dv begin
-        for f in [:(+),:(-),:(*),:(^)]
+        for f in [+, -, *, ^]
             for i in 1:length(dv)
-                @test @eval isna(($f).(v, dv)[$i]) && isna(dv[$i]) ||
-                        ($f).(v, dv)[$i] == ($f)(v[$i], dv[$i])
-                @test @eval isna(($f).(dv, v)[$i]) && isna(dv[$i]) ||
-                        ($f).(dv, v)[$i] == ($f)(dv[$i], v[$i])
+                @test isna(f.(v, dv)[i]) && isna(dv[i]) || f.(v, dv)[i] == f(v[i], dv[i])
+                @test isna(f.(dv, v)[i]) && isna(dv[i]) || f.(dv, v)[i] == f(dv[i], v[i])
             end
         end
         for f in bit_operators
             for i in 1:length(bdv)
-                @test @eval ($f).(bv, bdv)[$i]  == ($f).(bv[$i], bdv[$i])
-                @test @eval ($f).(bdv, bv)[$i]  == ($f).(bdv[$i], bv[$i])
-                @test @eval ($f).(bbv, bdv)[$i] == ($f).(bbv[$i], bdv[$i])
-                @test @eval ($f).(bdv, bbv)[$i] == ($f).(bdv[$i], bbv[$i])
+                @test f.(bv, bdv)[i]  == f.(bv[i], bdv[i])
+                @test f.(bdv, bv)[i]  == f.(bdv[i], bv[i])
+                @test f.(bbv, bdv)[i] == f.(bbv[i], bdv[i])
+                @test f.(bdv, bbv)[i] == f.(bdv[i], bbv[i])
             end
         end
     end
@@ -209,28 +207,24 @@ end
     dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
     dv[1] = dvd[1] = NA
     @test_da_pda dv begin
-        for f in [:(+),:(-),:(*),:(^)]
+        for f in [+, -, *, ^]
             for i in 1:length(dv)
-                @test @eval isna(($f).(dv, dv)[$i]) && isna(dv[$i]) ||
-                        ($f).(dv, dv)[$i] == ($f)(dv[$i], dv[$i])
+                @test isna(f.(dv, dv)[i]) && isna(dv[i]) || f.(dv, dv)[i] == f(dv[i], dv[i])
             end
         end
         for f in [+,-]
             for i in 1:length(dv)
-                @test isna((f)(dv, dv)[i]) && isna(dv[i]) ||
-                        (f)(dv, dv)[i] == (f)(dv[i], dv[i])
+                @test isna((f)(dv, dv)[i]) && isna(dv[i]) || (f)(dv, dv)[i] == (f)(dv[i], dv[i])
             end
         end
         for f in bit_operators
             for i in 1:length(bv)
-                @test @eval ($f).(bv, bv)[$i] == ($f).(bv[$i], bv[$i])
+                @test f.(bv, bv)[i] == f.(bv[i], bv[i])
             end
         end
         for i in 1:length(dvd)
-            @test isna((dvd - dvd)[i]) && isna(dvd[i]) ||
-                    (dvd - dvd)[i] == dvd[i] - dvd[i]
-            @test isna((dvd .- dvd)[i]) && isna(dvd[i]) ||
-                    (dvd .- dvd)[i] == dvd[i] - dvd[i]
+            @test isna((dvd - dvd)[i]) && isna(dvd[i]) || (dvd - dvd)[i] == dvd[i] - dvd[i]
+            @test isna((dvd .- dvd)[i]) && isna(dvd[i]) || (dvd .- dvd)[i] == dvd[i] - dvd[i]
         end
     end
 
