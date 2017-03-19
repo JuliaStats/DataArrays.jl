@@ -1,3 +1,16 @@
+macro test_da_approx_eq(da1, da2)
+    quote
+        v1 = $(esc(da1))
+        v2 = $(esc(da2))
+        na = isna(v1)
+        @test na == isna(v2)
+        defined = (!).(na)
+        if any(defined)
+            @test isapprox(v1[defined], v2[defined], nans = true)
+        end
+    end
+end
+
 @testset "Reducedim" begin
     # Test for fast unit stride BitArray functions
     function test_any()
@@ -99,19 +112,6 @@
         end
 
         return R
-    end
-
-    macro test_da_approx_eq(da1, da2)
-        quote
-            v1 = $(esc(da1))
-            v2 = $(esc(da2))
-            na = isna(v1)
-            @test na == isna(v2)
-            defined = (!).(na)
-            if any(defined)
-                @test isapprox(v1[defined], v2[defined], nans = true)
-            end
-        end
     end
 
     myvarzm(x; skipna::Bool=false) = var(x; mean=0, skipna=skipna)
