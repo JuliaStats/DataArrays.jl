@@ -462,10 +462,10 @@ end
     @test isequal(@data([1, NA]) .== @data([1, NA]), @data([true, NA]))
     @test isequal(@pdata([1, NA]) .== @pdata([1, NA]), @data([true, NA]))
 
-    @test all(isna(NA .== convert(DataArray, ones(5))))
-    @test allna(isna(convert(DataArray, ones(5))) .== NA)
-    @test all(isna(NA .== PooledDataArray(convert(DataArray, ones(5)))))
-    @test allna(isna(convert(PooledDataArray, convert(DataArray, ones(5)))) .== NA)
+    @test all(isna.(NA .== convert(DataArray, ones(5))))
+    @test allna(isna.(convert(DataArray, ones(5))) .== NA)
+    @test all(isna.(NA .== PooledDataArray(convert(DataArray, ones(5)))))
+    @test allna(isna.(convert(PooledDataArray, convert(DataArray, ones(5)))) .== NA)
 
     # Run length encoding
     dv = convert(DataArray, ones(5))

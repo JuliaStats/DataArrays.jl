@@ -70,13 +70,13 @@
     #test_group("DataVector methods")
     @test size(dvint) == (4,)
     @test length(dvint) == 4
-    @test sum(isna(dvint)) == 1
+    @test sum(isna.(dvint)) == 1
     @test eltype(dvint) == Int
 
     #test_group("PooledDataVector methods")
     @test size(pdvstr) == (7,)
     @test length(pdvstr) == 7
-    @test sum(isna(pdvstr)) == 1
+    @test sum(isna.(pdvstr)) == 1
     @test eltype(pdvstr) == String
 
     #test_group("DataVector operations")
@@ -169,13 +169,13 @@
     @test all(isna(begin pdvstr2[[1, 2]] = NA end))
     @test all(isna(begin pdvstr2[[false, false, true, false, false]] = NA end))
     @test all(isna(begin pdvstr2[4:5] = NA end))
-    @test all(isna(pdvstr2))
+    @test all(isna.(pdvstr2))
 
     #test_group("PooledDataVector replace!")
     pdvstr2 = @pdata ["one", "one", "two", "two", "three"]
     @test replace!(pdvstr2, "two", "four") == "four"
     @test replace!(pdvstr2, "three", "four") == "four"
-    @test isna(replace!(pdvstr2, "one", NA))
+    @test isna.(replace!(pdvstr2, "one", NA))
     @test replace!(pdvstr2, NA, "five") == "five"
     @test isequal(pdvstr2, (@data ["five", "five", "four", "four", "four"]))
 end

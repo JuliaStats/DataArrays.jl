@@ -40,20 +40,20 @@
 
     b[1, 1] = NA
     res = a * b[1:1, :]
-    @test all(isna(res[:, 1]))
-    @test all(.!(isna(res[:, 2])))
-    @test all(.!(isna(res[:, 3])))
+    @test all(isna.(res[:, 1]))
+    @test all(.!(isna.(res[:, 2])))
+    @test all(.!(isna.(res[:, 3])))
     res = a * b[2:2, :]
-    @test all(.!(isna(res)))
+    @test all(.!(isna.(res)))
 
     #
     # DataMatrix w NA's * DataVector
     #
 
     res = b * a
-    @test isna(res[1])
-    @test .!(isna(res[2]))
-    @test .!(isna(res[3]))
+    @test isna.(res[1])
+    @test .!(isna.(res[2]))
+    @test .!(isna.(res[3]))
 
     #
     # DataMatrix * DataMatrix
@@ -64,30 +64,30 @@
     #  NA   NA   NA
     #  NA  1.0  0.0
     #  NA  0.0  1.0
-    @test isna(res[1, 1])
-    @test isna(res[1, 2])
-    @test isna(res[1, 3])
-    @test isna(res[2, 1])
-    @test .!(isna(res[2, 2]))
-    @test .!(isna(res[2, 3]))
-    @test isna(res[3, 1])
-    @test .!(isna(res[3, 2]))
-    @test .!(isna(res[3, 3]))
+    @test isna.(res[1, 1])
+    @test isna.(res[1, 2])
+    @test isna.(res[1, 3])
+    @test isna.(res[2, 1])
+    @test .!(isna.(res[2, 2]))
+    @test .!(isna.(res[2, 3]))
+    @test isna.(res[3, 1])
+    @test .!(isna.(res[3, 2]))
+    @test .!(isna.(res[3, 3]))
 
     res = b * @data eye(3)
     # 3x3 Float64 DataMatrix:
     #   NA   NA   NA
     #  0.0  1.0  0.0
     #  0.0  0.0  1.0
-    @test isna(res[1, 1])
-    @test isna(res[1, 2])
-    @test isna(res[1, 3])
-    @test .!(isna(res[2, 1]))
-    @test .!(isna(res[2, 2]))
-    @test .!(isna(res[2, 3]))
-    @test .!(isna(res[3, 1]))
-    @test .!(isna(res[3, 2]))
-    @test .!(isna(res[3, 3]))
+    @test isna.(res[1, 1])
+    @test isna.(res[1, 2])
+    @test isna.(res[1, 3])
+    @test .!(isna.(res[2, 1]))
+    @test .!(isna.(res[2, 2]))
+    @test .!(isna.(res[2, 3]))
+    @test .!(isna.(res[3, 1]))
+    @test .!(isna.(res[3, 2]))
+    @test .!(isna.(res[3, 3]))
 
     res = (@data eye(3)) * b
     # julia> dataeye(3) * b
@@ -95,15 +95,15 @@
     #  NA  0.0  0.0
     #  NA  1.0  0.0
     #  NA  0.0  1.0
-    @test isna(res[1, 1])
-    @test .!(isna(res[1, 2]))
-    @test .!(isna(res[1, 3]))
-    @test isna(res[2, 1])
-    @test .!(isna(res[2, 2]))
-    @test .!(isna(res[2, 3]))
-    @test isna(res[3, 1])
-    @test .!(isna(res[3, 2]))
-    @test .!(isna(res[3, 3]))
+    @test isna.(res[1, 1])
+    @test .!(isna.(res[1, 2]))
+    @test .!(isna.(res[1, 3]))
+    @test isna.(res[2, 1])
+    @test .!(isna.(res[2, 2]))
+    @test .!(isna.(res[2, 3]))
+    @test isna.(res[3, 1])
+    @test .!(isna.(res[3, 2]))
+    @test .!(isna.(res[3, 3]))
 
     # Test row operations
     dm = @data eye(6, 2)

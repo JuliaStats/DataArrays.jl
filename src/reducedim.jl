@@ -147,7 +147,7 @@ end
         @nextract N sizeR d->size(R,d)
 
         # If reducing to a non-DataArray, throw an error at the start on NA
-        any(isna(A)) && throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
+        any(isna, A) && throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
         @nloops N i data d->(j_d = sizeR_d==1 ? 1 : i_d) begin
             @inbounds x = (@nref N data i)
             v = f(x)

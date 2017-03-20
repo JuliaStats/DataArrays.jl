@@ -52,14 +52,14 @@
 
     pdv = PooledDataArray([1, 2, 3], falses(3))
     @test all(pdv .== [1, 2, 3])
-    @test all(isna(pdv) .== falses(3))
+    @test all(isna.(pdv) .== falses(3))
 
     @test isequal(pdv, PooledDataArray([1, 2, 3], [false, false, false]))
     @test isequal(pdv, PooledDataArray([1, 2, 3]))
 
     pdv = convert(PooledDataArray, trues(3))
     @test all(pdv .== [true, true, true])
-    @test all(isna(pdv) .== falses(3))
+    @test all(isna.(pdv) .== falses(3))
     @test isequal(pdv, convert(PooledDataArray, trues(3)))
 
     pdv = PooledDataArray([1, 2, 3], falses(3))
@@ -68,7 +68,7 @@
 
     pdv = PooledDataArray(Int, 3)
     @test isequal(eltype(pdv), Int)
-    @test all(isna(pdv) .== trues(3))
+    @test all(isna.(pdv) .== trues(3))
 
     pdv = convert(PooledDataArray, zeros(3))
     @test isequal(pdv, convert(PooledDataArray, zeros(3)))

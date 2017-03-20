@@ -90,7 +90,7 @@ function Base.splice!(dv::DataVector, inds::Union{Integer, UnitRange{Int}}, ins:
         end
     end
 
-    splice!(dv.na, inds, isna(ins))
+    splice!(dv.na, inds, isna.(ins))
     v
 end
 

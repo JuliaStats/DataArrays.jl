@@ -243,8 +243,9 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
 end
 
 dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
-isna(da::DataArray) = copy(da.na) # -> BitArray
 isna(da::DataArray, I::Real) = getindex(da.na, I)
+
+Base.broadcast(::typeof(isna), da::DataArray) = copy(da.na)
 
 @nsplat N function isna(da::DataArray, I::NTuple{N,Real}...)
     getindex(da.na, I...)

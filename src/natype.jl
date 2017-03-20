@@ -42,6 +42,21 @@ Base.size(x::NAtype, i::Integer) = i < 1 ? throw(BoundsError()) : 1
 Base.ndims(x::NAtype) = 0
 Base.getindex(x::NAtype, i) = i == 1 ? NA : throw(BoundsError())
 
+"""
+    isna(x) -> Bool
+
+Determine whether `x` is missing, i.e. `NA`.
+
+# Examples
+
+```jldoctest
+julia> isna(1)
+false
+
+julia> isna(NA)
+true
+```
+"""
 isna(x::NAtype) = true
 isna(x::Any) = false
 
