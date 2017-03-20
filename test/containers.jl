@@ -1,68 +1,64 @@
-module TestContainers
-using Base.Test
-using DataArrays
+@testset "Containers" begin
+    dv = @data ones(3)
+    push!(dv, 3.0)
+    push!(dv, NA)
 
-dv = @data ones(3)
-push!(dv, 3.0)
-push!(dv, NA)
+    @test isequal(dv, (@data [1.0, 1.0, 1.0, 3.0, NA]))
 
-@assert isequal(dv, (@data [1.0, 1.0, 1.0, 3.0, NA]))
+    a, b = pop!(dv), pop!(dv)
+    @test isna(a)
+    @test b == 3.0
 
-a, b = pop!(dv), pop!(dv)
-@assert isna(a)
-@assert b == 3.0
+    unshift!(dv, 3.0)
+    unshift!(dv, NA)
 
-unshift!(dv, 3.0)
-unshift!(dv, NA)
+    @test isequal(dv, (@data [NA, 3.0, 1.0, 1.0, 1.0]))
 
-@assert isequal(dv, (@data [NA, 3.0, 1.0, 1.0, 1.0]))
+    a, b = shift!(dv), shift!(dv)
+    @test isna(a)
+    @test b == 3.0
 
-a, b = shift!(dv), shift!(dv)
-@assert isna(a)
-@assert b == 3.0
-
-## SPLICE
-function test_splice(dv, spliceout, splicein...)
-    dv = copy(dv)
-    v = Any[x for x in dv]
-    expval = dv[spliceout]
-    retval = splice!(dv, spliceout, splicein...)
-    isequal(retval, expval) ||
-        error("splice!$(tuple(dv, spliceout, splicein...)) gave incorrect return value $retval (expected $expval)")
-    splice!(v, spliceout, splicein...)
-    for i = 1:length(v)
-        isequal(dv[i], v[i]) ||
-            error("splice!$(tuple(dv, spliceout, splicein...)) gave incorrect output")
-    end
-end
-
-function test_deleteat(dv, spliceout)
-    dv = copy(dv)
-    v = Any[x for x in dv]
-    @test deleteat!(dv, spliceout) === dv
-    deleteat!(v, spliceout)
-    for i = 1:length(v)
-        isequal(dv[i], v[i]) ||
-            error("deleteat!($(tuple(dv, spliceout)) gave incorrect output")
-    end
-end
-
-dv1 = @data [1.0, 2.0, NA, 2.0, NA, 3.0]
-for dv in (dv1, convert(DataVector{Number}, dv1), convert(PooledDataArray, dv1))
-    for spliceout in (2, 3, 2:3, 5:6)
-        test_splice(dv, spliceout)
-        test_deleteat(dv, spliceout)
-        for splicein in ([], [3], @data([3]), @pdata([3]),
-                         [3, 4, 5], [3., 4., 5.], @data([3, NA, 4]),
-                         @pdata([3, NA, 4]), @data([NA, 3.0, 4.0]),
-                         @pdata([NA, 3.0, 4.0]))
-            test_splice(dv, spliceout, splicein)
+    ## SPLICE
+    function test_splice(dv, spliceout, splicein...)
+        dv = copy(dv)
+        v = Any[x for x in dv]
+        expval = dv[spliceout]
+        retval = splice!(dv, spliceout, splicein...)
+        isequal(retval, expval) ||
+            error("splice!$(tuple(dv, spliceout, splicein...)) gave incorrect return value $retval (expected $expval)")
+        splice!(v, spliceout, splicein...)
+        for i = 1:length(v)
+            isequal(dv[i], v[i]) ||
+                error("splice!$(tuple(dv, spliceout, splicein...)) gave incorrect output")
         end
     end
-end
 
-## sizehint
-sizehint!(@data([1.0, 2.0]), 5)
-sizehint!(@pdata([1.0, 2.0]), 5)
+    function test_deleteat(dv, spliceout)
+        dv = copy(dv)
+        v = Any[x for x in dv]
+        @test deleteat!(dv, spliceout) === dv
+        deleteat!(v, spliceout)
+        for i = 1:length(v)
+            isequal(dv[i], v[i]) ||
+                error("deleteat!($(tuple(dv, spliceout)) gave incorrect output")
+        end
+    end
 
+    dv1 = @data [1.0, 2.0, NA, 2.0, NA, 3.0]
+    for dv in (dv1, convert(DataVector{Number}, dv1), convert(PooledDataArray, dv1))
+        for spliceout in (2, 3, 2:3, 5:6)
+            test_splice(dv, spliceout)
+            test_deleteat(dv, spliceout)
+            for splicein in ([], [3], @data([3]), @pdata([3]),
+                             [3, 4, 5], [3., 4., 5.], @data([3, NA, 4]),
+                             @pdata([3, NA, 4]), @data([NA, 3.0, 4.0]),
+                             @pdata([NA, 3.0, 4.0]))
+                test_splice(dv, spliceout, splicein)
+            end
+        end
+    end
+
+    ## sizehint
+    sizehint!(@data([1.0, 2.0]), 5)
+    sizehint!(@pdata([1.0, 2.0]), 5)
 end

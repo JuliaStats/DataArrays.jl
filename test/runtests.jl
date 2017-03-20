@@ -4,7 +4,6 @@
 
 using Base.Test
 using DataArrays
-using Compat
 
 my_tests = ["abstractarray.jl",
             "booleans.jl",
@@ -31,9 +30,6 @@ my_tests = ["abstractarray.jl",
             "newtests/datamatrix.jl",
             "newtests/datavector.jl"]
 
-println("Running tests:")
-
-for my_test in my_tests
-    @printf " * %s\n" my_test
-    include(my_test)
+for test in my_tests
+    include(test)
 end
