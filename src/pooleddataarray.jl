@@ -228,7 +228,7 @@ function Base.isfinite(pda::PooledDataArray)
     PooledDataArray(RefArray(copy(pda.refs)), isfinite(pda.pool))
 end
 
-isna(pda::PooledDataArray) = pda.refs .== 0
+Base.broadcast(::typeof(isna), pda::PooledDataArray) = pda.refs .== 0
 isna(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
 
 function anyna(pda::PooledDataArray)
@@ -423,7 +423,7 @@ function setlevels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     pool = myunique(newpool)
     refs = zeros(R, length(x))
     tidx::Array{R} = indexin(newpool, pool)
-    tidx[isna(newpool)] = 0
+    tidx[isna.(newpool)] = 0
     for i in 1:length(refs)
         if x.refs[i] != 0
             refs[i] = tidx[x.refs[i]]
@@ -472,7 +472,7 @@ function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
     else
         x.pool = myunique(newpool)
         tidx::Array{R} = indexin(newpool, x.pool)
-        tidx[isna(newpool)] = 0
+        tidx[isna.(newpool)] = 0
         for i in 1:length(x.refs)
             if x.refs[i] != 0
                 x.refs[i] = tidx[x.refs[i]]

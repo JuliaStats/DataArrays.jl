@@ -2,8 +2,8 @@ macro test_da_approx_eq(da1, da2)
     quote
         v1 = $(esc(da1))
         v2 = $(esc(da2))
-        na = isna(v1)
-        @test na == isna(v2)
+        na = isna.(v1)
+        @test na == isna.(v2)
         defined = (!).(na)
         if any(defined)
             @test isapprox(v1[defined], v2[defined], nans = true)
@@ -44,7 +44,7 @@ end
             if skipna
                 naval = f(T[], 1)
                 A = copy(A)
-                A[isna(A)] = isempty(naval) ? NA : naval[1]
+                A[isna.(A)] = isempty(naval) ? NA : naval[1]
             end
             return A
         end

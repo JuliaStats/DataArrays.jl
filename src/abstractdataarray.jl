@@ -28,22 +28,7 @@ Base.start(x::AbstractDataArray) = 1
 Base.next(x::AbstractDataArray, state::Integer) = (x[state], state + 1)
 Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
 
-"""
-    isna(a::AbstractArray) -> BitArray
-
-Determine whether each element of `a` is missing, i.e. `NA`.
-
-# Examples
-
-```jldoctest
-julia> isna(@data [1, 2, NA])
-3-element BitArray{1}:
- false
- false
-  true
-```
-"""
-isna{T}(a::AbstractArray{T}) =
+Base.broadcast{T}(::typeof(isna), a::AbstractArray{T}) =
     NAtype <: T ? BitArray(map(x->isa(x, NAtype), a)) : falses(size(a)) # -> BitArray
 
 """
@@ -80,7 +65,7 @@ julia> anyna(@data [1, 2, NA])
 true
 ```
 """
-anyna(a::AbstractArray) = any(isna(a)) # -> Bool
+anyna(a::AbstractArray) = any(isna.(a)) # -> Bool
 
 """
     allna(a::AbstractArray) -> Bool
@@ -97,7 +82,7 @@ julia> allna(@data [1, 2, NA])
 false
 ```
 """
-allna(a::AbstractArray) = all(isna(a)) # -> Bool
+allna(a::AbstractArray) = all(isna.(a)) # -> Bool
 
 """
     dropna(v::AbstractVector) -> AbstractVector
