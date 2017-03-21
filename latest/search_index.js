@@ -125,7 +125,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Missing Data and Arrays",
     "title": "DataArrays.isna",
     "category": "Function",
-    "text": "isna(a::AbstractArray) -> BitArray\n\nDetermine whether each element of a is missing, i.e. NA.\n\nExamples\n\njulia> isna(@data [1, 2, NA])\n3-element BitArray{1}:\n false\n false\n  true\n\n\n\nisna(a::AbstractArray, i) -> Bool\n\nDetermine whether the element of a at index i is missing, i.e. NA.\n\nExamples\n\njulia> X = @data [1, 2, NA];\n\njulia> isna(X, 2)\nfalse\n\njulia> isna(X, 3)\ntrue\n\n\n\n"
+    "text": "isna(x) -> Bool\n\nDetermine whether x is missing, i.e. NA.\n\nExamples\n\njulia> isna(1)\nfalse\n\njulia> isna(NA)\ntrue\n\n\n\nisna(a::AbstractArray, i) -> Bool\n\nDetermine whether the element of a at index i is missing, i.e. NA.\n\nExamples\n\njulia> X = @data [1, 2, NA];\n\njulia> isna(X, 2)\nfalse\n\njulia> isna(X, 3)\ntrue\n\n\n\n"
 },
 
 {
