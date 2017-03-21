@@ -129,22 +129,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "da.html#DataArrays.allna",
-    "page": "Missing Data and Arrays",
-    "title": "DataArrays.allna",
-    "category": "Function",
-    "text": "allna(a::AbstractArray) -> Bool\n\nDetermine whether all elements of a are NA.\n\nExamples\n\njulia> allna(@data [NA, NA])\ntrue\n\njulia> allna(@data [1, 2, NA])\nfalse\n\n\n\n"
-},
-
-{
-    "location": "da.html#DataArrays.anyna",
-    "page": "Missing Data and Arrays",
-    "title": "DataArrays.anyna",
-    "category": "Function",
-    "text": "anyna(a::AbstractArray) -> Bool\n\nDetermine whether any of the entries of a are NA.\n\nExamples\n\njulia> anyna([1, 2, 3])\nfalse\n\njulia> anyna(@data [1, 2, NA])\ntrue\n\n\n\n"
-},
-
-{
     "location": "da.html#DataArrays.dropna",
     "page": "Missing Data and Arrays",
     "title": "DataArrays.dropna",
@@ -173,7 +157,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Missing Data and Arrays",
     "title": "Arrays with possibly missing data",
     "category": "section",
-    "text": "AbstractDataArray\nAbstractDataVector\nAbstractDataMatrix\nDataArray\nDataVector\nDataMatrix\n@data\nisna\nallna\nanyna\ndropna\npadNA\nlevels"
+    "text": "AbstractDataArray\nAbstractDataVector\nAbstractDataMatrix\nDataArray\nDataVector\nDataMatrix\n@data\nisna\ndropna\npadNA\nlevels"
 },
 
 {
