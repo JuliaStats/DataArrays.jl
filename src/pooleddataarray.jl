@@ -231,14 +231,14 @@ end
 Base.broadcast(::typeof(isna), pda::PooledDataArray) = pda.refs .== 0
 isna(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
 
-function anyna(pda::PooledDataArray)
+function Base.any(::typeof(isna), pda::PooledDataArray)
     for ref in pda.refs
         ref == 0 && return true
     end
     return false
 end
 
-function allna(pda::PooledDataArray)
+function Base.all(::typeof(isna), pda::PooledDataArray)
     for ref in pda.refs
         ref == 0 || return false
     end

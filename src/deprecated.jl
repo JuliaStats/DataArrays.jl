@@ -7,3 +7,5 @@ function Base.isnan(da::DataArray)
 end
 
 @deprecate isna(x::AbstractArray) isna.(x)
+@deprecate anyna(x) any(isna, x)
+@deprecate allna(x) all(isna, x)

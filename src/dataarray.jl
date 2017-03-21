@@ -189,7 +189,7 @@ end
 
 function Base.convert{S, T, N}(::Type{Array{S, N}},
                                x::DataArray{T, N}) # -> Array{S, N}
-    if anyna(x)
+    if any(isna, x)
         err = "Cannot convert DataArray with NA's to desired type"
         throw(NAException(err))
     else
@@ -247,12 +247,12 @@ isna(da::DataArray, I::Real) = getindex(da.na, I)
 
 Base.broadcast(::typeof(isna), da::DataArray) = copy(da.na)
 
+Base.any(::typeof(isna), da::DataArray) = any(da.na) # -> Bool
+Base.all(::typeof(isna), da::DataArray) = all(da.na) # -> Bool
+
 @nsplat N function isna(da::DataArray, I::NTuple{N,Real}...)
     getindex(da.na, I...)
 end
-
-anyna(da::DataArray) = any(da.na) # -> Bool
-allna(da::DataArray) = all(da.na) # -> Bool
 
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
     n = length(da)
@@ -322,7 +322,7 @@ data(a::AbstractArray) = convert(DataArray, a)
 for f in (:(Base.float),)
     @eval begin
         function ($f)(da::DataArray) # -> DataArray
-            if anyna(da)
+            if any(isna, da)
                 err = "Cannot convert DataArray with NA's to desired type"
                 throw(NAException(err))
             else

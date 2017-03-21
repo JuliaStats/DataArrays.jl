@@ -87,7 +87,7 @@ elseif isdefined(Base, :checkindex)
 else
     Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
     function Base.checkbounds{T<:Real}(::Type{Bool}, sz::Int, I::AbstractDataArray{T})
-        anyna(I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
+        any(isna, I) && throw(NAException("cannot index into an array with a DataArray containing NAs"))
         extr = daextract(I)
         b = true
         for i = 1:length(I)
