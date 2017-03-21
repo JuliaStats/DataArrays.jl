@@ -44,7 +44,7 @@ end
             if skipna
                 naval = f(T[], 1)
                 A = copy(A)
-                A[isna(A)] = isempty(naval) ? NA : naval[1]
+                A[isna.(A)] = isempty(naval) ? NA : naval[1]
             end
             return A
         end
