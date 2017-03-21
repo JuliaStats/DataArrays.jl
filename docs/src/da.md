@@ -21,7 +21,7 @@ DataMatrix
 @data
 isna
 dropna
-padNA
+padna
 levels
 ```
 
