@@ -9,3 +9,4 @@ end
 @deprecate isna(x::AbstractArray) isna.(x)
 @deprecate anyna(x) any(isna, x)
 @deprecate allna(x) all(isna, x)
+@deprecate padNA(dv::AbstractDataVector, front::Integer, back::Integer) padna(dv, front, back)

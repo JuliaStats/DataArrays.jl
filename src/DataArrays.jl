@@ -41,7 +41,7 @@ module DataArrays
            NA,
            NAException,
            NAtype,
-           padNA,
+           padna,
            pdata,
            percent_change,
            PooledDataArray,
