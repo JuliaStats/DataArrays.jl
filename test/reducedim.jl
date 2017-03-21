@@ -126,7 +126,7 @@ end
                 # println("region = $region, skipna = $skipna")
 
                 outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
-                has_na = anyna(Areduc)
+                has_na = any(isna, Areduc)
                 if has_na && !skipna
                     # Should throw an error reducing to non-DataArray
                     @test_throws NAException sum!(outputs[1].data, Areduc; skipna=skipna)

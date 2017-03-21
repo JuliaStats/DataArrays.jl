@@ -180,7 +180,7 @@ function Base.mean(a::DataArray, w::WeightVec; skipna::Bool=false)
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values, v.na); skipna=true)
     else
-        anyna(a) ? NA : mean(a.data, w)
+        any(isna, a) ? NA : mean(a.data, w)
     end
 end
 
@@ -189,6 +189,6 @@ function Base.mean{W,V<:DataArray}(a::DataArray, w::WeightVec{W,V}; skipna::Bool
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values.data, v.na); skipna=true)
     else
-        anyna(a) || anyna(w.values) ? NA : wsum(a.data, w.values.data) / w.sum
+        any(isna, a) || any(isna, w.values) ? NA : wsum(a.data, w.values.data) / w.sum
     end
 end

@@ -17,8 +17,6 @@ module DataArrays
            AbstractDataArray,
            AbstractDataMatrix,
            AbstractDataVector,
-           allna,
-           anyna,
            array,
            autocor,
            compact,

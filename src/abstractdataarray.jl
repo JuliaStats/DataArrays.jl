@@ -51,40 +51,6 @@ true
 isna{T}(a::AbstractArray{T}, i::Real) = NAtype <: T ? isa(a[i], NAtype) : false # -> Bool
 
 """
-    anyna(a::AbstractArray) -> Bool
-
-Determine whether any of the entries of `a` are `NA`.
-
-# Examples
-
-```jldoctest
-julia> anyna([1, 2, 3])
-false
-
-julia> anyna(@data [1, 2, NA])
-true
-```
-"""
-anyna(a::AbstractArray) = any(isna.(a)) # -> Bool
-
-"""
-    allna(a::AbstractArray) -> Bool
-
-Determine whether all elements of `a` are `NA`.
-
-# Examples
-
-```jldoctest
-julia> allna(@data [NA, NA])
-true
-
-julia> allna(@data [1, 2, NA])
-false
-```
-"""
-allna(a::AbstractArray) = all(isna.(a)) # -> Bool
-
-"""
     dropna(v::AbstractVector) -> AbstractVector
 
 Return a copy of `v` with all `NA` elements removed.

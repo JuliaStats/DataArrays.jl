@@ -20,8 +20,6 @@ DataVector
 DataMatrix
 @data
 isna
-allna
-anyna
 dropna
 padNA
 levels

@@ -463,9 +463,9 @@ end
     @test isequal(@pdata([1, NA]) .== @pdata([1, NA]), @data([true, NA]))
 
     @test all(isna.(NA .== convert(DataArray, ones(5))))
-    @test allna(isna.(convert(DataArray, ones(5))) .== NA)
+    @test all(isna, isna.(convert(DataArray, ones(5))) .== NA)
     @test all(isna.(NA .== PooledDataArray(convert(DataArray, ones(5)))))
-    @test allna(isna.(convert(PooledDataArray, convert(DataArray, ones(5)))) .== NA)
+    @test all(isna, isna.(convert(PooledDataArray, convert(DataArray, ones(5)))) .== NA)
 
     # Run length encoding
     dv = convert(DataArray, ones(5))
@@ -483,6 +483,6 @@ end
     b = @data([false, false, true, true])
     a[:] = NA
     b[:] = NA
-    @test allna(a .& b)
-    @test allna(a .| b)
+    @test all(isna, a .& b)
+    @test all(isna, a .| b)
 end
