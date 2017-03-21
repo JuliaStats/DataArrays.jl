@@ -137,11 +137,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "da.html#DataArrays.padNA",
+    "location": "da.html#DataArrays.padna",
     "page": "Missing Data and Arrays",
-    "title": "DataArrays.padNA",
+    "title": "DataArrays.padna",
     "category": "Function",
-    "text": "padNA(dv::AbstractDataVector, front::Integer, back::Integer) -> DataVector\n\nPad dv with NA values. front is an integer number of NAs to add at the beginning of the array and back is the number of NAs to add at the end.\n\nExamples\n\njulia> padNA(@data([1, 2, 3]), 1, 2)\n6-element DataArrays.DataArray{Int64,1}:\n  NA\n 1\n 2\n 3\n  NA\n  NA\n\n\n\n"
+    "text": "padna(dv::AbstractDataVector, front::Integer, back::Integer) -> DataVector\n\nPad dv with NA values. front is an integer number of NAs to add at the beginning of the array and back is the number of NAs to add at the end.\n\nExamples\n\njulia> padna(@data([1, 2, 3]), 1, 2)\n6-element DataArrays.DataArray{Int64,1}:\n  NA\n 1\n 2\n 3\n  NA\n  NA\n\n\n\n"
 },
 
 {
@@ -157,7 +157,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Missing Data and Arrays",
     "title": "Arrays with possibly missing data",
     "category": "section",
-    "text": "AbstractDataArray\nAbstractDataVector\nAbstractDataMatrix\nDataArray\nDataVector\nDataMatrix\n@data\nisna\ndropna\npadNA\nlevels"
+    "text": "AbstractDataArray\nAbstractDataVector\nAbstractDataMatrix\nDataArray\nDataVector\nDataMatrix\n@data\nisna\ndropna\npadna\nlevels"
 },
 
 {
@@ -265,43 +265,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "util.html#DataArrays.xtab",
-    "page": "Utilities",
-    "title": "DataArrays.xtab",
-    "category": "Constant",
-    "text": "xtab(x::AbstractArray) -> xtab\n\nConstruct a cross-tabulation table from the unique values in x. Currently only one-way tables are supported. Returns an xtab object.\n\n\n\n"
-},
-
-{
-    "location": "util.html#DataArrays.xtabs",
-    "page": "Utilities",
-    "title": "DataArrays.xtabs",
-    "category": "Function",
-    "text": "xtabs(x::AbstractArray) -> Dict\n\nConstruct a cross-tabulation table from the unique values in x, returning a Dict. Currently only one-way tables are supported.\n\n\n\n"
-},
-
-{
-    "location": "util.html#DataArrays.reldiff",
-    "page": "Utilities",
-    "title": "DataArrays.reldiff",
-    "category": "Function",
-    "text": "reldiff(v::Vector) -> Vector\n\nFor each element in v, compute the relative difference from the previous element.\n\nExamples\n\njulia> reldiff([1.0, 2.0, 3.0, 4.0])\n3-element Array{Float64,1}:\n 2.0\n 1.5\n 1.33333\n\n\n\n"
-},
-
-{
-    "location": "util.html#DataArrays.percent_change",
-    "page": "Utilities",
-    "title": "DataArrays.percent_change",
-    "category": "Function",
-    "text": "percent_change(v::Vector) -> Vector\n\nFor each element in v, compute the percent change from the previous element.\n\nExamples\n\njulia> percent_change([1.0, 2.0, 3.0, 4.0])\n3-element Array{Float64,1}:\n 1.0\n 0.5\n 0.333333\n\n\n\n"
-},
-
-{
     "location": "util.html#Utility-functions-1",
     "page": "Utilities",
     "title": "Utility functions",
     "category": "section",
-    "text": "CurrentModule = DataArrayscut\ngl\nxtab\nxtabs\nreldiff\npercent_change"
+    "text": "CurrentModule = DataArrayscut\ngl"
 },
 
 ]}
