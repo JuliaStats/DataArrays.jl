@@ -32,8 +32,9 @@ julia> DataArray(Float64, 3, 3)
 mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
     na::BitArray{N}
+    parent::Vector{UInt8}
 
-    function DataArray{T,N}(d::Array{T, N}, m::BitArray{N}) where {T, N}
+    function DataArray{T,N}(d::Array{T, N}, m::BitArray{N}, parent::Vector{UInt8}=Vector{UInt8}()) where {T, N}
         # Ensure data values and missingness metadata match
         if size(d) != size(m)
             msg = "Data and missingness arrays must be the same size"
@@ -49,7 +50,7 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
         elseif eltype(d) <: NAtype
             m = trues(m)
         end
-        new(d, m)
+        new(d, m, parent)
     end
 end
 
