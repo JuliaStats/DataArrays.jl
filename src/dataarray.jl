@@ -32,8 +32,9 @@ julia> DataArray(Float64, 3, 3)
 mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
     na::BitArray{N}
+    parent::Vector{UInt8}
 
-    function DataArray{T,N}(d::Array{T, N}, m::BitArray{N}) where {T, N}
+    function DataArray{T,N}(d::Array{T, N}, m::BitArray{N}, parent::Vector{UInt8}=Vector{UInt8}()) where {T, N}
         # Ensure data values and missingness metadata match
         if size(d) != size(m)
             msg = "Data and missingness arrays must be the same size"
@@ -49,7 +50,7 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
         elseif eltype(d) <: NAtype
             m = trues(m)
         end
-        new(d, m)
+        new(d, m, parent)
     end
 end
 
@@ -189,7 +190,7 @@ end
 
 function Base.convert{S, T, N}(::Type{Array{S, N}},
                                x::DataArray{T, N}) # -> Array{S, N}
-    if any(isna, x)
+    if anyna(x)
         err = "Cannot convert DataArray with NA's to desired type"
         throw(NAException(err))
     else
@@ -243,16 +244,15 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
 end
 
 dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
+isna(da::DataArray) = copy(da.na) # -> BitArray
 isna(da::DataArray, I::Real) = getindex(da.na, I)
-
-Base.broadcast(::typeof(isna), da::DataArray) = copy(da.na)
-
-Base.any(::typeof(isna), da::DataArray) = any(da.na) # -> Bool
-Base.all(::typeof(isna), da::DataArray) = all(da.na) # -> Bool
 
 @nsplat N function isna(da::DataArray, I::NTuple{N,Real}...)
     getindex(da.na, I...)
 end
+
+anyna(da::DataArray) = any(da.na) # -> Bool
+allna(da::DataArray) = all(da.na) # -> Bool
 
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
     n = length(da)
@@ -322,7 +322,7 @@ data(a::AbstractArray) = convert(DataArray, a)
 for f in (:(Base.float),)
     @eval begin
         function ($f)(da::DataArray) # -> DataArray
-            if any(isna, da)
+            if anyna(da)
                 err = "Cannot convert DataArray with NA's to desired type"
                 throw(NAException(err))
             else
