@@ -68,7 +68,7 @@ var documenterSearchIndex = {"docs": [
     "location": "da.html#DataArrays.AbstractDataArray",
     "page": "Missing Data and Arrays",
     "title": "DataArrays.AbstractDataArray",
-    "category": "Constant",
+    "category": "Type",
     "text": "AbstractDataArray{T, N}\n\nAn N-dimensional AbstractArray whose entries can take on values of type T or the value NA.\n\n\n\n"
 },
 
@@ -76,7 +76,7 @@ var documenterSearchIndex = {"docs": [
     "location": "da.html#DataArrays.AbstractDataVector",
     "page": "Missing Data and Arrays",
     "title": "DataArrays.AbstractDataVector",
-    "category": "Constant",
+    "category": "Type",
     "text": "AbstractDataVector{T}\n\nA 1-dimensional AbstractDataArray with element type T.\n\n\n\n"
 },
 
@@ -84,7 +84,7 @@ var documenterSearchIndex = {"docs": [
     "location": "da.html#DataArrays.AbstractDataMatrix",
     "page": "Missing Data and Arrays",
     "title": "DataArrays.AbstractDataMatrix",
-    "category": "Constant",
+    "category": "Type",
     "text": "AbstractDataMatrix{T}\n\nA 2-dimensional AbstractDataArray with element type T.\n\n\n\n"
 },
 
@@ -92,7 +92,7 @@ var documenterSearchIndex = {"docs": [
     "location": "da.html#DataArrays.DataArray",
     "page": "Missing Data and Arrays",
     "title": "DataArrays.DataArray",
-    "category": "Constant",
+    "category": "Type",
     "text": "DataArray{T,N}(d::Array{T,N}, m::AbstractArray{Bool} = falses(size(d)))\n\nConstruct a DataArray, an N-dimensional array with element type T that allows missing values. The resulting array uses the data in d with m as a bitmask to signify missingness. That is, for each index i in d, if m[i] is true, the array contains NA at index i, otherwise it contains d[i].\n\nDataArray(T::Type, dims...)\n\nConstruct a DataArray with element type T and dimensions specified by dims. All elements default to NA.\n\nExamples\n\njulia> DataArray([1, 2, 3], [true, false, true])\n3-element DataArrays.DataArray{Int64,1}:\n  NA\n 2\n  NA\n\njulia> DataArray(Float64, 3, 3)\n3×3 DataArrays.DataArray{Float64,2}:\n NA  NA  NA\n NA  NA  NA\n NA  NA  NA\n\n\n\n"
 },
 
@@ -100,7 +100,7 @@ var documenterSearchIndex = {"docs": [
     "location": "da.html#DataArrays.DataVector",
     "page": "Missing Data and Arrays",
     "title": "DataArrays.DataVector",
-    "category": "Constant",
+    "category": "Type",
     "text": "DataVector{T}\n\nA 1-dimensional DataArray with element type T.\n\n\n\n"
 },
 
@@ -108,7 +108,7 @@ var documenterSearchIndex = {"docs": [
     "location": "da.html#DataArrays.DataMatrix",
     "page": "Missing Data and Arrays",
     "title": "DataArrays.DataMatrix",
-    "category": "Constant",
+    "category": "Type",
     "text": "DataMatrix{T}\n\nA 2-dimensional DataArray with element type T.\n\n\n\n"
 },
 
@@ -164,7 +164,7 @@ var documenterSearchIndex = {"docs": [
     "location": "da.html#DataArrays.PooledDataArray",
     "page": "Missing Data and Arrays",
     "title": "DataArrays.PooledDataArray",
-    "category": "Constant",
+    "category": "Type",
     "text": "PooledDataArray(data::AbstractArray{T}, [pool::Vector{T}], [m::AbstractArray{Bool}], [r::Type])\n\nConstruct a PooledDataArray based on the unique values in the given array. PooledDataArrays are useful for efficient storage of categorical data with a limited set of unique values. Rather than storing all length(data) values, it stores a smaller set of values (typically unique(data)) and an array of references to the stored values.\n\nOptional arguments\n\npool: The possible values of data. Defaults to unique(data).\nm: A missingness indicator akin to that of DataArray. Defaults to falses(size(d)).\nr: The integer subtype used to store pool references. Defaults to UInt32.\n\nExamples\n\njulia> d = repeat([\"A\", \"B\"], outer=4);\n\njulia> p = PooledDataArray(d)\n8-element DataArrays.PooledDataArray{String,UInt32,1}:\n \"A\"\n \"B\"\n \"A\"\n \"B\"\n \"A\"\n \"B\"\n \"A\"\n \"B\"\n\nPooledDataArray(T::Type, [R::Type=UInt32], [dims...])\n\nConstruct a PooledDataArray with element type T, reference storage type R, and dimensions dims. If the dimensions are specified and nonzero, the array is filled with NA values.\n\nExamples\n\njulia> PooledDataArray(Int, 2, 2)\n2×2 DataArrays.PooledDataArray{Int64,UInt32,2}:\n NA  NA\n NA  NA\n\n\n\n"
 },
 
