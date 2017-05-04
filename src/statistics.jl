@@ -35,3 +35,31 @@ function gl(n::Integer, k::Integer, l::Integer)
 end
 
 gl(n::Integer, k::Integer) = gl(n, k, n*k)
+
+StatsBase.describe(X::DataVector) = StatsBase.describe(STDOUT, X)
+
+function StatsBase.describe{T<:Real}(io::IO, X::AbstractDataVector{T})
+    nacount = sum(isna.(X))
+    pna = 100nacount/length(X)
+    if pna != 100 # describe will fail if dropna returns an empty vector
+        describe(io, dropna(X))
+    else
+        println(io, "Summary Stats:")
+        println(io, "Type:           $(eltype(X))")
+    end
+    println(io, "Number Missing: $(nacount)")
+    @printf(io, "%% Missing:      %.6f\n", pna)
+    return
+end
+
+function StatsBase.describe(io::IO, X::AbstractDataVector)
+    nacount = sum(isna.(X))
+    pna = 100nacount/length(X)
+    println(io, "Summary Stats:")
+    println(io, "Length:         $(length(X))")
+    println(io, "Type:           $(eltype(X))")
+    println(io, "Number Unique:  $(length(unique(X)))")
+    println(io, "Number Missing: $(nacount)")
+    @printf(io, "%% Missing:      %.6f\n", pna)
+    return
+end
