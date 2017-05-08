@@ -243,16 +243,13 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
 end
 
 dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
-isna(da::DataArray, I::Real) = getindex(da.na, I)
 
 Base.broadcast(::typeof(isna), da::DataArray) = copy(da.na)
 
 Base.any(::typeof(isna), da::DataArray) = any(da.na) # -> Bool
 Base.all(::typeof(isna), da::DataArray) = all(da.na) # -> Bool
 
-@nsplat N function isna(da::DataArray, I::NTuple{N,Real}...)
-    getindex(da.na, I...)
-end
+isna(da::DataArray, I::Real, Is::Real...) = getindex(da.na, I, Is...)
 
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
     n = length(da)
