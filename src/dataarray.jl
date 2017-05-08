@@ -250,8 +250,8 @@ Base.broadcast(::typeof(isna), da::DataArray) = copy(da.na)
 Base.any(::typeof(isna), da::DataArray) = any(da.na) # -> Bool
 Base.all(::typeof(isna), da::DataArray) = all(da.na) # -> Bool
 
-@nsplat N function isna(da::DataArray, I::NTuple{N,Real}...)
-    getindex(da.na, I...)
+@nsplat N function isna(da::DataArray, I::Real, Is::NTuple{N,Real}...)
+    getindex(da.na, I, Is...)
 end
 
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
