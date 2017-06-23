@@ -126,4 +126,18 @@
     r = vcat(ca1, ca2)
     @test r == vcat(a1, a2)
     @test isa(r, PooledDataArray{Int,DataArrays.DEFAULT_POOLED_REF_TYPE,4})
+
+    # Issue #265:
+    #   Ensure that any levels that have are not expressed in a
+    #   PooledDataArray are handled correctly and not left uninitialised when
+    #   using unique()
+    x = ["A", "B", "A"];
+    masks = [[1], [2], [3], [1, 3]]
+    for mask in masks
+        y = PooledDataArray(x)
+        y[mask] = NA
+        @test isequal(sort(unique(y)), sort(DataArray(unique(y))))
+    end
+    z = PooledDataArray([1, 2], [1, 2, 3])
+    @test sort(unique(z)) == DataArray([1, 2])
 end
