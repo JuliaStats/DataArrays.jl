@@ -327,16 +327,6 @@ end
         end
     end
 
-    # FFT's on DataVector's
-    dv = convert(DataArray, ones(5))
-    for f in map(eval, DataArrays.ffts)
-        @test f(dv) == f(dv.data)
-    end
-    dv[1] = NA
-    for f in map(eval, DataArrays.ffts)
-        @test isna(f(dv))
-    end
-
     # Binary vector operators on DataVector's
     dv = convert(DataArray, ones(5))
     for f in map(eval, DataArrays.binary_vector_operators)

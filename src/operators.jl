@@ -6,8 +6,6 @@ const unary_vector_operators = [:(Base.median),
 
 # TODO: dist, iqr
 
-const ffts = [:(Base.fft)]
-
 const binary_vector_operators = [:(Base.dot),
                                  :(Base.cor),
                                  :(Base.cov),
@@ -21,7 +19,6 @@ const rowwise_operators = [:rowminimums,
                            :rowmedians,
                            :rowstds,
                            :rowvars,
-                           :rowffts,
                            :rownorms]
 
 # Swap arguments to fname() anywhere in AST. Returns the number of
@@ -668,7 +665,7 @@ end
 Base.cumsum(dv::DataVector) = accumulate(+, dv)
 Base.cumprod(dv::DataVector)   = accumulate(*, dv)
 
-for f in [unary_vector_operators; ffts]
+for f in unary_vector_operators
     @eval ($f)(dv::DataVector) = any(dv.na) ? NA : ($f)(dv.data)
 end
 
