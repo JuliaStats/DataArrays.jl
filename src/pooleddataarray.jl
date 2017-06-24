@@ -334,7 +334,8 @@ function Base.unique{T}(pda::PooledDataArray{T})
     end
 
     if firstna > 0
-        res = DataArray(Vector{T}(nlevels + 1))
+        n = length(unique_values)
+        res = DataArray(Vector{T}(n + 1))
         i = 0
         for val in unique_values
             i += 1
@@ -345,8 +346,8 @@ function Base.unique{T}(pda::PooledDataArray{T})
             res.data[i] = val
         end
 
-        if firstna == nlevels + 1
-            res.na[nlevels + 1] = true
+        if firstna == n + 1
+            res.na[n + 1] = true
         end
 
         return res
