@@ -33,3 +33,7 @@ my_tests = ["abstractarray.jl",
 for test in my_tests
     include(test)
 end
+
+@testset "Ambiguities" begin
+    @test_broken isempty(detect_ambiguities(DataArrays, Base, Core))
+end
