@@ -31,7 +31,7 @@ function percent_change{T}(v::Vector{T})
     return res
 end
 
-type xtab{T}
+mutable struct xtab{T}
     vals::Array{T}
     counts::Vector{Int}
 end

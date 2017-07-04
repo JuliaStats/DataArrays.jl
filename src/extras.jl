@@ -84,13 +84,13 @@ cut(x::AbstractVector, ngroups::Integer) = cut(x, quantile(x, collect(1 : ngroup
 function Base.repeat{T,N}(A::DataArray{T,N};
                           inner = ntuple(x->1, ndims(A)),
                           outer = ntuple(x->1, ndims(A)))
-    DataArray{T,N}(Compat.repeat(A.data; inner=inner, outer=outer),
-                   BitArray(Compat.repeat(A.na; inner=inner, outer=outer)))
+    DataArray{T,N}(repeat(A.data; inner=inner, outer=outer),
+                   BitArray(repeat(A.na; inner=inner, outer=outer)))
 end
 
 function Base.repeat{T,R,N}(A::PooledDataArray{T,R,N};
                             inner = ntuple(x->1, ndims(A)),
                             outer = ntuple(x->1, ndims(A)))
-    PooledDataArray(RefArray{R,N}(Compat.repeat(A.refs; inner=inner, outer=outer)),
+    PooledDataArray(RefArray{R,N}(repeat(A.refs; inner=inner, outer=outer)),
                     A.pool)
 end

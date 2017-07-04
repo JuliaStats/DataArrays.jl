@@ -336,7 +336,7 @@ Base.mean{T}(A::DataArray{T}, region; skipna::Bool=false) =
 
 ## var
 
-immutable MapReduceDim2ArgHelperFun{F,T}
+struct MapReduceDim2ArgHelperFun{F,T}
     f::F
     val::T
 end
@@ -478,7 +478,7 @@ end
     return R
 end
 
-immutable Abs2MinusFun end
+struct Abs2MinusFun end
 (::Abs2MinusFun)(x, m) = abs2(x - m)
 
 function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected::Bool=true,

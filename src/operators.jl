@@ -496,7 +496,7 @@ end
 if isdefined(Base, :UniformScaling)
 
 function (+){TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
-    n = Compat.LinAlg.checksquare(A)
+    n = LinAlg.checksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
     @inbounds for i = 1:n
@@ -509,7 +509,7 @@ end
 (+){TA}(J::UniformScaling,A::DataArray{TA,2}) = A + J
 
 function (-){TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
-    n = Compat.LinAlg.checksquare(A)
+    n = LinAlg.checksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
     @inbounds for i = 1:n
@@ -520,7 +520,7 @@ function (-){TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
     B
 end
 function (-){TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
-    n = Compat.LinAlg.checksquare(A)
+    n = LinAlg.checksquare(A)
     B = -A
     @inbounds for i = 1:n
         if !B.na[i,i]
