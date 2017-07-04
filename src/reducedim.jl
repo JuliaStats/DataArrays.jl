@@ -5,23 +5,25 @@ using Base.check_reducedims
 # This is a substantially faster implementation of the "all" reduction
 # across dimensions for reducing a BitArray to an Array{Bool}. We use
 # this below for implementing MaxFun and MinFun with skipna=true.
-@ngenerate N typeof(R) function Base._mapreducedim!{N}(f, op::typeof(&), R::Array{Bool}, A::BitArray{N})
-    lsiz = check_reducedims(R, A)
-    isempty(A) && return R
-    @nextract N sizeR d->size(R, d)
-    @nexprs 1 d->(state_0 = state_{N} = 1)
-    @nexprs N d->(skip_d = sizeR_d == 1)
-    Achunks = A.chunks
-    k = 1
-    @nloops(N, i, A,
-        d->(state_{d-1} = state_d),
-        d->(skip_d || (state_d = state_0)),
-        begin
-            @inbounds R[state_0] &= f(Base.unsafe_bitgetindex(Achunks, k))
-            state_0 += 1
-            k += 1
-        end)
-    R
+@generated function Base._mapreducedim!(f, op::typeof(&), R::Array{Bool}, A::BitArray{N}) where {N}
+    quote
+        lsiz = check_reducedims(R, A)
+        isempty(A) && return R
+        @nextract $N sizeR d->size(R, d)
+        @nexprs 1 d->(state_0 = state_{$N} = 1)
+        @nexprs $N d->(skip_d = sizeR_d == 1)
+        Achunks = A.chunks
+        k = 1
+        @nloops($N, i, A,
+            d->(state_{d-1} = state_d),
+            d->(skip_d || (state_d = state_0)),
+            begin
+                @inbounds R[state_0] &= f(Base.unsafe_bitgetindex(Achunks, k))
+                state_0 += 1
+                k += 1
+            end)
+        R
+    end
 end
 
 # Determine if there are any true values in a BitArray in a given
@@ -60,103 +62,107 @@ function _count(B::BitArray, istart::Int, iend::Int)
 end
 
 ## NA-preserving
-@ngenerate N typeof(R) function _mapreducedim!{T,N}(f::SafeMapFuns, op::SafeReduceFuns,
-                                                    R::DataArray, A::DataArray{T,N})
-    data = A.data
-    na = A.na
+@generated function _mapreducedim!(f::SafeMapFuns, op::SafeReduceFuns,
+                                   R::DataArray, A::DataArray{T,N} where {T}) where {N}
+    quote
+        data = A.data
+        na = A.na
 
-    lsiz = check_reducedims(R, data)
-    isempty(data) && return R
+        lsiz = check_reducedims(R, data)
+        isempty(data) && return R
 
-    if lsiz > 16
-        # use mapreduce_impl, which is probably better tuned to achieve higher performance
-        nslices = div(length(A), lsiz)
-        ibase = 0
-        extr = daextract(R)
-        for i = 1:nslices
-            if _any(na, ibase+1, ibase+lsiz)
-                unsafe_setna!(R, extr, i)
-            else
-                v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
-                @inbounds unsafe_dasetindex!(R, extr, v, i)
-            end
-            ibase += lsiz
-        end
-    else
-        @nextract N sizeR d->size(R,d)
-        na_chunks = A.na.chunks
-
-        new_data = R.data
-
-        # If reducing to a DataArray, skip strides with NAs.
-        # In my benchmarks, it is actually faster to compute a new NA
-        # array and BitArray it than to operate on the BitArray
-        # directly.
-        new_na = fill(false, size(new_data))
-
-        @nexprs 1 d->(state_0 = state_{N} = 1)
-        @nexprs N d->(skip_d = sizeR_d == 1)
-        k = 1
-        @nloops(N, i, A,
-            d->(state_{d-1} = state_d),
-            d->(skip_d || (state_d = state_0)), begin
-                @inbounds vna = new_na[state_0] | Base.unsafe_bitgetindex(na_chunks, k)
-                if vna
-                    @inbounds new_na[state_0] = true
+        if lsiz > 16
+            # use mapreduce_impl, which is probably better tuned to achieve higher performance
+            nslices = div(length(A), lsiz)
+            ibase = 0
+            extr = daextract(R)
+            for i = 1:nslices
+                if _any(na, ibase+1, ibase+lsiz)
+                    unsafe_setna!(R, extr, i)
                 else
-                    @inbounds x = data[k]
-                    v = f(x)
-                    @inbounds v0 = new_data[state_0]
-                    nv = op(v0, v)
-                    @inbounds new_data[state_0] = nv
+                    v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
+                    @inbounds unsafe_dasetindex!(R, extr, v, i)
                 end
+                ibase += lsiz
+            end
+        else
+            @nextract $N sizeR d->size(R,d)
+            na_chunks = A.na.chunks
 
-                state_0 += 1
-                k += 1
-            end)
+            new_data = R.data
 
-        R.na = BitArray(new_na)
+            # If reducing to a DataArray, skip strides with NAs.
+            # In my benchmarks, it is actually faster to compute a new NA
+            # array and BitArray it than to operate on the BitArray
+            # directly.
+            new_na = fill(false, size(new_data))
+
+            @nexprs 1 d->(state_0 = state_{$N} = 1)
+            @nexprs $N d->(skip_d = sizeR_d == 1)
+            k = 1
+            @nloops($N, i, A,
+                d->(state_{d-1} = state_d),
+                d->(skip_d || (state_d = state_0)), begin
+                    @inbounds vna = new_na[state_0] | Base.unsafe_bitgetindex(na_chunks, k)
+                    if vna
+                        @inbounds new_na[state_0] = true
+                    else
+                        @inbounds x = data[k]
+                        v = f(x)
+                        @inbounds v0 = new_data[state_0]
+                        nv = op(v0, v)
+                        @inbounds new_data[state_0] = nv
+                    end
+
+                    state_0 += 1
+                    k += 1
+                end)
+
+            R.na = BitArray(new_na)
+        end
+        return R
     end
-    return R
 end
 
 ## NA-preserving to array
-@ngenerate N typeof(R) function _mapreducedim!{T,N}(f::SafeMapFuns, op::SafeReduceFuns,
-                                                    R::AbstractArray, A::DataArray{T,N})
-    data = A.data
-    na = A.na
+@generated function _mapreducedim!(f::SafeMapFuns, op::SafeReduceFuns,
+                                   R::AbstractArray, A::DataArray{T,N} where {T}) where {N}
+    quote
+        data = A.data
+        na   = A.na
 
-    lsiz = check_reducedims(R, data)
-    isempty(data) && return R
+        lsiz = check_reducedims(R, data)
+        isempty(data) && return R
 
-    if lsiz > 16
-        # use mapreduce_impl, which is probably better tuned to achieve higher performance
-        nslices = div(length(A), lsiz)
-        ibase = 0
-        extr = daextract(R)
-        for i = 1:nslices
-            if _any(na, ibase+1, ibase+lsiz)
-                throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
-            else
-                v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
-                @inbounds unsafe_dasetindex!(R, extr, v, i)
+        if lsiz > 16
+            # use mapreduce_impl, which is probably better tuned to achieve higher performance
+            nslices = div(length(A), lsiz)
+            ibase = 0
+            extr = daextract(R)
+            for i = 1:nslices
+                if _any(na, ibase+1, ibase+lsiz)
+                    throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
+                else
+                    v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
+                    @inbounds unsafe_dasetindex!(R, extr, v, i)
+                end
+                ibase += lsiz
             end
-            ibase += lsiz
-        end
-    else
-        @nextract N sizeR d->size(R,d)
+        else
+            @nextract $N sizeR d->size(R,d)
 
-        # If reducing to a non-DataArray, throw an error at the start on NA
-        any(isna, A) && throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
-        @nloops N i data d->(j_d = sizeR_d==1 ? 1 : i_d) begin
-            @inbounds x = (@nref N data i)
-            v = f(x)
-            @inbounds v0 = (@nref N R j)
-            nv = op(v0, v)
-            @inbounds (@nref N R j) = nv
+            # If reducing to a non-DataArray, throw an error at the start on NA
+            any(isna, A) && throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
+            @nloops $N i data d->(j_d = sizeR_d==1 ? 1 : i_d) begin
+                @inbounds x = (@nref $N data i)
+                v = f(x)
+                @inbounds v0 = (@nref $N R j)
+                nv = op(v0, v)
+                @inbounds (@nref $N R j) = nv
+            end
         end
+        return R
     end
-    return R
 end
 _mapreducedim!(f, op, R, A) = Base._mapreducedim!(f, op, R, A)
 
@@ -166,60 +172,63 @@ _getdata(A::DataArray) = A.data
 
 # mapreduce across a dimension. If specified, C contains the number of
 # non-NA values reduced into each element of R.
-@ngenerate N typeof(R) function _mapreducedim_skipna_impl!{T,N}(f, op, R::AbstractArray,
-                                                                C::Union{Array{Int}, Void},
-                                                                A::DataArray{T,N})
-    data = A.data
-    na = A.na
-    na_chunks = na.chunks
-    new_data = _getdata(R)
+@generated function _mapreducedim_skipna_impl!(f, op, R::AbstractArray,
+                                                      C::Union{Array{Int}, Void},
+                                                      A::DataArray{T,N} where {T}) where {N}
+    quote
 
-    C === nothing || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
-    lsiz = check_reducedims(new_data, data)
-    isempty(data) && return R
+        data = A.data
+        na = A.na
+        na_chunks = na.chunks
+        new_data = _getdata(R)
 
-    if lsiz > 16
-        # keep the accumulator as a local variable when reducing along the first dimension
-        nslices = div(length(A), lsiz)
-        ibase = 0
-        for i = 1:nslices
-            # TODO: use pairwise impl for sum
-            @inbounds v = new_data[i]
-            @inbounds C !== nothing && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
-            for k = ibase+1:ibase+lsiz
-                @inbounds Base.unsafe_bitgetindex(na_chunks, k) && continue
-                @inbounds x = data[k]
-                v = convert(typeof(v), op(f(x), v))::typeof(v)
-            end
-            @inbounds new_data[i] = v
-            ibase += lsiz
-        end
-    else
-        # general implementation
-        @nextract N sizeR d->size(new_data,d)
-        @nexprs 1 d->(state_0 = state_{N} = 1)
-        @nexprs N d->(skip_d = sizeR_d == 1)
-        k = 1
-        C !== nothing && fill!(C, div(length(A), length(R)))
-        @nloops(N, i, A,
-            d->(state_{d-1} = state_d),
-            d->(skip_d || (state_d = state_0)), begin
-                @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k)
-                if xna
-                    C !== nothing && @inbounds C[state_0] -= 1
-                else
+        C === nothing || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
+        lsiz = check_reducedims(new_data, data)
+        isempty(data) && return R
+
+        if lsiz > 16
+            # keep the accumulator as a local variable when reducing along the first dimension
+            nslices = div(length(A), lsiz)
+            ibase = 0
+            for i = 1:nslices
+                # TODO: use pairwise impl for sum
+                @inbounds v = new_data[i]
+                @inbounds C !== nothing && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
+                for k = ibase+1:ibase+lsiz
+                    @inbounds Base.unsafe_bitgetindex(na_chunks, k) && continue
                     @inbounds x = data[k]
-                    v = f(x)
-                    @inbounds v0 = new_data[state_0]
-                    nv = op(v0, v)
-                    @inbounds new_data[state_0] = nv
+                    v = convert(typeof(v), op(f(x), v))::typeof(v)
                 end
+                @inbounds new_data[i] = v
+                ibase += lsiz
+            end
+        else
+            # general implementation
+            @nextract $N sizeR d->size(new_data,d)
+            @nexprs 1 d->(state_0 = state_{$N} = 1)
+            @nexprs $N d->(skip_d = sizeR_d == 1)
+            k = 1
+            C !== nothing && fill!(C, div(length(A), length(R)))
+            @nloops($N, i, A,
+                d->(state_{d-1} = state_d),
+                d->(skip_d || (state_d = state_0)), begin
+                    @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k)
+                    if xna
+                        C !== nothing && @inbounds C[state_0] -= 1
+                    else
+                        @inbounds x = data[k]
+                        v = f(x)
+                        @inbounds v0 = new_data[state_0]
+                        nv = op(v0, v)
+                        @inbounds new_data[state_0] = nv
+                    end
 
-                state_0 += 1
-                k += 1
-        end)
+                    state_0 += 1
+                    k += 1
+            end)
+        end
+        return R
     end
-    return R
 end
 
 _mapreducedim_skipna!(f, op, R::AbstractArray, A::DataArray) =
@@ -344,138 +353,142 @@ end
 
 # A version of _mapreducedim! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
-@ngenerate N typeof(R) function _mapreducedim_2arg!{T,N}(f, op, R::DataArray,
-                                                         A::DataArray{T,N},
-                                                         S::AbstractArray)
-    data = A.data
-    na = A.na
-    Sextr = daextract(S)
+@generated function _mapreducedim_2arg!(f, op, R::DataArray,
+                                                    A::DataArray{T,N} where {T},
+                                                    S::AbstractArray) where {N}
+    quote
+        data = A.data
+        na = A.na
+        Sextr = daextract(S)
 
-    lsiz = check_reducedims(R, data)
-    size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
-    isempty(data) && return R
+        lsiz = check_reducedims(R, data)
+        size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
+        isempty(data) && return R
 
-    if lsiz > 16
-        # use mapreduce_impl, which is probably better tuned to achieve higher performance
-        nslices = div(length(A), lsiz)
-        ibase = 0
-        extr = daextract(R)
-        for i = 1:nslices
-            if unsafe_isna(S, Sextr, i) || _any(na, ibase+1, ibase+lsiz)
-                unsafe_setna!(R, extr, i)
-            else
-                @inbounds s = unsafe_getindex_notna(S, Sextr, i)
-                v = Base.mapreduce_impl(MapReduceDim2ArgHelperFun(f, s), op, data, ibase+1, ibase+lsiz)
-                @inbounds unsafe_dasetindex!(R, extr, v, i)
-            end
-            ibase += lsiz
-        end
-    else
-        @nextract N sizeR d->size(R,d)
-        na_chunks = A.na.chunks
-        new_data = R.data
-        new_na = isa(S, DataArray) ? Array(S.na) : fill(false, size(S))
-
-        @nexprs 1 d->(state_0 = state_{N} = 1)
-        @nexprs N d->(skip_d = sizeR_d == 1)
-        k = 1
-        @nloops(N, i, A,
-            d->(state_{d-1} = state_d),
-            d->(skip_d || (state_d = state_0)), begin
-                @inbounds vna = new_na[state_0] | Base.unsafe_bitgetindex(na_chunks, k)
-                if vna
-                    @inbounds new_na[state_0] = true
+        if lsiz > 16
+            # use mapreduce_impl, which is probably better tuned to achieve higher performance
+            nslices = div(length(A), lsiz)
+            ibase = 0
+            extr = daextract(R)
+            for i = 1:nslices
+                if unsafe_isna(S, Sextr, i) || _any(na, ibase+1, ibase+lsiz)
+                    unsafe_setna!(R, extr, i)
                 else
-                    @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
-                    @inbounds x = data[k]
-                    v = f(x, s)
-                    @inbounds v0 = new_data[state_0]
-                    nv = op(v0, v)
-                    @inbounds new_data[state_0] = nv
+                    @inbounds s = unsafe_getindex_notna(S, Sextr, i)
+                    v = Base.mapreduce_impl(MapReduceDim2ArgHelperFun(f, s), op, data, ibase+1, ibase+lsiz)
+                    @inbounds unsafe_dasetindex!(R, extr, v, i)
                 end
+                ibase += lsiz
+            end
+        else
+            @nextract $N sizeR d->size(R,d)
+            na_chunks = A.na.chunks
+            new_data = R.data
+            new_na = isa(S, DataArray) ? Array(S.na) : fill(false, size(S))
 
-                state_0 += 1
-                k += 1
-            end)
+            @nexprs 1 d->(state_0 = state_{$N} = 1)
+            @nexprs $N d->(skip_d = sizeR_d == 1)
+            k = 1
+            @nloops($N, i, A,
+                d->(state_{d-1} = state_d),
+                d->(skip_d || (state_d = state_0)), begin
+                    @inbounds vna = new_na[state_0] | Base.unsafe_bitgetindex(na_chunks, k)
+                    if vna
+                        @inbounds new_na[state_0] = true
+                    else
+                        @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
+                        @inbounds x = data[k]
+                        v = f(x, s)
+                        @inbounds v0 = new_data[state_0]
+                        nv = op(v0, v)
+                        @inbounds new_data[state_0] = nv
+                    end
 
-        R.na = BitArray(new_na)
+                    state_0 += 1
+                    k += 1
+                end)
+
+            R.na = BitArray(new_na)
+        end
+        return R
     end
-    return R
 end
 
 # A version of _mapreducedim_skipna! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
-@ngenerate N typeof(R) function _mapreducedim_skipna_2arg!{T,N}(f, op, R::AbstractArray,
-                                                                C::Union{Array{Int}, Void},
-                                                                A::DataArray{T,N}, S::AbstractArray)
-    data = A.data
-    na = A.na
-    na_chunks = na.chunks
-    new_data = _getdata(R)
-    Sextr = daextract(S)
+@generated function _mapreducedim_skipna_2arg!(f, op, R::AbstractArray,
+                                                      C::Union{Array{Int}, Void},
+                                                      A::DataArray{T,N} where {T}, S::AbstractArray) where {N}
+    quote
+        data = A.data
+        na = A.na
+        na_chunks = na.chunks
+        new_data = _getdata(R)
+        Sextr = daextract(S)
 
-    lsiz = check_reducedims(new_data, data)
-    C === nothing || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
-    size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
-    isempty(data) && return R
-    @nextract N sizeR d->size(new_data,d)
-    sizA1 = size(data, 1)
+        lsiz = check_reducedims(new_data, data)
+        C === nothing || size(R) == size(C) || throw(DimensionMismatch("R and C must have same size"))
+        size(R) == size(S) || throw(DimensionMismatch("R and S must have same size"))
+        isempty(data) && return R
+        @nextract $N sizeR d->size(new_data,d)
+        sizA1 = size(data, 1)
 
-    # If there are any NAs in S, assume these will produce NAs in R
-    if isa(S, DataArray)
-        copy!(R.na, S.na)
-    end
-
-    if lsiz > 16
-        # keep the accumulator as a local variable when reducing along the first dimension
-        nslices = div(length(A), lsiz)
-        ibase = 0
-        for i = 1:nslices
-            @inbounds v = new_data[i]
-            !isa(C, Void) && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
-
-            # If S[i] is NA, skip this iteration
-            @inbounds sna = unsafe_isna(S, Sextr, i)
-            if !sna
-                @inbounds s = unsafe_getindex_notna(S, Sextr, i)
-                # TODO: use pairwise impl for sum
-                for k = ibase+1:ibase+lsiz
-                    @inbounds Base.unsafe_bitgetindex(na_chunks, k) && continue
-                    @inbounds x = data[k]
-                    v = convert(typeof(v), op(f(x, s), v))::typeof(v)
-                end
-
-                @inbounds new_data[i] = v
-            end
-
-            ibase += lsiz
+        # If there are any NAs in S, assume these will produce NAs in R
+        if isa(S, DataArray)
+            copy!(R.na, S.na)
         end
-    else
-        # general implementation
-        @nexprs 1 d->(state_0 = state_{N} = 1)
-        @nexprs N d->(skip_d = sizeR_d == 1)
-        k = 1
-        !isa(C, Void) && fill!(C, div(length(A), length(R)))
-        @nloops(N, i, A,
-            d->(state_{d-1} = state_d),
-            d->(skip_d || (state_d = state_0)), begin
-                @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k) | unsafe_isna(S, Sextr, state_0)
-                if xna
-                    !isa(C, Void) && @inbounds C[state_0] -= 1
-                else
-                    @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
-                    @inbounds x = data[k]
-                    v = f(x, s)
-                    @inbounds v0 = new_data[state_0]
-                    nv = op(v0, v)
-                    @inbounds new_data[state_0] = nv
+
+        if lsiz > 16
+            # keep the accumulator as a local variable when reducing along the first dimension
+            nslices = div(length(A), lsiz)
+            ibase = 0
+            for i = 1:nslices
+                @inbounds v = new_data[i]
+                !isa(C, Void) && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
+
+                # If S[i] is NA, skip this iteration
+                @inbounds sna = unsafe_isna(S, Sextr, i)
+                if !sna
+                    @inbounds s = unsafe_getindex_notna(S, Sextr, i)
+                    # TODO: use pairwise impl for sum
+                    for k = ibase+1:ibase+lsiz
+                        @inbounds Base.unsafe_bitgetindex(na_chunks, k) && continue
+                        @inbounds x = data[k]
+                        v = convert(typeof(v), op(f(x, s), v))::typeof(v)
+                    end
+
+                    @inbounds new_data[i] = v
                 end
 
-                state_0 += 1
-                k += 1
-        end)
+                ibase += lsiz
+            end
+        else
+            # general implementation
+            @nexprs 1 d->(state_0 = state_{$N} = 1)
+            @nexprs $N d->(skip_d = sizeR_d == 1)
+            k = 1
+            !isa(C, Void) && fill!(C, div(length(A), length(R)))
+            @nloops($N, i, A,
+                d->(state_{d-1} = state_d),
+                d->(skip_d || (state_d = state_0)), begin
+                    @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k) | unsafe_isna(S, Sextr, state_0)
+                    if xna
+                        !isa(C, Void) && @inbounds C[state_0] -= 1
+                    else
+                        @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
+                        @inbounds x = data[k]
+                        v = f(x, s)
+                        @inbounds v0 = new_data[state_0]
+                        nv = op(v0, v)
+                        @inbounds new_data[state_0] = nv
+                    end
+
+                    state_0 += 1
+                    k += 1
+            end)
+        end
+        return R
     end
-    return R
 end
 
 struct Abs2MinusFun end
