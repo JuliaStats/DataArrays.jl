@@ -2,7 +2,7 @@
 # TODO: Pull in existing tests into this file
 # TODO: Rename to TestDataArray
 module TestDataArrays
-    using DataArrays, Base.Test, Compat
+    using DataArrays, Base.Test
 
     # DataArray{T, N}(d::Array{T, N}, m::BitArray{N} = falses(size(d)))
     DataArray([1, 2], falses(2))

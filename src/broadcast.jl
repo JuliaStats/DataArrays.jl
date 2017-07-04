@@ -1,7 +1,5 @@
-using DataArrays
 using Base: @get!, promote_eltype
 using Base.Broadcast: bitcache_chunks, bitcache_size, dumpbitcache
-using Compat: promote_eltype_op
 
 _broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_indices(x...))
 
