@@ -2,7 +2,7 @@ __precompile__()
 
 module DataArrays
     using Base: promote_op
-    using Base.Cartesian, Compat, Reexport
+    using Base.Cartesian, Reexport
     @reexport using StatsBase
     using SpecialFunctions
 
