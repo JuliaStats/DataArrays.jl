@@ -58,3 +58,19 @@ function xtabs{T}(x::AbstractArray{T})
     end
     return d
 end
+
+# Implicitly vectorized bitwise operations
+
+import Base: &, |, xor
+
+for f in [:(&), :(|), :(xor)]
+    for T in [:(BitArray), :(Range{<:Integer}), :(AbstractArray{<:Integer}), :(Integer)]
+        @eval begin
+            @deprecate ($f)(a::DataArray{<:Integer}, b::$T) ($f).(a, b)
+            @deprecate ($f)(a::$T, b::DataArray{<:Integer}) ($f).(a, b)
+        end
+    end
+    @eval begin
+        @deprecate ($f)(a::DataArray{<:Integer}, b::DataArray{<:Integer}) ($f).(a, b)
+    end
+end

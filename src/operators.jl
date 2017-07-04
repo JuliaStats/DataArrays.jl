@@ -372,24 +372,6 @@ for f in (:(&), :(|), :(Base.xor))
     end
 end
 
-# # DataArray with DataArray
-# (&)(a::DataArray{Bool}, b::DataArray{Bool}) =
-#     DataArray(a.data & b.data, (a.na & b.na) | (a.na & b.data) | (b.na & a.data))
-# (|)(a::DataArray{Bool}, b::DataArray{Bool}) =
-#     DataArray(a.data | b.data, (a.na & b.na) | (a.na & !b.data) | (b.na & !a.data))
-# ($)(a::DataArray{Bool}, b::DataArray{Bool}) =
-#     DataArray(a.data $ b.data, a.na | b.na)
-
-# DataArray with non-DataArray
-# Need explicit definition for BitArray to avoid ambiguity
-for t in (:(BitArray), :(Range{Bool}), :(Union{AbstractArray{Bool}, Bool}))
-    @eval begin
-        @swappable (&)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data & b), a.na & b)
-        @swappable (|)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data | b), a.na & !b)
-        @swappable ($)(a::DataArray{Bool}, b::$t) = DataArray(convert(Array{Bool}, a.data $ b), copy(a.na))
-    end
-end
-
 #
 # Comparison operators
 #
