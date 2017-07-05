@@ -359,12 +359,12 @@ end
 
 @swappable (&)(a::NAtype, b::Bool) = b ? NA : false
 @swappable (|)(a::NAtype, b::Bool) = b ? true : NA
-@swappable ($)(a::NAtype, b::Bool) = NA
+@swappable (⊻)(a::NAtype, b::Bool) = NA
 
 # To avoid ambiguity warning
 @swappable (|)(a::NAtype, b::Function) = NA
 
-for f in (:(&), :(|), :(Base.xor))
+for f in (:(&), :(|), :(⊻))
     @eval begin
         # Scalar with NA
         ($f)(::NAtype, ::NAtype) = NA
