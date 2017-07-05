@@ -11,6 +11,12 @@
     @test isna(true & NA)
     @test false & NA === false
 
+    @test isna(NA ⊻ true)
+    @test isna(NA ⊻ false)
+    @test isna(NA ⊻ NA)
+    @test isna(true ⊻ NA)
+    @test isna(false ⊻ NA)
+
     @test any((@data [1, 2, NA]) .== 1) === true
     @test any((@data [NA, 1, 2]) .== 1) === true
     @test isna(any((@data [1, 2, NA]) .== 3))
