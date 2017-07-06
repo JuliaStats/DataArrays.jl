@@ -140,4 +140,15 @@
     end
     z = PooledDataArray([1, 2], [1, 2, 3])
     @test sort(unique(z)) == DataArray([1, 2])
+
+
+    # Issue #273
+    #   Ensure that PooledDataArray works for arrays with non leaf type elements.
+    #   Those two examples used to throw exceptions.
+    x = AbstractString["a"]
+    m = Bool[false]
+    r = UInt32
+    @test isa(PooledDataArray(x, m, r), DataArrays.PooledDataArray{AbstractString, UInt32, 1})
+    x = Integer[1]
+    @test isa(PooledDataArray(x, m, r), DataArrays.PooledDataArray{Integer, UInt32, 1})
 end
