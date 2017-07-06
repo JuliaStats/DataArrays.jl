@@ -137,7 +137,7 @@ end
 function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
                                          m::AbstractArray{Bool, N},
                                          r::Type{R} = DEFAULT_POOLED_REF_TYPE)
-    pool = convert(Array, unique(d[.!m]))
+    pool = convert(typeof(d), unique(d[.!m]))
     if method_exists(isless, (T, T))
         sort!(pool)
     end
