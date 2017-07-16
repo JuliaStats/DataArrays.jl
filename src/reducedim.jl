@@ -2,30 +2,6 @@
 
 using Base.check_reducedims
 
-# This is a substantially faster implementation of the "all" reduction
-# across dimensions for reducing a BitArray to an Array{Bool}. We use
-# this below for implementing MaxFun and MinFun with skipna=true.
-@generated function Base._mapreducedim!(f, op::typeof(&), R::Array{Bool}, A::BitArray{N}) where {N}
-    quote
-        lsiz = check_reducedims(R, A)
-        isempty(A) && return R
-        @nextract $N sizeR d->size(R, d)
-        @nexprs 1 d->(state_0 = state_{$N} = 1)
-        @nexprs $N d->(skip_d = sizeR_d == 1)
-        Achunks = A.chunks
-        k = 1
-        @nloops($N, i, A,
-            d->(state_{d-1} = state_d),
-            d->(skip_d || (state_d = state_0)),
-            begin
-                @inbounds R[state_0] &= f(Base.unsafe_bitgetindex(Achunks, k))
-                state_0 += 1
-                k += 1
-            end)
-        R
-    end
-end
-
 # Determine if there are any true values in a BitArray in a given
 # range. We use this for reductions with skipna=false along the first
 # dimension.
