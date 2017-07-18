@@ -97,4 +97,7 @@
         @test_throws BoundsError copy!(dest, 3, src, 1, 2)
         @test_throws BoundsError copy!(dest, 1, src, 2, 2)
     end
+
+    # Inferrability of map (#276)
+    @test eltype(map(x -> x > 1, @data [1, 2])) == Bool
 end
