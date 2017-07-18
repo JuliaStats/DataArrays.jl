@@ -100,16 +100,6 @@ function Base.deleteat!(dv::DataVector, inds)
     dv
 end
 
-# TODO: should this be an AbstractDataVector, so it works with PDV's?
-function Base.map(f::Function, dv::DataVector)
-    n = length(dv)
-    res = DataArray(Any, n)
-    for i in 1:n
-        res[i] = f(dv[i])
-    end
-    return res
-end
-
 function Base.push!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
     push!(pdv.refs, zero(R))
     return v
