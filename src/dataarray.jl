@@ -274,13 +274,12 @@ function Base.convert{S, T, N}(::Type{DataArray{S, N}},
                                a::AbstractArray{T, N}) # -> DataArray{S, N}
     return DataArray(convert(Array{S, N}, a), falses(size(a)))
 end
-Base.convert{S,T,N}(::Type{DataArray{S}}, x::AbstractArray{T,N}) =
-    convert(DataArray{S,N}, x)
+Base.convert{S, T, N}(::Type{DataArray{S}}, x::AbstractArray{T, N}) =
+    convert(DataArray{S, N}, x)
 Base.convert{T, N}(::Type{DataArray}, x::AbstractArray{T, N}) =
-    convert(DataArray{T,N}, x)
-
-function Base.convert{S, T, N}(::Type{DataArray{S, N}},
-                               x::DataArray{T, N}) # -> DataArray{S, N}
+    convert(DataArray{T, N}, x)
+Base.convert{T, N}(::Type{DataArray{T, N}}, x::DataArray{T, N}) = x
+function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N}) # -> DataArray{S, N}
     v = similar(x.data, S)
     @inbounds for i = 1:length(x)
         if !x.na[i]
