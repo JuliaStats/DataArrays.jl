@@ -100,4 +100,9 @@
 
     # Inferrability of map (#276)
     @test eltype(map(x -> x > 1, @data [1, 2])) == Bool
+
+    @testset "Issue #278" begin
+        x = @data ones(4)
+        @test parent(view(x, :)).data === x.data
+    end
 end
