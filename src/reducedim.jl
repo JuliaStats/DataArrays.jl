@@ -302,8 +302,8 @@ end
 ## mean
 
 function Base.mean!(R::AbstractArray{T}, A::DataArray; skipna::Bool=false,
-                    init::Bool=true) where T
-    init && fill!(R, zero(eltype(R)))
+                       init::Bool=true) where {T}
+    init && fill!(R, 0)
     if skipna
         C = Array{Int}(size(R))
         _mapreducedim_skipna_impl!(identity, +, R, C, A)

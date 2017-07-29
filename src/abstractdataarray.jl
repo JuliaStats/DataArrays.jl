@@ -4,7 +4,7 @@
 An `N`-dimensional `AbstractArray` whose entries can take on values of type
 `T` or the value `NA`.
 """
-abstract type AbstractDataArray{T, N} <: AbstractArray{T, N} end
+abstract type AbstractDataArray{T, N} <: AbstractArray{Union{T, NAtype}, N} end
 
 """
     AbstractDataVector{T}
@@ -20,7 +20,7 @@ A 2-dimensional [`AbstractDataArray`](@ref) with element type `T`.
 """
 const AbstractDataMatrix{T} = AbstractDataArray{T, 2}
 
-Base.eltype(d::AbstractDataArray{T, N}) where {T, N} = T
+Base.eltype(d::AbstractDataArray{T, N}) where {T, N} = Union{T,NAtype}
 
 # Generic iteration over AbstractDataArray's
 

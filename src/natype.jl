@@ -36,11 +36,32 @@ struct NAException <: Exception
 end
 NAException() = NAException("NA found")
 
+# Restrict to Number to avoid infinite recursion
+## Numbers
+Base.promote_rule(::Type{Union{T,NAtype}}, ::Type{Union{S,NAtype}}) where {T<:Number,S<:Number} =
+    Union{promote_type(T, S),NAtype}
+Base.promote_rule(::Type{Union{T,NAtype}}, ::Type{S}) where {T<:Number,S<:Number} =
+    Union{promote_type(T, S),NAtype}
+## Dates
+Base.promote_rule(::Type{Union{T,NAtype}}, ::Type{Union{S,NAtype}}) where {T<:Dates.AbstractTime,S<:Dates.AbstractTime} =
+    Union{promote_type(T, S),NAtype}
+Base.promote_rule(::Type{Union{T,NAtype}}, ::Type{S}) where {T<:Dates.AbstractTime,S<:Dates.AbstractTime} =
+    Union{promote_type(T, S),NAtype}
+
+# Restrict to Number to avoid maching everything
+Base.convert(::Type{Union{T,NAtype}}, x::Number)             where {T<:Number}             = convert(T, x)
+Base.convert(::Type{Union{T,NAtype}}, x::Dates.AbstractTime) where {T<:Dates.AbstractTime} = convert(T, x)
+
 Base.length(x::NAtype) = 1
 Base.size(x::NAtype) = ()
 Base.size(x::NAtype, i::Integer) = i < 1 ? throw(BoundsError()) : 1
 Base.ndims(x::NAtype) = 0
 Base.getindex(x::NAtype, i) = i == 1 ? NA : throw(BoundsError())
+
+extractT(::Type{T}) where {T} = T
+extractT(::Type{Union{T,NAtype}}) where {T} = T
+
+Base.zero(::Type{Union{T,NAtype}}) where {T} = zero(T)
 
 """
     isna(x) -> Bool

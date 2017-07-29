@@ -62,4 +62,12 @@
     @test_throws NAException for v in each_failna(dv); end
     @test collect(each_dropna(dv)) == a
     @test collect(each_replacena(dv, 4)) == [4, 4, a..., 4]
+
+    @testset "promotion" for (T1, T2) in ((Int, Float64),
+                                          (Dates.Minute, Dates.Second))
+        @test promote_type(T1, Union{T2,NAtype})               == Union{T2,NAtype}
+        @test promote_type(Union{T1,NAtype}, T2)               == Union{T2,NAtype}
+        @test promote_type(Union{T1,NAtype}, Union{T2,NAtype}) == Union{T2,NAtype}
+    end
+
 end

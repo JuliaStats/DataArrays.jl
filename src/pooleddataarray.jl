@@ -106,9 +106,9 @@ end
 PooledDataArray(d::PooledDataArray) = d
 
 # Constructor from array, w/ pool, missingness, and ref type
-function PooledDataArray(d::AbstractArray{T, N},
+function PooledDataArray(d::AbstractArray{<:Union{T,NAtype}, N},
                          pool::Vector{T},
-                         m::AbstractArray{Bool, N},
+                         m::AbstractArray{<:Union{Bool,NAtype}, N},
                          r::Type{R} = DEFAULT_POOLED_REF_TYPE) where {T,R<:Integer,N}
     if length(pool) > typemax(R)
         throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))"))
@@ -466,7 +466,11 @@ julia> p # has been modified
  "B"
 ```
 """
+<<<<<<< HEAD
 function setlevels!(x::PooledDataArray{T,R}, newpool::AbstractVector{T}) where {T,R}
+=======
+function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
+>>>>>>> Stop lying about eltype
     if newpool == myunique(newpool) # no NAs or duplicates
         x.pool = newpool
         return x
@@ -483,9 +487,12 @@ function setlevels!(x::PooledDataArray{T,R}, newpool::AbstractVector{T}) where {
     end
 end
 
+<<<<<<< HEAD
 setlevels!(x::PooledDataArray{T, R},
            newpool::AbstractVector) where {T, R} = setlevels!(x, convert(Array{T}, newpool))
 
+=======
+>>>>>>> Stop lying about eltype
 function setlevels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
@@ -552,8 +559,13 @@ end
 ##
 ##############################################################################
 
+<<<<<<< HEAD
 function Base.similar(pda::PooledDataArray{T,R}, S::Type, dims::Dims) where {T,R}
     PooledDataArray(RefArray(zeros(R, dims)), S[])
+=======
+function Base.similar{T,R}(pda::PooledDataArray{T,R}, S::Type, dims::Dims)
+    PooledDataArray(RefArray(zeros(R, dims)), extractT(S)[])
+>>>>>>> Stop lying about eltype
 end
 
 ##############################################################################
