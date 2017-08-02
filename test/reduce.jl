@@ -76,6 +76,12 @@ end
         @test sum(da2; skipna=true) ≈ sum(dropna(da2))
     end
 
+    # Check that mapreduce with skipna=true works when a full block has no NA
+    da = DataArray(1:2049)
+    da[1] = NA
+    @test isna(sum(da))
+    @test sum(da, skipna=true) === 2100224
+
     ## other reductions
 
     _varuc(x; kw...) = var(x; corrected=false, kw...)
