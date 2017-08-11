@@ -1,11 +1,11 @@
-function StatsBase.addcounts!{T,U}(cm::Dict{U,Int}, x::AbstractDataArray{T})
+function StatsBase.addcounts!(cm::Dict{U,Int}, x::AbstractDataArray{T}) where {T,U}
     for v in x
         cm[v] = get(cm, v, 0) + 1
     end
     return cm
 end
 
-function StatsBase.addcounts!{T,U,W}(cm::Dict{U,W}, x::AbstractDataArray{T}, wv::Weights{W})
+function StatsBase.addcounts!(cm::Dict{U,W}, x::AbstractDataArray{T}, wv::Weights{W}) where {T,U,W}
     n = length(x)
     length(wv) == n || raise_dimerror()
     w = values(wv)
@@ -19,11 +19,11 @@ function StatsBase.addcounts!{T,U,W}(cm::Dict{U,W}, x::AbstractDataArray{T}, wv:
     return cm
 end
 
-function StatsBase.countmap{T}(x::AbstractDataArray{T})
+function StatsBase.countmap(x::AbstractDataArray{T}) where T
     addcounts!(Dict{Union{T, NAtype}, Int}(), x)
 end
 
-function StatsBase.countmap{T,W}(x::AbstractDataArray{T}, wv::Weights{W})
+function StatsBase.countmap(x::AbstractDataArray{T}, wv::Weights{W}) where {T,W}
     addcounts!(Dict{Union{T, NAtype}, W}(), x, wv)
 end
 
@@ -45,7 +45,7 @@ julia> cut([1, 2, 3, 4], [1, 3])
  "(3,4]"
 ```
 """
-function cut{S, T}(x::AbstractVector{S}, breaks::Vector{T})
+function cut(x::AbstractVector{S}, breaks::Vector{T}) where {S, T}
     if !issorted(breaks)
         sort!(breaks)
     end
@@ -81,16 +81,16 @@ end
 
 cut(x::AbstractVector, ngroups::Integer) = cut(x, quantile(x, collect(1 : ngroups - 1) / ngroups))
 
-function Base.repeat{T,N}(A::DataArray{T,N};
-                          inner = ntuple(x->1, ndims(A)),
-                          outer = ntuple(x->1, ndims(A)))
+function Base.repeat(A::DataArray{T,N};
+                     inner = ntuple(x->1, ndims(A)),
+                     outer = ntuple(x->1, ndims(A))) where {T,N}
     DataArray{T,N}(repeat(A.data; inner=inner, outer=outer),
                    BitArray(repeat(A.na; inner=inner, outer=outer)))
 end
 
-function Base.repeat{T,R,N}(A::PooledDataArray{T,R,N};
-                            inner = ntuple(x->1, ndims(A)),
-                            outer = ntuple(x->1, ndims(A)))
+function Base.repeat(A::PooledDataArray{T,R,N};
+                     inner = ntuple(x->1, ndims(A)),
+                     outer = ntuple(x->1, ndims(A))) where {T,R,N}
     PooledDataArray(RefArray{R,N}(repeat(A.refs; inner=inner, outer=outer)),
                     A.pool)
 end

@@ -31,7 +31,7 @@ function mapreduce_seq_impl_skipna(f, op, T, A::DataArray, ifirst::Int, ilast::I
 end
 
 # Pairwise map-reduce
-function mapreduce_pairwise_impl_skipna{T}(f, op, A::DataArray{T}, bytefirst::Int, bytelast::Int, n_notna::Int, blksize::Int)
+function mapreduce_pairwise_impl_skipna(f, op, A::DataArray{T}, bytefirst::Int, bytelast::Int, n_notna::Int, blksize::Int) where T
     if n_notna <= blksize
         ifirst = 64*(bytefirst-1)+1
         ilast = min(64*bytelast, length(A))
@@ -62,7 +62,7 @@ else
     const sum_pairwise_blocksize = Base.sum_pairwise_blocksize
 end
 
-mapreduce_impl_skipna{T}(f, op, A::DataArray{T}) =
+mapreduce_impl_skipna(f, op, A::DataArray{T}) where {T} =
     mapreduce_seq_impl_skipna(f, op, T, A, 1, length(A.data))
 mapreduce_impl_skipna(f, op::typeof(+), A::DataArray) =
     mapreduce_pairwise_impl_skipna(f, op, A, 1, length(A.na.chunks),
@@ -71,7 +71,7 @@ mapreduce_impl_skipna(f, op::typeof(+), A::DataArray) =
 
 ## general mapreduce interface
 
-function _mapreduce_skipna{T}(f, op, A::DataArray{T})
+function _mapreduce_skipna(f, op, A::DataArray{T}) where T
     n = length(A)
     na = A.na
 
@@ -139,7 +139,7 @@ Base.mean(a::DataArray; skipna::Bool=false) =
 
 ## variance
 
-function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::Bool=false)
+function Base.varm(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::Bool=false) where T
     if skipna
         n = length(A)
         na = A.na
@@ -157,7 +157,7 @@ function Base.varm{T}(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::
         Base.varm(A.data, m; corrected=corrected)
     end
 end
-Base.varm{T}(A::DataArray{T}, m::NAtype; corrected::Bool=true, skipna::Bool=false) = NA
+Base.varm(A::DataArray{T}, m::NAtype; corrected::Bool=true, skipna::Bool=false) where {T} = NA
 
 function Base.var(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false)
     mean == 0 ? Base.varm(A, 0; corrected=corrected, skipna=skipna) :
@@ -184,7 +184,7 @@ function Base.mean(a::DataArray, w::Weights; skipna::Bool=false)
     end
 end
 
-function Base.mean{W,V<:DataArray}(a::DataArray, w::Weights{W,V}; skipna::Bool=false)
+function Base.mean(a::DataArray, w::Weights{W,V}; skipna::Bool=false) where {W,V<:DataArray}
     if skipna
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values.data, v.na); skipna=true)

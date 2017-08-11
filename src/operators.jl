@@ -495,7 +495,7 @@ end
 # warnings...
 if isdefined(Base, :UniformScaling)
 
-function (+){TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
+function (+)(A::DataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ}
     n = LinAlg.checksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
@@ -506,9 +506,9 @@ function (+){TA,TJ}(A::DataArray{TA,2},J::UniformScaling{TJ})
     end
     B
 end
-(+){TA}(J::UniformScaling,A::DataArray{TA,2}) = A + J
+(+)(J::UniformScaling,A::DataArray{TA,2}) where {TA} = A + J
 
-function (-){TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
+function (-)(A::DataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ<:Number}
     n = LinAlg.checksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
@@ -519,7 +519,7 @@ function (-){TA,TJ<:Number}(A::DataArray{TA,2},J::UniformScaling{TJ})
     end
     B
 end
-function (-){TA,TJ<:Number}(J::UniformScaling{TJ},A::DataArray{TA,2})
+function (-)(J::UniformScaling{TJ},A::DataArray{TA,2}) where {TA,TJ<:Number}
     n = LinAlg.checksquare(A)
     B = -A
     @inbounds for i = 1:n
@@ -539,13 +539,13 @@ end
 (-)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
     invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Bool,2}}, J, A)
 
-(+){TA,TJ}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
+(+)(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ} =
     invoke(+, Tuple{AbstractArray{TA,2},UniformScaling{TJ}}, A, J)
-(+){TA}(J::UniformScaling,A::AbstractDataArray{TA,2}) =
+(+)(J::UniformScaling,A::AbstractDataArray{TA,2}) where {TA} =
     invoke(+, Tuple{UniformScaling,AbstractArray{TA,2}}, J, A)
-(-){TA,TJ<:Number}(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) =
+(-)(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ<:Number} =
     invoke(-, Tuple{AbstractArray{TA,2},UniformScaling{TJ}}, A, J)
-(-){TA,TJ<:Number}(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) =
+(-)(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) where {TA,TJ<:Number} =
     invoke(-, Tuple{UniformScaling{TJ},AbstractArray{TA,2}}, J, A)
 
 (+)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
@@ -592,7 +592,7 @@ for f in (:(+), :(-))
 end
 
 # / is defined separately since it is not swappable
-(/){T,N}(b::AbstractArray{T,N}, ::NAtype) =
+(/)(b::AbstractArray{T,N}, ::NAtype) where {T,N} =
     DataArray(Array{T,N}(size(b)), trues(size(b)))
 @dataarray_binary_scalar(/, /, nothing, false)
 
@@ -739,7 +739,7 @@ function Base.any(dv::AbstractDataArray{Bool})
     has_na ? NA : false
 end
 
-function rle{T}(v::AbstractVector{T})
+function rle(v::AbstractVector{T}) where T
     n = length(v)
     current_value = v[1]
     current_length = 1
@@ -764,7 +764,7 @@ function rle{T}(v::AbstractVector{T})
     return (values[1:total_values], lengths[1:total_lengths])
 end
 
-function rle{T}(v::AbstractDataVector{T})
+function rle(v::AbstractDataVector{T}) where T
     n = length(v)
     current_value = v[1]
     current_length = 1
@@ -803,8 +803,8 @@ function rle{T}(v::AbstractDataVector{T})
 end
 
 ## inverse run-length encoding
-function inverse_rle{T, I <: Integer}(values::AbstractVector{T},
-                                      lengths::Vector{I})
+function inverse_rle(values::AbstractVector{T},
+                     lengths::Vector{I}) where {T, I <: Integer}
     total_n = Int(sum(lengths))
     pos = 0
     res = similar(values, total_n)

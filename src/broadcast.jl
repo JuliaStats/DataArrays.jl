@@ -57,9 +57,9 @@ end
 #
 # TODO: Fall back on faster implementation for same-sized inputs when
 # it is safe to do so.
-Base.map!{F}(f::F, B::Union{DataArray, PooledDataArray}, A0::AbstractArray, As::AbstractArray...) =
+Base.map!(f::F, B::Union{DataArray, PooledDataArray}, A0::AbstractArray, As::AbstractArray...) where {F} =
         broadcast!(f, B, A0, As...)
-Base.map!{F}(f::F, B::Union{DataArray, PooledDataArray}, A0, As...) =
+Base.map!(f::F, B::Union{DataArray, PooledDataArray}, A0, As...) where {F} =
         broadcast!(f, B, A0, As...)
 
 @generated function _broadcast!(f, B::Union{DataArray, PooledDataArray}, As...)

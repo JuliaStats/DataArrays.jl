@@ -236,11 +236,11 @@ for op in (+, *, &, |, min, max)
     end
 end
 
-function Base.reducedim_initarray{R}(A::DataArray, region, v0, ::Type{R})
+function Base.reducedim_initarray(A::DataArray, region, v0, ::Type{R}) where R
     rd = length.(Base.reduced_indices(A.data, region))
     DataArray(fill!(similar(A.data, R, rd), v0), falses(rd))
 end
-function Base.reducedim_initarray0{R}(A::DataArray, region, v0, ::Type{R})
+function Base.reducedim_initarray0(A::DataArray, region, v0, ::Type{R}) where R
     rd = length.(Base.reduced_indices0(A,region))
     DataArray(fill!(similar(A.data, R, rd), v0), falses(rd))
 end
@@ -250,12 +250,12 @@ function Base.mapreducedim!(f::Function, op, R::AbstractArray, A::DataArray; ski
 end
 Base.mapreducedim!(f, op, R::AbstractArray, A::DataArray; skipna::Bool=false) =
     skipna ? _mapreducedim_skipna!(f, op, R, A) : _mapreducedim!(f, op, R, A)
-Base.reducedim!{RT}(op, R::DataArray{RT}, A::AbstractArray; skipna::Bool=false) =
+Base.reducedim!(op, R::DataArray{RT}, A::AbstractArray; skipna::Bool=false) where {RT} =
     Base.mapreducedim!(identity, op, R, A, zero(RT); skipna=skipna)
 
 Base.mapreducedim(f, op, A::DataArray, region, v0; skipna::Bool=false) =
     Base.mapreducedim!(f, op, Base.reducedim_initarray(A, region, v0), A; skipna=skipna)
-Base.mapreducedim{T}(f, op, A::DataArray{T}, region; skipna::Bool=false) =
+Base.mapreducedim(f, op, A::DataArray{T}, region; skipna::Bool=false) where {T} =
     Base.mapreducedim!(f, op, Base.reducedim_init(f, op, A, region), A; skipna=skipna)
 
 Base.reducedim(op, A::DataArray, region, v0; skipna::Bool=false) =
@@ -301,8 +301,8 @@ end
 
 ## mean
 
-function Base.mean!{T}(R::AbstractArray{T}, A::DataArray; skipna::Bool=false,
-                       init::Bool=true)
+function Base.mean!(R::AbstractArray{T}, A::DataArray; skipna::Bool=false,
+                    init::Bool=true) where T
     init && fill!(R, zero(eltype(R)))
     if skipna
         C = Array{Int}(size(R))
@@ -315,7 +315,7 @@ function Base.mean!{T}(R::AbstractArray{T}, A::DataArray; skipna::Bool=false,
     end
 end
 
-Base.mean{T}(A::DataArray{T}, region; skipna::Bool=false) =
+Base.mean(A::DataArray{T}, region; skipna::Bool=false) where {T} =
     mean!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A; skipna=skipna,
           init=false)
 
@@ -499,13 +499,13 @@ function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected:
     end
 end
 
-Base.varm{T}(A::DataArray{T}, m::AbstractArray, region; corrected::Bool=true,
-             skipna::Bool=false) =
+Base.varm(A::DataArray{T}, m::AbstractArray, region; corrected::Bool=true,
+          skipna::Bool=false) where {T} =
     Base.varm!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A, m;
                corrected=corrected, skipna=skipna, init=false)
 
-function Base.var{T}(A::DataArray{T}, region::Union{Integer, AbstractArray, Tuple};
-                     corrected::Bool=true, mean=nothing, skipna::Bool=false)
+function Base.var(A::DataArray{T}, region::Union{Integer, AbstractArray, Tuple};
+                  corrected::Bool=true, mean=nothing, skipna::Bool=false) where T
     if mean == 0
         Base.varm(A, Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), region;
                   corrected=corrected, skipna=skipna)

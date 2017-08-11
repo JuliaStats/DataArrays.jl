@@ -1,5 +1,5 @@
-autocor{T}(dv::DataVector{T}, lag::Int) = cor(dv[1:(end - lag)], dv[(1 + lag):end])
-autocor{T}(dv::DataVector{T}) = autocor(dv, 1)
+autocor(dv::DataVector{T}, lag::Int) where {T} = cor(dv[1:(end - lag)], dv[(1 + lag):end])
+autocor(dv::DataVector{T}) where {T} = autocor(dv, 1)
 
 """
     gl(n::Integer, k::Integer, l::Integer = n*k) -> PooledDataArray
@@ -38,7 +38,7 @@ gl(n::Integer, k::Integer) = gl(n, k, n*k)
 
 StatsBase.describe(X::DataVector) = StatsBase.describe(STDOUT, X)
 
-function StatsBase.describe{T<:Real}(io::IO, X::AbstractDataVector{T})
+function StatsBase.describe(io::IO, X::AbstractDataVector{T}) where T<:Real
     nacount = sum(isna.(X))
     pna = 100nacount/length(X)
     if pna != 100 # describe will fail if dropna returns an empty vector

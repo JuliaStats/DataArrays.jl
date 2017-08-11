@@ -2,8 +2,8 @@
 
 nas2end!(v::AbstractVector, o::Base.Sort.ForwardOrdering) = nas2right!(v,o)
 nas2end!(v::AbstractVector, o::Base.Sort.ReverseOrdering) = nas2left!(v,o)
-nas2end!{O<:Base.Order.ForwardOrdering}(v::AbstractVector{Int}, o::Base.Order.Perm{O}) = nas2right!(v,o)
-nas2end!{O<:Base.Order.ReverseOrdering}(v::AbstractVector{Int}, o::Base.Order.Perm{O}) = nas2left!(v,o)
+nas2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ForwardOrdering} = nas2right!(v,o)
+nas2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ReverseOrdering} = nas2left!(v,o)
 
 myisna(o::Base.Order.Ordering, chunks, i::Int) = Base.unsafe_bitgetindex(chunks, i)
 
@@ -65,10 +65,10 @@ function dasort!(v::DataVector, a::Base.Sort.Algorithm, o::Base.Order.DirectOrde
     v
 end
 
-function dapermsort!{O<:Base.Order.DirectOrdering,T<:DataVector}(v::AbstractVector{Int}, a::Base.Sort.Algorithm, o::Base.Order.Perm{O,T})
+function dapermsort!(v::AbstractVector{Int}, a::Base.Sort.Algorithm, o::Base.Order.Perm{O,T}) where {O<:Base.Order.DirectOrdering,T<:DataVector}
     lo, hi = nas2end!(v, o)
     sort!(v, lo, hi, a, Base.Order.Perm(o.order, o.data.data))
 end
 
 Base.sort!(v::DataVector, a::Base.Sort.Algorithm, o::Base.Order.DirectOrdering) = dasort!(v,a,o)
-Base.sort!{O<:Base.Order.DirectOrdering,T<:DataVector}(v::Vector{Int}, a::Base.Sort.Algorithm, o::Base.Order.Perm{O,T}) = dapermsort!(v,a,o)
+Base.sort!(v::Vector{Int}, a::Base.Sort.Algorithm, o::Base.Order.Perm{O,T}) where {O<:Base.Order.DirectOrdering,T<:DataVector} = dapermsort!(v,a,o)

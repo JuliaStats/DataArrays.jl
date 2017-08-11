@@ -26,7 +26,7 @@ function make_test_types(genfunc, sz)
     )
 end
 
-make_bools{N}(x::NTuple{N}) = convert(Array{Bool, N}, bitrand(x...))
+make_bools(x::NTuple{N}) where {N} = convert(Array{Bool, N}, bitrand(x...))
 make_bools(x::Integer...) = make_bools(x)
 
 macro perf(fn, replications, idx...)
