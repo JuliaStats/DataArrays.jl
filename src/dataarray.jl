@@ -53,8 +53,8 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     end
 end
 
-function DataArray{T, N}(d::Array{T, N},
-                         m::BitArray{N} = falses(size(d))) # -> DataArray{T}
+function DataArray(d::Array{T, N},
+                   m::BitArray{N} = falses(size(d))) where {T, N} # -> DataArray{T}
     return DataArray{T, N}(d, m)
 end
 
@@ -66,7 +66,7 @@ function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
     return DataArray(Array{T}(dims...), trues(dims...))
 end
 
-function DataArray{N}(T::Type, dims::NTuple{N, Int}) # -> DataArray{T}
+function DataArray(T::Type, dims::NTuple{N, Int}) where N # -> DataArray{T}
     return DataArray(Array{T}(dims...), trues(dims...))
 end
 
@@ -153,7 +153,7 @@ function Base.deepcopy(d::DataArray) # -> DataArray{T}
     return DataArray(deepcopy(d.data), deepcopy(d.na))
 end
 
-function Base.resize!{T}(da::DataArray{T,1}, n::Int)
+function Base.resize!(da::DataArray{T,1}, n::Int) where T
     resize!(da.data, n)
     oldn = length(da.na)
     resize!(da.na, n)
@@ -334,7 +334,7 @@ end
 Get the unique values in `da` as well as the index of the first `NA` value
 in `da` if present, or 0 otherwise.
 """
-function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Int
+function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
     out = Vector{T}(0)
     seen = Set{T}()
     n = length(da)
@@ -354,7 +354,7 @@ function finduniques{T}(da::DataArray{T}) # -> Vector{T}, Int
     return out, firstna
 end
 
-function Base.unique{T}(da::DataArray{T}) # -> DataVector{T}
+function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
     unique_values, firstna = finduniques(da)
     n = length(unique_values)
     if firstna > 0

@@ -20,7 +20,7 @@ A 2-dimensional [`AbstractDataArray`](@ref) with element type `T`.
 """
 const AbstractDataMatrix{T} = AbstractDataArray{T, 2}
 
-Base.eltype{T, N}(d::AbstractDataArray{T, N}) = T
+Base.eltype(d::AbstractDataArray{T, N}) where {T, N} = T
 
 # Generic iteration over AbstractDataArray's
 
@@ -48,7 +48,7 @@ julia> isna(X, 3)
 true
 ```
 """
-isna{T}(a::AbstractArray{T}, i::Real) = NAtype <: T ? isa(a[i], NAtype) : false # -> Bool
+isna(a::AbstractArray{T}, i::Real) where {T} = NAtype <: T ? isa(a[i], NAtype) : false # -> Bool
 
 """
     dropna(v::AbstractVector) -> AbstractVector
@@ -79,7 +79,7 @@ dropna(v::AbstractVector) = copy(v) # -> AbstractVector
 struct EachFailNA{T}
     da::AbstractDataArray{T}
 end
-each_failna{T}(da::AbstractDataArray{T}) = EachFailNA(da)
+each_failna(da::AbstractDataArray{T}) where {T} = EachFailNA(da)
 Base.length(itr::EachFailNA) = length(itr.da)
 Base.start(itr::EachFailNA) = 1
 Base.done(itr::EachFailNA, ind::Integer) = ind > length(itr)
@@ -94,8 +94,8 @@ end
 struct EachDropNA{T}
     da::AbstractDataArray{T}
 end
-each_dropna{T}(da::AbstractDataArray{T}) = EachDropNA(da)
-function _next_nonna_ind{T}(da::AbstractDataArray{T}, ind::Int)
+each_dropna(da::AbstractDataArray{T}) where {T} = EachDropNA(da)
+function _next_nonna_ind(da::AbstractDataArray{T}, ind::Int) where T
     ind += 1
     while ind <= length(da) && isna(da, ind)
         ind += 1

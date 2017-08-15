@@ -8,7 +8,7 @@ function Base.push!(dv::DataVector, v::NAtype)
     return v
 end
 
-function Base.push!{S, T}(dv::DataVector{S}, v::T)
+function Base.push!(dv::DataVector{S}, v::T) where {S, T}
     push!(dv.data, v)
     push!(dv.na, false)
     return v
@@ -23,19 +23,19 @@ function Base.pop!(dv::DataVector)
     end
 end
 
-function Base.unshift!{T}(dv::DataVector{T}, v::NAtype)
+function Base.unshift!(dv::DataVector{T}, v::NAtype) where T
     ccall(:jl_array_grow_beg, Void, (Any, UInt), dv.data, 1)
     unshift!(dv.na, true)
     return v
 end
 
-function Base.unshift!{S, T}(dv::DataVector{S}, v::T)
+function Base.unshift!(dv::DataVector{S}, v::T) where {S, T}
     unshift!(dv.data, v)
     unshift!(dv.na, false)
     return v
 end
 
-function Base.shift!{T}(dv::DataVector{T})
+function Base.shift!(dv::DataVector{T}) where T
     d, m = shift!(dv.data), shift!(dv.na)
     if m
         return NA
@@ -100,12 +100,12 @@ function Base.deleteat!(dv::DataVector, inds)
     dv
 end
 
-function Base.push!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
+function Base.push!(pdv::PooledDataVector{T,R}, v::NAtype) where {T,R}
     push!(pdv.refs, zero(R))
     return v
 end
 
-function Base.push!{S,R,T}(pdv::PooledDataVector{S,R}, v::T)
+function Base.push!(pdv::PooledDataVector{S,R}, v::T) where {S,R,T}
     v = convert(S,v)
     push!(pdv.refs, getpoolidx(pdv, v))
     return v
@@ -113,12 +113,12 @@ end
 
 Base.pop!(pdv::PooledDataVector) = pdv.pool[pop!(pdv.refs)]
 
-function Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
+function Base.unshift!(pdv::PooledDataVector{T,R}, v::NAtype) where {T,R}
     unshift!(pdv.refs, zero(R))
     return v
 end
 
-function Base.unshift!{S,R,T}(pdv::PooledDataVector{S,R}, v::T)
+function Base.unshift!(pdv::PooledDataVector{S,R}, v::T) where {S,R,T}
     v = convert(S,v)
     unshift!(pdv.refs, getpoolidx(pdv, v))
     return v

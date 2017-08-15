@@ -11,7 +11,7 @@ end
 @deprecate allna(x) all(isna, x)
 @deprecate padNA(dv::AbstractDataVector, front::Integer, back::Integer) padna(dv, front, back)
 
-function reldiff{T}(v::Vector{T})
+function reldiff(v::Vector{T}) where T
     depwarn("reldiff is deprecated.", :reldiff)
     n = length(v)
     res = Array(T, n - 1)
@@ -21,7 +21,7 @@ function reldiff{T}(v::Vector{T})
     return res
 end
 
-function percent_change{T}(v::Vector{T})
+function percent_change(v::Vector{T}) where T
     depwarn("percent_change is deprecated.", :percent_change)
     n = length(v)
     res = Array(T, n - 1)
@@ -36,7 +36,7 @@ mutable struct xtab{T}
     counts::Vector{Int}
 end
 
-function xtab{T}(x::AbstractArray{T})
+function xtab(x::AbstractArray{T}) where T
     depwarn("xtab is deprecated; use the FreqTables package instead.", :xtab)
     d = Dict{T, Int}()
     for el in x
@@ -50,7 +50,7 @@ function xtab{T}(x::AbstractArray{T})
     return xtab(kk, cc)
 end
 
-function xtabs{T}(x::AbstractArray{T})
+function xtabs(x::AbstractArray{T}) where T
     depwarn("xtabs is deprecated; use the FreqTables package instead.", :xtabs)
     d = Dict{T, Int}()
     for el in x
