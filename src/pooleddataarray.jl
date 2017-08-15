@@ -106,9 +106,9 @@ end
 PooledDataArray(d::PooledDataArray) = d
 
 # Constructor from array, w/ pool, missingness, and ref type
-function PooledDataArray(d::AbstractArray{<:Union{T,NAtype}, N},
+function PooledDataArray(d::AbstractArray{<:Data{T}, N},
                          pool::Vector{T},
-                         m::AbstractArray{<:Union{Bool,NAtype}, N},
+                         m::AbstractArray{<:Data{Bool}, N},
                          r::Type{R} = DEFAULT_POOLED_REF_TYPE) where {T,R<:Integer,N}
     if length(pool) > typemax(R)
         throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))"))

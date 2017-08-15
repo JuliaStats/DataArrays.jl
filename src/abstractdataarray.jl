@@ -4,7 +4,7 @@
 An `N`-dimensional `AbstractArray` whose entries can take on values of type
 `T` or the value `NA`.
 """
-abstract type AbstractDataArray{T, N} <: AbstractArray{Union{T, NAtype}, N} end
+abstract type AbstractDataArray{T, N} <: AbstractArray{Data{T}, N} end
 
 """
     AbstractDataVector{T}

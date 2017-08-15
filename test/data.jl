@@ -71,13 +71,13 @@
     @test size(dvint) == (4,)
     @test length(dvint) == 4
     @test sum(isna.(dvint)) == 1
-    @test eltype(dvint) == Union{Int,NAtype}
+    @test eltype(dvint) == Data{Int}
 
     #test_group("PooledDataVector methods")
     @test size(pdvstr) == (7,)
     @test length(pdvstr) == 7
     @test sum(isna.(pdvstr)) == 1
-    @test eltype(pdvstr) == Union{String,NAtype}
+    @test eltype(pdvstr) == Data{String}
 
     #test_group("DataVector operations")
     @test isequal(dvint .+ 1, DataArray([2, 3, 4, 5], [false, false, true, false]))

@@ -65,9 +65,11 @@
 
     @testset "promotion" for (T1, T2) in ((Int, Float64),
                                           (Dates.Minute, Dates.Second))
-        @test promote_type(T1, Union{T2,NAtype})               == Union{T2,NAtype}
-        @test promote_type(Union{T1,NAtype}, T2)               == Union{T2,NAtype}
-        @test promote_type(Union{T1,NAtype}, Union{T2,NAtype}) == Union{T2,NAtype}
+        @eval begin
+            @test promote_type($T1, Data{$T2})       == Data{$T2}
+            @test promote_type(Data{$T1}, $T2)       == Data{$T2}
+            @test promote_type(Data{$T1}, Data{$T2}) == Data{$T2}
+        end
     end
 
 end

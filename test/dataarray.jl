@@ -99,7 +99,7 @@
     end
 
     # Inferrability of map (#276)
-    @test eltype(map(x -> x > 1, @data [1, 2])) == Union{Bool,NAtype}
+    @test eltype(map(x -> x > 1, @data [1, 2])) == Data{Bool}
 
     @testset "Issue #278" begin
         x = @data ones(4)

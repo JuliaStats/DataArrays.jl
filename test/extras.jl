@@ -5,8 +5,8 @@
 
     d = @data [NA,3,3]
     w = weights([1.1,2.2,3.3])
-    cm = Dict{Union{Int, NAtype}, Int}([(NA, 1), (3, 2)])
-    cmw = Dict{Union{Int, NAtype}, Real}([(NA, 1.1), (3, 5.5)])
+    cm = Dict{Data{Int}, Int}([(NA, 1), (3, 2)])
+    cmw = Dict{Data{Int}, Real}([(NA, 1.1), (3, 5.5)])
     @test isequal(countmap(d), cm)
     @test isequal(countmap(d, w), cmw)
 
