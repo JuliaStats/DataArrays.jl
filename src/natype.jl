@@ -30,6 +30,7 @@ A value denoting missingness within the domain of any type.
 const NA = NAtype()
 
 Base.show(io::IO, x::NAtype) = print(io, "NA")
+Base.symbol(x::NAtype) = :NA
 
 struct NAException <: Exception
     msg::String
