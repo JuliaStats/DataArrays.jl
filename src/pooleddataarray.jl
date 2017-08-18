@@ -466,11 +466,7 @@ julia> p # has been modified
  "B"
 ```
 """
-<<<<<<< HEAD
-function setlevels!(x::PooledDataArray{T,R}, newpool::AbstractVector{T}) where {T,R}
-=======
-function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
->>>>>>> Stop lying about eltype
+function setlevels!(x::PooledDataArray{T,R}, newpool::AbstractVector) where {T,R}
     if newpool == myunique(newpool) # no NAs or duplicates
         x.pool = newpool
         return x
@@ -487,12 +483,6 @@ function setlevels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     end
 end
 
-<<<<<<< HEAD
-setlevels!(x::PooledDataArray{T, R},
-           newpool::AbstractVector) where {T, R} = setlevels!(x, convert(Array{T}, newpool))
-
-=======
->>>>>>> Stop lying about eltype
 function setlevels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
@@ -559,13 +549,9 @@ end
 ##
 ##############################################################################
 
-<<<<<<< HEAD
+
 function Base.similar(pda::PooledDataArray{T,R}, S::Type, dims::Dims) where {T,R}
-    PooledDataArray(RefArray(zeros(R, dims)), S[])
-=======
-function Base.similar{T,R}(pda::PooledDataArray{T,R}, S::Type, dims::Dims)
     PooledDataArray(RefArray(zeros(R, dims)), extractT(S)[])
->>>>>>> Stop lying about eltype
 end
 
 ##############################################################################
