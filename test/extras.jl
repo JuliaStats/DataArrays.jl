@@ -1,12 +1,14 @@
-@testset "Extras" begin
+# @testset "Extras" begin
     ##########
     ## countmap
     ##########
 
     d = @data [NA,3,3]
     w = weights([1.1,2.2,3.3])
-    cm = Dict{Data{Int}, Int}([(NA, 1), (3, 2)])
-    cmw = Dict{Data{Int}, Real}([(NA, 1.1), (3, 5.5)])
+    # cm = Dict{DataArrays.Data{Int}, Int}([(NA, 1), (3, 2)])
+    # cmw = Dict{DataArrays.Data{Int}, Real}([(NA, 1.1), (3, 5.5)])
+    cm = Dict{Union{NAtype,Int}, Int}([(NA, 1), (3, 2)])
+    cmw = Dict{Union{NAtype,Int}, Real}([(NA, 1.1), (3, 5.5)])
     @test isequal(countmap(d), cm)
     @test isequal(countmap(d, w), cmw)
 
@@ -44,4 +46,4 @@
     @test isequal(repeat(@pdata [:a :b NA]; inner = [2,1], outer = [1,3]),
                   @pdata [:a :b NA :a :b NA :a :b NA;
                           :a :b NA :a :b NA :a :b NA])
-end
+# end
