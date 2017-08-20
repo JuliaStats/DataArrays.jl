@@ -4,6 +4,7 @@
 
 using Base.Test
 using DataArrays
+using DataArrays: Data
 
 my_tests = ["abstractarray.jl",
             "booleans.jl",

@@ -19,12 +19,13 @@ function StatsBase.addcounts!(cm::Dict{U,W}, x::AbstractDataArray{T}, wv::Weight
     return cm
 end
 
-function StatsBase.countmap(x::AbstractDataArray{T}) where T
-    addcounts!(Dict{Union{T, NAtype}, Int}(), x)
+
+function StatsBase.countmap(x::AbstractDataArray{T}) where {T}
+    addcounts!(Dict{Data{T}, Int}(), x)
 end
 
 function StatsBase.countmap(x::AbstractDataArray{T}, wv::Weights{W}) where {T,W}
-    addcounts!(Dict{Union{T, NAtype}, W}(), x, wv)
+    addcounts!(Dict{Data{T}, W}(), x, wv)
 end
 
 """

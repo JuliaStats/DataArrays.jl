@@ -128,4 +128,12 @@
     @test map!(abs, x, x) == @data([1, 2])
     @test isequal(map!(+, DataArray(Float64, 3), @data([1, NA, 3]), @data([NA, 2, 3])), @data([NA, NA, 6]))
     @test map!(isequal, DataArray(Float64, 3), @data([1, NA, NA]), @data([1, NA, 3])) == @data([true, true, false])
+
+    # isna doesn't propagate NAs so it should return BitArrays
+    x = isna.(@data [NA, 1, 2])
+    @test x isa BitArray
+    @test x == [true, false, false]
+    x = (!).(isna.(@data [NA, 1, 2]))
+    @test x isa BitArray
+    @test x == [false, true, true]
 end

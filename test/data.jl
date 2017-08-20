@@ -71,13 +71,13 @@
     @test size(dvint) == (4,)
     @test length(dvint) == 4
     @test sum(isna.(dvint)) == 1
-    @test eltype(dvint) == Int
+    @test eltype(dvint) == Data{Int}
 
     #test_group("PooledDataVector methods")
     @test size(pdvstr) == (7,)
     @test length(pdvstr) == 7
     @test sum(isna.(pdvstr)) == 1
-    @test eltype(pdvstr) == String
+    @test eltype(pdvstr) == Data{String}
 
     #test_group("DataVector operations")
     @test isequal(dvint .+ 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
@@ -99,7 +99,7 @@
     @test all(convert(Vector{Int}, dvint2) .== [5:8;])
     @test all([i + 1 for i in dvint2] .== [6:9;])
     @test all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
-    @test repr(dvint) == "[1, 2, NA, 4]"
+    @test repr(dvint) == "Union{DataArrays.NAtype, $Int}[1, 2, NA, 4]"
 
     #test_group("PooledDataVector to something else")
     @test all(dropna(pdvstr) .== ["one", "one", "two", "two", "one", "one"])

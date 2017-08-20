@@ -62,4 +62,14 @@
     @test_throws NAException for v in each_failna(dv); end
     @test collect(each_dropna(dv)) == a
     @test collect(each_replacena(dv, 4)) == [4, 4, a..., 4]
+
+    @testset "promotion" for (T1, T2) in ((Int, Float64),
+                                          (Dates.Minute, Dates.Second))
+        @eval begin
+            @test promote_type($T1, Data{$T2})       == Data{$T2}
+            @test promote_type(Data{$T1}, $T2)       == Data{$T2}
+            @test promote_type(Data{$T1}, Data{$T2}) == Data{$T2}
+        end
+    end
+
 end

@@ -25,7 +25,7 @@
     @test isequal(dv, convert(DataArray, 1:3))
 
     dv = DataArray(Int, 3)
-    @test isequal(eltype(dv), Int)
+    @test isequal(eltype(dv), Data{Int})
     @test isequal(dv.na, trues(3))
 
     dv = convert(DataArray, zeros(3))
@@ -67,7 +67,7 @@
     @test isequal(pdv, convert(PooledDataArray, PooledDataArray([1, 2, 3])))
 
     pdv = PooledDataArray(Int, 3)
-    @test isequal(eltype(pdv), Int)
+    @test isequal(eltype(pdv), Data{Int})
     @test all(isna.(pdv) .== trues(3))
 
     pdv = convert(PooledDataArray, zeros(3))
@@ -106,7 +106,7 @@
     @test isequal(dm, convert(DataArray, trues(2, 2)))
 
     dm = DataArray(Int, 2, 2)
-    @test isequal(eltype(dm), Int)
+    @test isequal(eltype(dm), Data{Int})
     @test isequal(dm.na, trues(2, 2))
 
     @test_nowarn convert(DataArray, zeros(2, 2))

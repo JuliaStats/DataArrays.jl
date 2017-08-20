@@ -162,7 +162,7 @@ function Base.resize!(da::DataArray{T,1}, n::Int) where T
 end
 
 function Base.similar(da::DataArray, T::Type, dims::Dims) #-> DataArray{T}
-    return DataArray(Array{T}(dims), trues(dims))
+    return DataArray(Array{extractT(T)}(dims), trues(dims))
 end
 
 Base.size(d::DataArray) = size(d.data) # -> (Int...)
@@ -243,8 +243,6 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
 end
 
 dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
-
-Base.broadcast(::typeof(isna), da::DataArray) = copy(da.na)
 
 Base.any(::typeof(isna), da::DataArray) = any(da.na) # -> Bool
 Base.all(::typeof(isna), da::DataArray) = all(da.na) # -> Bool

@@ -106,9 +106,9 @@ end
 PooledDataArray(d::PooledDataArray) = d
 
 # Constructor from array, w/ pool, missingness, and ref type
-function PooledDataArray(d::AbstractArray{T, N},
+function PooledDataArray(d::AbstractArray{<:Data{T}, N},
                          pool::Vector{T},
-                         m::AbstractArray{Bool, N},
+                         m::AbstractArray{<:Data{Bool}, N},
                          r::Type{R} = DEFAULT_POOLED_REF_TYPE) where {T,R<:Integer,N}
     if length(pool) > typemax(R)
         throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))"))
@@ -466,7 +466,7 @@ julia> p # has been modified
  "B"
 ```
 """
-function setlevels!(x::PooledDataArray{T,R}, newpool::AbstractVector{T}) where {T,R}
+function setlevels!(x::PooledDataArray{T,R}, newpool::AbstractVector) where {T,R}
     if newpool == myunique(newpool) # no NAs or duplicates
         x.pool = newpool
         return x
@@ -482,9 +482,6 @@ function setlevels!(x::PooledDataArray{T,R}, newpool::AbstractVector{T}) where {
         return x
     end
 end
-
-setlevels!(x::PooledDataArray{T, R},
-           newpool::AbstractVector) where {T, R} = setlevels!(x, convert(Array{T}, newpool))
 
 function setlevels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
@@ -552,8 +549,9 @@ end
 ##
 ##############################################################################
 
+
 function Base.similar(pda::PooledDataArray{T,R}, S::Type, dims::Dims) where {T,R}
-    PooledDataArray(RefArray(zeros(R, dims)), S[])
+    PooledDataArray(RefArray(zeros(R, dims)), extractT(S)[])
 end
 
 ##############################################################################
