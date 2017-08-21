@@ -22,8 +22,8 @@ function mapreduce_seq_impl_skipna(f, op, T, A::DataArray, ifirst::Int, ilast::I
 
     while i < ilast
         i += 1
-        @inbounds na = Base.unsafe_bitgetindex(chunks, i)
-        na && continue
+        @inbounds na_el = Base.unsafe_bitgetindex(chunks, i)
+        na_el && continue
         @inbounds d = data[i]
         v = op(v, f(d))
     end
@@ -36,7 +36,7 @@ function mapreduce_pairwise_impl_skipna(f, op, A::DataArray{T}, bytefirst::Int, 
         ifirst = 64*(bytefirst-1)+1
         ilast = min(64*bytelast, length(A))
         # Fall back to Base implementation if no NAs in block
-        return ilast - ifirst + 1 == n_notna ? Base.mapreduce_seq_impl(f, op, A.data, ifirst, ilast) :
+        return ilast - ifirst + 1 == n_notna ? Base.mapreduce_impl(f, op, A.data, ifirst, ilast) :
                                                mapreduce_seq_impl_skipna(f, op, T, A, ifirst, ilast)
     end
 
