@@ -5,28 +5,28 @@
 
 Construct a `DataArray`, an `N`-dimensional array with element type `T` that allows missing
 values. The resulting array uses the data in `d` with `m` as a bitmask to signify missingness.
-That is, for each index `i` in `d`, if `m[i]` is `true`, the array contains `NA` at index `i`,
+That is, for each index `i` in `d`, if `m[i]` is `true`, the array contains `null` at index `i`,
 otherwise it contains `d[i]`.
 
     DataArray(T::Type, dims...)
 
 Construct a `DataArray` with element type `T` and dimensions specified by `dims`. All elements
-default to `NA`.
+default to `null`.
 
 # Examples
 
 ```jldoctest
 julia> DataArray([1, 2, 3], [true, false, true])
 3-element DataArrays.DataArray{Int64,1}:
-  NA
+  null
  2
-  NA
+  null
 
 julia> DataArray(Float64, 3, 3)
 3×3 DataArrays.DataArray{Float64,2}:
- NA  NA  NA
- NA  NA  NA
- NA  NA  NA
+ null  null  null
+ null  null  null
+ null  null  null
 ```
 """
 mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
@@ -39,14 +39,14 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
             msg = "Data and missingness arrays must be the same size"
             throw(ArgumentError(msg))
         end
-        # additionally check that d does not contain NA entries
+        # additionally check that d does not contain null entries
         if eltype(d) === Any
             for i in eachindex(d)
-                if isassigned(d, i) && isna(d, i)
+                if isassigned(d, i) && isnull(d, i)
                     m[i] = true
                 end
             end
-        elseif eltype(d) <: NAtype
+        elseif eltype(d) <: Null
             m = trues(m)
         end
         new(d, m)
@@ -146,7 +146,7 @@ function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Inte
     dest
 end
 
-Base.fill!(A::DataArray, ::NAtype) = (fill!(A.na, true); A)
+Base.fill!(A::DataArray, ::Null) = (fill!(A.na, true); A)
 Base.fill!(A::DataArray, v) = (fill!(A.data, v); fill!(A.na, false); A)
 
 function Base.deepcopy(d::DataArray) # -> DataArray{T}
@@ -162,7 +162,7 @@ function Base.resize!(da::DataArray{T,1}, n::Int) where T
 end
 
 function Base.similar(da::DataArray, T::Type, dims::Dims) #-> DataArray{T}
-    return DataArray(Array{extractT(T)}(dims), trues(dims))
+    return DataArray(Array{Nulls.T(T)}(dims), trues(dims))
 end
 
 Base.size(d::DataArray) = size(d.data) # -> (Int...)
@@ -189,9 +189,9 @@ end
 
 function Base.convert{S, T, N}(::Type{Array{S, N}},
                                x::DataArray{T, N}) # -> Array{S, N}
-    if any(isna, x)
-        err = "Cannot convert DataArray with NA's to desired type"
-        throw(NAException(err))
+    if any(isnull, x)
+        err = "Cannot convert DataArray with nulls to desired type"
+        throw(NullException(err))
     else
         return convert(Array{S, N}, x.data)
     end
@@ -244,10 +244,10 @@ end
 
 dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
 
-Base.any(::typeof(isna), da::DataArray) = any(da.na) # -> Bool
-Base.all(::typeof(isna), da::DataArray) = all(da.na) # -> Bool
+Base.any(::typeof(isnull), da::DataArray) = any(da.na) # -> Bool
+Base.all(::typeof(isnull), da::DataArray) = all(da.na) # -> Bool
 
-isna(da::DataArray, I::Real, Is::Real...) = getindex(da.na, I, Is...)
+Base.isnull(da::DataArray, I::Real, Is::Real...) = getindex(da.na, I, Is...)
 
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
     n = length(da)
@@ -301,11 +301,11 @@ julia> data([1, 2, 3])
  2
  3
 
-julia> data(@data [1, 2, NA])
+julia> data(@data [1, 2, null])
 3-element DataArrays.DataArray{Int64,1}:
  1
  2
-  NA
+  null
 ```
 """
 data(a::AbstractArray) = convert(DataArray, a)
@@ -316,9 +316,9 @@ data(a::AbstractArray) = convert(DataArray, a)
 for f in (:(Base.float),)
     @eval begin
         function ($f)(da::DataArray) # -> DataArray
-            if any(isna, da)
-                err = "Cannot convert DataArray with NA's to desired type"
-                throw(NAException(err))
+            if any(isnull, da)
+                err = "Cannot convert DataArray with nulls to desired type"
+                throw(NullException(err))
             else
                 ($f)(da.data)
             end
@@ -329,7 +329,7 @@ end
 """
     finduniques(da::DataArray) -> (Vector, Int)
 
-Get the unique values in `da` as well as the index of the first `NA` value
+Get the unique values in `da` as well as the index of the first `null` value
 in `da` if present, or 0 otherwise.
 """
 function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
@@ -338,7 +338,7 @@ function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
     n = length(da)
     firstna = 0
     for i in 1:n
-        if isna(da, i)
+        if isnull(da, i)
             if firstna == 0
                 firstna = length(out) + 1
             else
@@ -380,7 +380,7 @@ end
 """
     levels(da::DataArray) -> DataVector
 
-Return a vector of the unique values in `da`, excluding any `NA`s.
+Return a vector of the unique values in `da`, excluding any `null`s.
 
     levels(a::AbstractArray) -> Vector
 
@@ -389,7 +389,7 @@ Equivalent to `unique(a)`.
 # Examples
 
 ```jldoctest
-julia> levels(@data [1, 2, NA])
+julia> levels(@data [1, 2, null])
 2-element DataArrays.DataArray{Int64,1}:
  1
  2

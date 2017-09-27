@@ -1,11 +1,11 @@
-## mapreduce implementation that skips NA
+## mapreduce implementation that skips null
 
 function skipna_init(f, op, na::BitArray, data::Array, ifirst::Int, ilast::Int)
-    # Get first non-NA element
+    # Get first non-null element
     ifirst = Base.findnextnot(na, ifirst)
     @inbounds d1 = data[ifirst]
 
-    # Get next non-NA element
+    # Get next non-null element
     ifirst = Base.findnextnot(na, ifirst+1)
     @inbounds d2 = data[ifirst]
 
@@ -35,14 +35,14 @@ function mapreduce_pairwise_impl_skipna(f, op, A::DataArray{T}, bytefirst::Int, 
     if n_notna <= blksize
         ifirst = 64*(bytefirst-1)+1
         ilast = min(64*bytelast, length(A))
-        # Fall back to Base implementation if no NAs in block
+        # Fall back to Base implementation if no nulls in block
         return ilast - ifirst + 1 == n_notna ? Base.mapreduce_seq_impl(f, op, A.data, ifirst, ilast) :
                                                mapreduce_seq_impl_skipna(f, op, T, A, ifirst, ilast)
     end
 
     # Find byte in the middle of range
     # The block size is restricted so that there will always be at
-    # least two non-NA elements in the returned range
+    # least two non-null elements in the returned range
     chunks = A.na.chunks
     nmid = 0
     imid = bytefirst-1
@@ -84,14 +84,14 @@ function _mapreduce_skipna(f, op, A::DataArray{T}) where T
 end
 
 # This is only safe when we can guarantee that if a function is passed
-# NA, it returns NA. Otherwise we will fall back to the implementation
+# null, it returns null. Otherwise we will fall back to the implementation
 # in Base, which is slow because it's type-unstable, but guarantees the
 # correct semantics
 const SafeMapFuns = Union{typeof(identity), typeof(abs), typeof(abs2),
                             typeof(exp), typeof(log), typeof(Base.centralizedabs2fun)}
 const SafeReduceFuns = Union{typeof(+), typeof(*), typeof(max), typeof(min)}
 function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
-    any(A.na) && return NA
+    any(A.na) && return null
     Base._mapreduce(f, op, A.data)
 end
 
@@ -153,16 +153,16 @@ function Base.varm(A::DataArray{T}, m::Number; corrected::Bool=true, skipna::Boo
                      mapreduce_impl_skipna(Base.centralizedabs2fun(m), +, A),
           n - nna - corrected)
     else
-        any(A.na) && return NA
+        any(A.na) && return null
         Base.varm(A.data, m; corrected=corrected)
     end
 end
-Base.varm(A::DataArray{T}, m::NAtype; corrected::Bool=true, skipna::Bool=false) where {T} = NA
+Base.varm(A::DataArray{T}, m::Null; corrected::Bool=true, skipna::Bool=false) where {T} = null
 
 function Base.var(A::DataArray; corrected::Bool=true, mean=nothing, skipna::Bool=false)
     mean == 0 ? Base.varm(A, 0; corrected=corrected, skipna=skipna) :
     mean == nothing ? varm(A, Base.mean(A; skipna=skipna); corrected=corrected, skipna=skipna) :
-    isa(mean, Data{Number}) ?
+    isa(mean, Union{Number,Null}) ?
         varm(A, mean; corrected=corrected, skipna=skipna) :
         throw(ErrorException("Invalid value of mean."))
 end
@@ -180,7 +180,7 @@ function Base.mean(a::DataArray, w::Weights; skipna::Bool=false)
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values, v.na); skipna=true)
     else
-        any(isna, a) ? NA : mean(a.data, w)
+        any(isnull, a) ? null : mean(a.data, w)
     end
 end
 
@@ -189,6 +189,6 @@ function Base.mean(a::DataArray, w::Weights{W,V}; skipna::Bool=false) where {W,V
         v = a .* w.values
         sum(v; skipna=true) / sum(DataArray(w.values.data, v.na); skipna=true)
     else
-        any(isna, a) || any(isna, w.values) ? NA : wsum(a.data, w.values.data) / w.sum
+        any(isnull, a) || any(isnull, w.values) ? null : wsum(a.data, w.values.data) / w.sum
     end
 end

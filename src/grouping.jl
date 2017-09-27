@@ -1,7 +1,7 @@
 function groupsort_indexer(x::AbstractVector, ngroups::Integer, nalast::Bool=false)
     # translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
 
-    # count group sizes, location 0 for NA
+    # count group sizes, location 0 for null
     n = length(x)
     # counts = x.pool
     counts = fill(0, ngroups + 1)

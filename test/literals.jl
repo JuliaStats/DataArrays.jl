@@ -7,85 +7,85 @@
     @test isequal(dv, DataArray(Float64[], Bool[]))
     @test typeof(dv) == DataVector{Float64}
 
-    dv = @data [1, NA, 3]
+    dv = @data [1, null, 3]
     @test isequal(dv,
                   DataArray([1, 0, 3],
                             [false, true, false]))
 
-    dv = @data [1 NA 3]
+    dv = @data [1 null 3]
     @test isequal(dv,
                   DataArray([1 0 3],
                             [false true false]))
 
-    dv = @data Float64[1, NA, 3]
+    dv = @data Float64[1, null, 3]
     @test isequal(dv,
                   DataArray(Float64[1, 0, 3],
                             [false, true, false]))
     @test typeof(dv) == DataVector{Float64}
 
-    dv = @data Float64[1 NA 3]
+    dv = @data Float64[1 null 3]
     @test isequal(dv,
                   DataArray(Float64[1 0 3],
                             [false true false]))
     @test typeof(dv) == DataMatrix{Float64}
 
-    dv = @data [NA, NA]
+    dv = @data [null, null]
     @test isequal(dv, DataArray(Any, 2))
     @test typeof(dv) == DataVector{Any}
 
-    dv = @data [NA NA]
+    dv = @data [null null]
     @test isequal(dv, DataArray(Any, 1, 2))
     @test typeof(dv) == DataMatrix{Any}
 
-    dm = @data [1 NA; 3 4]
+    dm = @data [1 null; 3 4]
     @test isequal(dm,
                   DataArray([1 0; 3 4],
                             [false true; false false]))
 
-    dm = @data Float64[1 NA; 3 4]
+    dm = @data Float64[1 null; 3 4]
     @test isequal(dm,
                   DataArray(Float64[1 0; 3 4],
                             [false true; false false]))
     @test typeof(dm) == DataMatrix{Float64}
 
-    dm = @data [NA NA; NA NA]
+    dm = @data [null null; null null]
     @test isequal(dm, DataArray(Any, 2, 2))
     @test typeof(dm) == DataMatrix{Any}
 
-    pdv = @pdata [1, NA, 3]
+    pdv = @pdata [1, null, 3]
     @test isequal(pdv,
                   PooledDataArray([1, 0, 3],
                                   [false, true, false]))
 
-    pdv = @pdata Float64[1, NA, 3]
+    pdv = @pdata Float64[1, null, 3]
     @test isequal(pdv,
                   PooledDataArray(Float64[1, 0, 3],
                                   [false, true, false]))
     @test typeof(pdv) == PooledDataArray{Float64,UInt32,1}
 
-    pdv = @pdata [1 NA 3]
+    pdv = @pdata [1 null 3]
     @test isequal(pdv,
                   PooledDataArray([1 0 3],
                                   [false true false]))
 
-    pdv = @pdata Float64[1 NA 3]
+    pdv = @pdata Float64[1 null 3]
     @test isequal(pdv,
                   PooledDataArray(Float64[1 0 3],
                                   [false true false]))
     @test typeof(pdv) == PooledDataArray{Float64,UInt32,2}
 
-    pdm = @pdata [1 NA; 3 4]
+    pdm = @pdata [1 null; 3 4]
     @test isequal(pdm,
                   PooledDataArray([1 0; 3 4],
                                   [false true; false false]))
 
-    pdm = @pdata Float64[1 NA; 3 4]
+    pdm = @pdata Float64[1 null; 3 4]
     @test isequal(pdm,
                   PooledDataArray(Float64[1 0; 3 4],
                                   [false true; false false]))
     @test typeof(pdm) == PooledDataArray{Float64,UInt32,2}
 
-    pdm = @pdata [1 NA;
+    pdm = @pdata [1 null;
                 3 4]
     @test isequal(pdm,
                   PooledDataArray([1 0; 3 4],
@@ -107,12 +107,12 @@
     pdm2 = @pdata ones(4, 4)
     pdm3 = @pdata rand(4, 4)
 
-    mixed1 = @data ["x", 1, 1.23, NA]
-    mixed2 = @data [NA, "x", 1, 1.23, NA]
+    mixed1 = @data ["x", 1, 1.23, null]
+    mixed2 = @data [null, "x", 1, 1.23, null]
 
     @test isequal(mixed1, DataArray(Any["x", 1, 1.23, 0],
                                     [false, false, false, true]))
-    @test isequal(mixed2, DataArray(Any[NA, "x", 1, 1.23, 0],
+    @test isequal(mixed2, DataArray(Any[null, "x", 1, 1.23, 0],
                                     [true, false, false, false, true]))
 
     x = 5.1
@@ -131,14 +131,14 @@
     @test isequal(@data([1, 2, x]),
                   DataArray([1, 2, x], [false, false, false]))
 
-    ex = :([1, 2, NA])
+    ex = :([1, 2, null])
     DataArrays.parsedata(ex)
-    @test isequal(@data([1, 2, NA]),
+    @test isequal(@data([1, 2, null]),
                   DataArray([1, 2, 1], [false, false, true]))
 
-    ex = :([1, 2, x, NA])
+    ex = :([1, 2, x, null])
     DataArrays.parsedata(ex)
-    @test isequal(@data([1, 2, x, NA]),
+    @test isequal(@data([1, 2, x, null]),
                   DataArray([1, 2, x, 1], [false, false, false, true]))
 
     # Matrices
@@ -158,20 +158,20 @@
     @test isequal(@data([1 2; x x]),
                   DataArray([1 2; x x], [false false; false false]))
 
-    ex = :([1 2; NA NA])
+    ex = :([1 2; null null])
     DataArrays.parsedata(ex)
-    @test isequal(@data([1 2; NA NA]),
+    @test isequal(@data([1 2; null null]),
                   DataArray([1 2; 1 1], [false false; true true]))
 
-    ex = :([1 2; x NA])
+    ex = :([1 2; x null])
     DataArrays.parsedata(ex)
-    @test isequal(@data([1 2; x NA]),
+    @test isequal(@data([1 2; x null]),
                   DataArray([1 2; x 1], [false false; false true]))
 
     # Complex vector expressions
-    ex = :([1 + 1, 2 + 2, x * x, NA])
+    ex = :([1 + 1, 2 + 2, x * x, null])
     DataArrays.parsedata(ex)
-    @test isequal(@data([1 + 1, 2 + 2, x * x, NA]),
+    @test isequal(@data([1 + 1, 2 + 2, x * x, null]),
                   DataArray([1 + 1, 2 + 2, x * x, 1],
                             [false, false, false, true]))
 
@@ -194,9 +194,9 @@
                             [false, false]))
 
     # Complex matrix expressions
-    ex = :([1 + 1 2 + 2; x * x NA])
+    ex = :([1 + 1 2 + 2; x * x null])
     DataArrays.parsedata(ex)
-    @test isequal(@data([1 + 1 2 + 2; x * x NA]),
+    @test isequal(@data([1 + 1 2 + 2; x * x null]),
                   DataArray([1 + 1 2 + 2; x * x 1],
                             [false false; false true]))
 
@@ -210,11 +210,11 @@
                             [false false;
                              false false]))
 
-    @test isequal(DataArrays.fixargs(:([1, 2, NA, x]).args, -1),
+    @test isequal(DataArrays.fixargs(:([1, 2, null, x]).args, -1),
                   (Any[1, 2, -1, :x], Any[false, false, true, false]))
 
-    @test isequal(DataArrays.findstub_vector(:([1, 2, NA, x])), 1)
-    @test isequal(DataArrays.findstub_vector(:([NA, NA, NA, x])), :x)
+    @test isequal(DataArrays.findstub_vector(:([1, 2, null, x])), 1)
+    @test isequal(DataArrays.findstub_vector(:([null, null, null, x])), :x)
 
     # Lots of variables
     a, b, c, d = 1, 2, 3, 4

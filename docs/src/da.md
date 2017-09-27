@@ -5,8 +5,8 @@ CurrentModule = DataArrays
 ```
 
 ```@docs
-NA
-NAtype
+null
+Null
 ```
 
 ## Arrays with possibly missing data
@@ -19,9 +19,11 @@ DataArray
 DataVector
 DataMatrix
 @data
-isna
-dropna
-padna
+isnull
+Nulls.fail
+Nulls.skip
+Nulls.replace
+padnull
 levels
 ```
 

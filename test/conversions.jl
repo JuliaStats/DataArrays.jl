@@ -1,18 +1,18 @@
 @testset "Conversions" begin
-    @test isequal(@data([1, 2, NA]),
-                  convert(DataArray, @pdata([1, 2, NA])))
+    @test isequal(@data([1, 2, null]),
+                  convert(DataArray, @pdata([1, 2, null])))
 
     # Test vector() and matrix() conversion tools
     dv = @data ones(5)
     @test isa(convert(Vector{Float64}, dv), Vector{Float64})
-    dv[1] = NA
+    dv[1] = null
     # Should raise errors:
     # vector(dv)
     # convert(Vector{Float64}, dv)
 
     dm = @data ones(3, 3)
     @test isa(convert(Matrix{Float64}, dm), Matrix{Float64})
-    dm[1, 1] = NA
+    dm[1, 1] = null
     # Should raise errors:
     # matrix(dm)
     # convert(Matrix{Float64}, dm)

@@ -2,8 +2,8 @@ macro test_da_approx_eq(da1, da2)
     quote
         v1 = $(esc(da1))
         v2 = $(esc(da2))
-        na = isna.(v1)
-        @test na == isna.(v2)
+        na = isnull.(v1)
+        @test na == isnull.(v2)
         defined = (!).(na)
         if any(defined)
             @test isapprox(v1[defined], v2[defined], nans = true)
@@ -42,9 +42,9 @@ end
         dims = intersect(region, 1:ndims(A))
         if isempty(dims)
             if skipna
-                naval = f(T[], 1)
+                naval = f(Nulls.T(T)[], 1)
                 A = copy(A)
-                A[isna.(A)] = isempty(naval) ? NA : naval[1]
+                A[isnull.(A)] = isempty(naval) ? null : naval[1]
             end
             return A
         end
@@ -102,7 +102,7 @@ end
                 catch e
                     if (isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed.") || (isa(e, ArgumentError) && e.msg == "reducing over an empty collection is not allowed")
 
-                        R[ridx...] = NA
+                        R[ridx...] = null
                     else
                         println(typeof(e))
                         rethrow(e)
@@ -126,10 +126,10 @@ end
                 # println("region = $region, skipna = $skipna")
 
                 outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
-                has_na = any(isna, Areduc)
+                has_na = any(isnull, Areduc)
                 if has_na && !skipna
                     # Should throw an error reducing to non-DataArray
-                    @test_throws NAException sum!(outputs[1].data, Areduc; skipna=skipna)
+                    @test_throws NullException sum!(outputs[1].data, Areduc; skipna=skipna)
                 else
                     # Should be able to reduce to non-DataArray
                     push!(outputs, outputs[1].data)
@@ -166,13 +166,13 @@ end
         end
     end
 
-    # Test NA-skipping behavior for maximum
-    a = @data([NA NA; 3 4])
+    # Test null-skipping behavior for maximum
+    a = @data([null null; 3 4])
     @test isequal(maximum(a, 1; skipna=true), [3 4])
     @test isequal(maximum!(zeros(1, 2), a; skipna=true), [3 4])
 
-    # Maximum should give an NA in the output if all values along dimension are NA
-    @test isequal(maximum(a, 2; skipna=true), @data([NA 4])')
+    # Maximum should give an null in the output if all values along dimension are null
+    @test isequal(maximum(a, 2; skipna=true), @data([null 4])')
     # Maximum should refuse to reduce to a non-DataArray
-    @test_throws NAException maximum!(zeros(2, 1), a; skipna=true)
+    @test_throws NullException maximum!(zeros(2, 1), a; skipna=true)
 end

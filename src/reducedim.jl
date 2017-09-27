@@ -37,7 +37,7 @@ function _count(B::BitArray, istart::Int, iend::Int)
     return n
 end
 
-## NA-preserving
+## null-preserving
 @generated function _mapreducedim!(f::SafeMapFuns, op::SafeReduceFuns,
                                    R::DataArray, A::DataArray{T,N} where {T}) where {N}
     quote
@@ -67,8 +67,8 @@ end
 
             new_data = R.data
 
-            # If reducing to a DataArray, skip strides with NAs.
-            # In my benchmarks, it is actually faster to compute a new NA
+            # If reducing to a DataArray, skip strides with nulls.
+            # In my benchmarks, it is actually faster to compute a new null
             # array and BitArray it than to operate on the BitArray
             # directly.
             new_na = fill(false, size(new_data))
@@ -100,7 +100,7 @@ end
     end
 end
 
-## NA-preserving to array
+## null-preserving to array
 @generated function _mapreducedim!(f::SafeMapFuns, op::SafeReduceFuns,
                                    R::AbstractArray, A::DataArray{T,N} where {T}) where {N}
     quote
@@ -117,7 +117,7 @@ end
             extr = daextract(R)
             for i = 1:nslices
                 if _any(na, ibase+1, ibase+lsiz)
-                    throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
+                    throw(NullException())
                 else
                     v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
                     @inbounds unsafe_dasetindex!(R, extr, v, i)
@@ -127,8 +127,8 @@ end
         else
             @nextract $N sizeR d->size(R,d)
 
-            # If reducing to a non-DataArray, throw an error at the start on NA
-            any(isna, A) && throw(NAException("cannot reduce a DataArray containing NAs to an AbstractArray"))
+            # If reducing to a non-DataArray, throw an error at the start on null
+            any(isnull, A) && throw(NullException())
             @nloops $N i data d->(j_d = sizeR_d==1 ? 1 : i_d) begin
                 @inbounds x = (@nref $N data i)
                 v = f(x)
@@ -142,12 +142,12 @@ end
 end
 _mapreducedim!(f, op, R, A) = Base._mapreducedim!(f, op, R, A)
 
-## NA-skipping
+## null-skipping
 _getdata(A) = A
 _getdata(A::DataArray) = A.data
 
 # mapreduce across a dimension. If specified, C contains the number of
-# non-NA values reduced into each element of R.
+# non-null values reduced into each element of R.
 @generated function _mapreducedim_skipna_impl!(f, op, R::AbstractArray,
                                                       C::Union{Array{Int}, Void},
                                                       A::DataArray{T,N} where {T}) where {N}
@@ -210,14 +210,14 @@ end
 _mapreducedim_skipna!(f, op, R::AbstractArray, A::DataArray) =
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 
-# for MinFun/MaxFun, min or max is NA if all values along a dimension are NA
+# for MinFun/MaxFun, min or max is null if all values along a dimension are null
 function _mapreducedim_skipna!(f, op::Union{typeof(min), typeof(max)}, R::DataArray, A::DataArray)
     R.na = BitArray(all!(fill(true, size(R)), A.na))
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 end
 function _mapreducedim_skipna!(f, op::Union{typeof(min), typeof(max)}, R::AbstractArray, A::DataArray)
     if any(all!(fill(true, size(R)), A.na))
-        throw(NAException("all values along specified dimension are NA for one element of reduced dimension; cannot reduce to non-DataArray"))
+        throw(NullException())
     end
     _mapreducedim_skipna_impl!(f, op, R, nothing, A)
 end
@@ -347,7 +347,7 @@ end
             ibase = 0
             extr = daextract(R)
             for i = 1:nslices
-                if unsafe_isna(S, Sextr, i) || _any(na, ibase+1, ibase+lsiz)
+                if unsafe_isnull(S, Sextr, i) || _any(na, ibase+1, ibase+lsiz)
                     unsafe_setna!(R, extr, i)
                 else
                     @inbounds s = unsafe_getindex_notna(S, Sextr, i)
@@ -409,7 +409,7 @@ end
         @nextract $N sizeR d->size(new_data,d)
         sizA1 = size(data, 1)
 
-        # If there are any NAs in S, assume these will produce NAs in R
+        # If there are any nulls in S, assume these will produce nulls in R
         if isa(S, DataArray)
             copy!(R.na, S.na)
         end
@@ -422,8 +422,8 @@ end
                 @inbounds v = new_data[i]
                 !isa(C, Void) && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
 
-                # If S[i] is NA, skip this iteration
-                @inbounds sna = unsafe_isna(S, Sextr, i)
+                # If S[i] is null, skip this iteration
+                @inbounds sna = unsafe_isnull(S, Sextr, i)
                 if !sna
                     @inbounds s = unsafe_getindex_notna(S, Sextr, i)
                     # TODO: use pairwise impl for sum
@@ -447,7 +447,7 @@ end
             @nloops($N, i, A,
                 d->(state_{d-1} = state_d),
                 d->(skip_d || (state_d = state_0)), begin
-                    @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k) | unsafe_isna(S, Sextr, state_0)
+                    @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k) | unsafe_isnull(S, Sextr, state_0)
                     if xna
                         !isa(C, Void) && @inbounds C[state_0] -= 1
                     else
@@ -482,7 +482,7 @@ function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected:
             # Compute R = abs2(A-m)
             _mapreducedim_skipna_2arg!(Abs2MinusFun(), +, R, C, A, m)
 
-            # Divide by number of non-NA values
+            # Divide by number of non-null values
             if corrected
                 for i = 1:length(C)
                     @inbounds C[i] = max(C[i] - 1, 0)

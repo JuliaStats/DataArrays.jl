@@ -18,7 +18,7 @@ end
                                Number Missing: 0
                                % Missing:      0.000000
                                """
-    describe(io, @data([1, NA]))
+    describe(io, @data([1, null]))
     @test String(take!(io)) == """
                                Summary Stats:
                                Mean:           1.000000
@@ -41,7 +41,7 @@ end
                                Number Missing: 0
                                % Missing:      0.000000
                                """
-    describe(io, @data(["s", NA]))
+    describe(io, @data(["s", null]))
     @test String(take!(io)) == """
                                Summary Stats:
                                Length:         2

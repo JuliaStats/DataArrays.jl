@@ -26,11 +26,11 @@
         @test broadcast(+, arr([1, 0]), arr([1, 4])) == [2, 4]
         @test broadcast(+, arr([1, 0]), 2) == [3, 2]
 
-        @test isequal(broadcast(+, arr(eye(2)), arr(@data [NA, 4])), @data [NA NA; 4 5])
-        @test isequal(broadcast(+, arr(eye(2)), arr(@data [NA  4])), @data [NA 4; NA 5])
-        @test isequal(broadcast(+, arr(@data [1  NA]), arr([1, 4])), @data [2 NA; 5 NA])
-        @test isequal(broadcast(+, arr(@data [1, NA]), arr([1  4])), @data [2 5; NA NA])
-        @test isequal(broadcast(+, arr(@data [1, NA]), arr([1, 4])), @data [2, NA])
+        @test isequal(broadcast(+, arr(eye(2)), arr(@data [null, 4])), @data [null null; 4 5])
+        @test isequal(broadcast(+, arr(eye(2)), arr(@data [null  4])), @data [null 4; null 5])
+        @test isequal(broadcast(+, arr(@data [1  null]), arr([1, 4])), @data [2 null; 5 null])
+        @test isequal(broadcast(+, arr(@data [1, null]), arr([1  4])), @data [2 5; null null])
+        @test isequal(broadcast(+, arr(@data [1, null]), arr([1, 4])), @data [2, null])
 
         @test @inferred(arr(eye(2)) .+ arr([1, 4])) == arr([2 1; 4 5])
         @test arr(eye(2)) .+ arr([1  4]) == arr([2 4; 1 5])
@@ -114,26 +114,26 @@
     # Test String broadcast
     @test broadcast(==, @data(["a", "b", "c", "d"]), "a") == @data([true,false,false,false])
 
-    # Test broadcasting of functions that do something besides propagate NA
-    @test isequal(broadcast(isequal, @data([NA, 1]), @data([NA 1])), @data([true false; false true]))
-    @test isequal(broadcast(isequal, @pdata([NA, 1]), @data([NA 1])), @data([true false; false true]))
-    @test isequal(broadcast(isequal, @data([NA, 1]), @pdata([NA 1])), @data([true false; false true]))
-    @test isequal(broadcast(isequal, @pdata([NA, 1]), @pdata([NA 1])), @pdata([true false; false true]))
-    @test isequal(broadcast(&, @data([NA, false]), @data([NA true false])), @data([NA NA false; false false false]))
-    @test isequal(broadcast(|, @data([NA, false]), @data([NA true false])), @data([NA true NA; NA true false]))
+    # Test broadcasting of functions that do something besides propagate null
+    @test isequal(broadcast(isequal, @data([null, 1]), @data([null 1])), @data([true false; false true]))
+    @test isequal(broadcast(isequal, @pdata([null, 1]), @data([null 1])), @data([true false; false true]))
+    @test isequal(broadcast(isequal, @data([null, 1]), @pdata([null 1])), @data([true false; false true]))
+    @test isequal(broadcast(isequal, @pdata([null, 1]), @pdata([null 1])), @pdata([true false; false true]))
+    @test isequal(broadcast(&, @data([null, false]), @data([null true false])), @data([null null false; false false false]))
+    @test isequal(broadcast(|, @data([null, false]), @data([null true false])), @data([null true null; null true false]))
 
     # Test map!
     @test map!(+, DataArray(Float64, 2), @data([1, 2]), @data([1, 2])) == @data([2, 4])
     x = @data([-1, -2])
     @test map!(abs, x, x) == @data([1, 2])
-    @test isequal(map!(+, DataArray(Float64, 3), @data([1, NA, 3]), @data([NA, 2, 3])), @data([NA, NA, 6]))
-    @test map!(isequal, DataArray(Float64, 3), @data([1, NA, NA]), @data([1, NA, 3])) == @data([true, true, false])
+    @test isequal(map!(+, DataArray(Float64, 3), @data([1, null, 3]), @data([null, 2, 3])), @data([null, null, 6]))
+    @test map!(isequal, DataArray(Float64, 3), @data([1, null, null]), @data([1, null, 3])) == @data([true, true, false])
 
-    # isna doesn't propagate NAs so it should return BitArrays
-    x = isna.(@data [NA, 1, 2])
+    # isnull doesn't propagate nulls so it should return BitArrays
+    x = isnull.(@data [null, 1, 2])
     @test x isa BitArray
     @test x == [true, false, false]
-    x = (!).(isna.(@data [NA, 1, 2]))
+    x = (!).(isnull.(@data [null, 1, 2]))
     @test x isa BitArray
     @test x == [false, true, true]
 end

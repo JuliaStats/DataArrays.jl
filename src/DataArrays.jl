@@ -4,6 +4,7 @@ module DataArrays
     using Base: promote_op
     using Base.Cartesian, Reexport
     @reexport using StatsBase
+    @reexport using Nulls
     using SpecialFunctions
 
     const DEFAULT_POOLED_REF_TYPE = UInt32
@@ -25,23 +26,15 @@ module DataArrays
            DataArray,
            DataMatrix,
            DataVector,
-           dropna,
-           each_failna,
-           each_dropna,
-           each_replacena,
-           EachFailNA,
-           EachDropNA,
-           EachReplaceNA,
+           EachFailNull,
+           EachDropNull,
+           EachReplaceNull,
            FastPerm,
            getpoolidx,
            gl,
            head,
-           isna,
            levels,
-           NA,
-           NAException,
-           NAtype,
-           padna,
+           padnull,
            pdata,
            PooledDataArray,
            PooledDataMatrix,
@@ -55,7 +48,6 @@ module DataArrays
            tail
 
     include("utils.jl")
-    include("natype.jl")
     include("abstractdataarray.jl")
     include("dataarray.jl")
     include("pooleddataarray.jl")
@@ -71,7 +63,6 @@ module DataArrays
     include("extras.jl")
     include("grouping.jl")
     include("statistics.jl")
-    include("predicates.jl")
     include("literals.jl")
     include("deprecated.jl")
 end

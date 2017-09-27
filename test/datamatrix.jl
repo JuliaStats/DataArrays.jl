@@ -35,25 +35,25 @@
     @test all(b * b .== m_b * m_b)
 
     #
-    # DataVector * DataMatrix w/ NA's
+    # DataVector * DataMatrix w/ nulls
     #
 
-    b[1, 1] = NA
+    b[1, 1] = null
     res = a * b[1:1, :]
-    @test all(isna.(res[:, 1]))
-    @test all(.!(isna.(res[:, 2])))
-    @test all(.!(isna.(res[:, 3])))
+    @test all(isnull.(res[:, 1]))
+    @test all(.!(isnull.(res[:, 2])))
+    @test all(.!(isnull.(res[:, 3])))
     res = a * b[2:2, :]
-    @test all(.!(isna.(res)))
+    @test all(.!(isnull.(res)))
 
     #
-    # DataMatrix w NA's * DataVector
+    # DataMatrix w nulls * DataVector
     #
 
     res = b * a
-    @test isna.(res[1])
-    @test .!(isna.(res[2]))
-    @test .!(isna.(res[3]))
+    @test isnull.(res[1])
+    @test .!(isnull.(res[2]))
+    @test .!(isnull.(res[3]))
 
     #
     # DataMatrix * DataMatrix
@@ -61,49 +61,49 @@
 
     res = b * b
     # 3x3 Float64 DataMatrix:
-    #  NA   NA   NA
-    #  NA  1.0  0.0
-    #  NA  0.0  1.0
-    @test isna.(res[1, 1])
-    @test isna.(res[1, 2])
-    @test isna.(res[1, 3])
-    @test isna.(res[2, 1])
-    @test .!(isna.(res[2, 2]))
-    @test .!(isna.(res[2, 3]))
-    @test isna.(res[3, 1])
-    @test .!(isna.(res[3, 2]))
-    @test .!(isna.(res[3, 3]))
+    #  null   null   null
+    #  null  1.0  0.0
+    #  null  0.0  1.0
+    @test isnull.(res[1, 1])
+    @test isnull.(res[1, 2])
+    @test isnull.(res[1, 3])
+    @test isnull.(res[2, 1])
+    @test .!(isnull.(res[2, 2]))
+    @test .!(isnull.(res[2, 3]))
+    @test isnull.(res[3, 1])
+    @test .!(isnull.(res[3, 2]))
+    @test .!(isnull.(res[3, 3]))
 
     res = b * @data eye(3)
     # 3x3 Float64 DataMatrix:
-    #   NA   NA   NA
+    #   null   null   null
     #  0.0  1.0  0.0
     #  0.0  0.0  1.0
-    @test isna.(res[1, 1])
-    @test isna.(res[1, 2])
-    @test isna.(res[1, 3])
-    @test .!(isna.(res[2, 1]))
-    @test .!(isna.(res[2, 2]))
-    @test .!(isna.(res[2, 3]))
-    @test .!(isna.(res[3, 1]))
-    @test .!(isna.(res[3, 2]))
-    @test .!(isna.(res[3, 3]))
+    @test isnull.(res[1, 1])
+    @test isnull.(res[1, 2])
+    @test isnull.(res[1, 3])
+    @test .!(isnull.(res[2, 1]))
+    @test .!(isnull.(res[2, 2]))
+    @test .!(isnull.(res[2, 3]))
+    @test .!(isnull.(res[3, 1]))
+    @test .!(isnull.(res[3, 2]))
+    @test .!(isnull.(res[3, 3]))
 
     res = (@data eye(3)) * b
     # julia> dataeye(3) * b
     # 3x3 Float64 DataMatrix:
-    #  NA  0.0  0.0
-    #  NA  1.0  0.0
-    #  NA  0.0  1.0
-    @test isna.(res[1, 1])
-    @test .!(isna.(res[1, 2]))
-    @test .!(isna.(res[1, 3]))
-    @test isna.(res[2, 1])
-    @test .!(isna.(res[2, 2]))
-    @test .!(isna.(res[2, 3]))
-    @test isna.(res[3, 1])
-    @test .!(isna.(res[3, 2]))
-    @test .!(isna.(res[3, 3]))
+    #  null  0.0  0.0
+    #  null  1.0  0.0
+    #  null  0.0  1.0
+    @test isnull.(res[1, 1])
+    @test .!(isnull.(res[1, 2]))
+    @test .!(isnull.(res[1, 3]))
+    @test isnull.(res[2, 1])
+    @test .!(isnull.(res[2, 2]))
+    @test .!(isnull.(res[2, 3]))
+    @test isnull.(res[3, 1])
+    @test .!(isnull.(res[3, 2]))
+    @test .!(isnull.(res[3, 3]))
 
     # Test row operations
     dm = @data eye(6, 2)

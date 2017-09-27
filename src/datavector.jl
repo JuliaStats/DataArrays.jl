@@ -2,7 +2,7 @@
 
 # TODO: Macroize these definitions
 
-function Base.push!(dv::DataVector, v::NAtype)
+function Base.push!(dv::DataVector, v::Null)
     resize!(dv.data, length(dv.data) + 1)
     push!(dv.na, true)
     return v
@@ -17,13 +17,13 @@ end
 function Base.pop!(dv::DataVector)
     d, m = pop!(dv.data), pop!(dv.na)
     if m
-        return NA
+        return null
     else
         return d
     end
 end
 
-function Base.unshift!(dv::DataVector{T}, v::NAtype) where T
+function Base.unshift!(dv::DataVector{T}, v::Null) where T
     ccall(:jl_array_grow_beg, Void, (Any, UInt), dv.data, 1)
     unshift!(dv.na, true)
     return v
@@ -38,7 +38,7 @@ end
 function Base.shift!(dv::DataVector{T}) where T
     d, m = shift!(dv.data), shift!(dv.na)
     if m
-        return NA
+        return null
     else
         return d
     end
@@ -53,7 +53,7 @@ end
 
 function Base.splice!(dv::DataVector, inds::Union{Integer, UnitRange{Int}}, ins::AbstractVector)
     # We cannot merely use the implementation in Base because this
-    # needs to handle NA in the replacement vector
+    # needs to handle null in the replacement vector
     v = dv[inds]
     m = length(ins)
     a = dv.data
@@ -79,7 +79,7 @@ function Base.splice!(dv::DataVector, inds::Union{Integer, UnitRange{Int}}, ins:
     end
 
     for k = 1:m
-        if !isna(ins, k)
+        if !isnull(ins, k)
             if isa(ins, DataVector)
                 a[f+k-1] = ins.data[k]
             elseif isa(ins, PooledDataVector)
@@ -90,7 +90,7 @@ function Base.splice!(dv::DataVector, inds::Union{Integer, UnitRange{Int}}, ins:
         end
     end
 
-    splice!(dv.na, inds, isna.(ins))
+    splice!(dv.na, inds, isnull.(ins))
     v
 end
 
@@ -100,7 +100,7 @@ function Base.deleteat!(dv::DataVector, inds)
     dv
 end
 
-function Base.push!(pdv::PooledDataVector{T,R}, v::NAtype) where {T,R}
+function Base.push!(pdv::PooledDataVector{T,R}, v::Null) where {T,R}
     push!(pdv.refs, zero(R))
     return v
 end
@@ -113,7 +113,7 @@ end
 
 Base.pop!(pdv::PooledDataVector) = pdv.pool[pop!(pdv.refs)]
 
-function Base.unshift!(pdv::PooledDataVector{T,R}, v::NAtype) where {T,R}
+function Base.unshift!(pdv::PooledDataVector{T,R}, v::Null) where {T,R}
     unshift!(pdv.refs, zero(R))
     return v
 end
@@ -157,29 +157,29 @@ end
 Base.sizehint!(pda::PooledDataVector, newsz::Integer) =
     sizehint!(pda.refs, newsz)
 
-# Pad a vector with NA's
+# Pad a vector with nulls
 """
-    padna(dv::AbstractDataVector, front::Integer, back::Integer) -> DataVector
+    padnull(dv::AbstractDataVector, front::Integer, back::Integer) -> DataVector
 
-Pad `dv` with `NA` values. `front` is an integer number of `NA`s to add at the
-beginning of the array and `back` is the number of `NA`s to add at the end.
+Pad `dv` with `null` values. `front` is an integer number of `null`s to add at the
+beginning of the array and `back` is the number of `null`s to add at the end.
 
 # Examples
 
 ```jldoctest
-julia> padna(@data([1, 2, 3]), 1, 2)
+julia> padnull(@data([1, 2, 3]), 1, 2)
 6-element DataArrays.DataArray{Int64,1}:
-  NA
+  null
  1
  2
  3
-  NA
-  NA
+  null
+  null
 ```
 """
-function padna(dv::AbstractDataVector,
-               front::Integer,
-               back::Integer)
+function padnull(dv::AbstractDataVector,
+                 front::Integer,
+                 back::Integer)
     n = length(dv)
     res = similar(dv, front + n + back)
     for i in 1:n

@@ -21,11 +21,11 @@ end
 
 
 function StatsBase.countmap(x::AbstractDataArray{T}) where {T}
-    addcounts!(Dict{Data{T}, Int}(), x)
+    addcounts!(Dict{Union{T,Null}, Int}(), x)
 end
 
 function StatsBase.countmap(x::AbstractDataArray{T}, wv::Weights{W}) where {T,W}
-    addcounts!(Dict{Data{T}, W}(), x, wv)
+    addcounts!(Dict{Union{T,Null}, W}(), x, wv)
 end
 
 """

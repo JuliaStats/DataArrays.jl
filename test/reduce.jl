@@ -31,21 +31,21 @@ end
         @test sum(bfz) == 136
     end
 
-    @test sum(@data(Int[NA])) === NA
-    @test sum(@data(Int[NA]); skipna=true) === 0
-    @test sum(@data(Int[NA, NA])) === NA
-    @test sum(@data(Int[NA, NA]); skipna=true) === 0
-    @test sum(@data(Int[NA, NA, 1]); skipna=true) === 1
-    @test sum(@data(Int[NA, NA, 1, 2]); skipna=true) === 3
-    @test sum(@data(Int[NA, 1, NA, 1, 2]); skipna=true) === 4
+    @test sum(@data(Int[null])) === null
+    @test sum(@data(Int[null]); skipna=true) === 0
+    @test sum(@data(Int[null, null])) === null
+    @test sum(@data(Int[null, null]); skipna=true) === 0
+    @test sum(@data(Int[null, null, 1]); skipna=true) === 1
+    @test sum(@data(Int[null, null, 1, 2]); skipna=true) === 3
+    @test sum(@data(Int[null, 1, null, 1, 2]); skipna=true) === 4
 
     z = DataArray(reshape(1:16, (2,2,2,2)))
-    z[6] = NA
+    z[6] = null
     fz = convert(DataArray{Float64}, z)
     bfz = convert(DataArray{BigFloat}, z)
-    @test isna(sum(z))
-    @test isna(sum(fz))
-    @test isna(sum(bfz))
+    @test isnull(sum(z))
+    @test isnull(sum(fz))
+    @test isnull(sum(bfz))
     @test sum(z; skipna=true) === 130
     @test sum(fz; skipna=true) === 130.0
     @test sum(bfz; skipna=true) == 130
@@ -58,21 +58,21 @@ end
         @test sum(da; skipna=true) ≈ s
 
         da2 = copy(da)
-        da2[1:2:end] = NA
-        @test isna(sum(da2))
+        da2[1:2:end] = null
+        @test isnull(sum(da2))
         @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
         da2 = convert(DataArray{BigFloat}, da2)
-        @test isna(sum(da2))
+        @test isnull(sum(da2))
         @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
         da2 = copy(da)
-        da2[2:2:end] = NA
-        @test isna(sum(da2))
+        da2[2:2:end] = null
+        @test isnull(sum(da2))
         @test sum(da2; skipna=true) ≈ sum(dropna(da2))
 
         da2 = convert(DataArray{BigFloat}, da2)
-        @test isna(sum(da2))
+        @test isnull(sum(da2))
         @test sum(da2; skipna=true) ≈ sum(dropna(da2))
     end
 
@@ -94,21 +94,21 @@ end
             @same_behavior fn(da; skipna=true) fn(da.data)
 
             da2 = copy(da)
-            da2[1:2:end] = NA
-            n > 0 && @test isna(fn(da2))
+            da2[1:2:end] = null
+            n > 0 && @test isnull(fn(da2))
             @same_behavior fn(da2; skipna=true) fn(dropna(da2))
 
             da2 = convert(DataArray{BigFloat}, da2)
-            n > 0 && @test isna(fn(da2))
+            n > 0 && @test isnull(fn(da2))
             @same_behavior fn(da2; skipna=true) fn(dropna(da2))
 
             da2 = copy(da)
-            da2[2:2:end] = NA
-            n > 1 && @test isna(fn(da2))
+            da2[2:2:end] = null
+            n > 1 && @test isnull(fn(da2))
             @same_behavior fn(da2; skipna=true) fn(dropna(da2))
 
             da2 = convert(DataArray{BigFloat}, da2)
-            n > 1 && @test isna(fn(da2))
+            n > 1 && @test isnull(fn(da2))
             @same_behavior fn(da2; skipna=true) fn(dropna(da2))
         end
     end
@@ -126,10 +126,10 @@ end
     end
 
     # make sure reductions of & and | are still calling Base
-    @test isna(reduce(&, @data([true, NA])))
-    @test !reduce(&, @data([false, NA]))
-    @test reduce(|, @data([true, NA]))
-    @test isna(reduce(|, @data([false, NA])))
+    @test isnull(reduce(&, @data([true, null])))
+    @test !reduce(&, @data([false, null]))
+    @test reduce(|, @data([true, null]))
+    @test isnull(reduce(|, @data([false, null])))
 
     # weighted mean
     da1 = DataArray(randn(128))
@@ -139,11 +139,11 @@ end
     @same_behavior mean(da1, weights(da2); skipna=true) mean(da1.data, weights(da2.data))
     @same_behavior mean(da1, weights(da2.data); skipna=true) mean(da1.data, weights(da2.data))
 
-    da1[1:3:end] = NA
+    da1[1:3:end] = null
     @same_behavior mean(da1, weights(da2); skipna=true) mean(dropna(da1), weights(da2.data[(!).(da1.na)]))
     @same_behavior mean(da1, weights(da2.data); skipna=true) mean(dropna(da1), weights(da2.data[(!).(da1.na)]))
 
-    da2[1:2:end] = NA
+    da2[1:2:end] = null
     keep = .!da1.na .& .!da2.na
     @same_behavior mean(da1, weights(da2); skipna=true) mean(da1.data[keep], weights(da2.data[keep]))
 end

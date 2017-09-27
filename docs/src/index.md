@@ -1,11 +1,10 @@
 # DataArrays.jl
 
-This package provides functionality for working with [missing data](https://en.wikipedia.org/wiki/Missing_data)
-in Julia.
+This package provides array types for working efficiently with [missing data](https://en.wikipedia.org/wiki/Missing_data)
+in Julia, based on the `null` value from the [Nulls.jl](https://github.com/JuliaData/Nulls.jl) package.
 In particular, it provides the following:
 
-* `NA`: A singleton representing a missing value
-* `DataArray{T}`: An array type that can house both values of type `T` and missing values
+* `DataArray{T}`: An array type that can house both values of type `T` and missing values (of type `Null`)
 * `PooledDataArray{T}`: An array type akin to `DataArray` but optimized for arrays with a smaller set of unique
   values, as commonly occurs with categorical data
 

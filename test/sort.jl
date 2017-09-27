@@ -1,5 +1,5 @@
 @testset "Sort" begin
-    dv1 = @data([9, 1, 8, NA, 3, 3, 7, NA])
+    dv1 = @data([9, 1, 8, null, 3, 3, 7, null])
     dv2 = 1.0 * dv1
     dv3 = DataArray(collect(1:8))
     pdv1 = convert(PooledDataArray, dv1)
