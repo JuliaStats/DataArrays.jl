@@ -3,9 +3,9 @@
     #test_group("nulls")
     @test length(null) == 1
     @test size(null) == ()
-    @test 3 != null
-    @test null != 3
-    @test null == null
+    @test isnull(3 == null)
+    @test isnull(null == 3)
+    @test isnull(null == null)
 
     #test_group("DataVector creation")
     dvint = @data [1, 2, null, 4]
@@ -82,8 +82,8 @@
     #test_group("DataVector operations")
     @test isequal(dvint .+ 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
     @test isequal(dvint .* 2, @data([2, 4, null, 8]))
-    @test isequal(dvint .== 2, @data([false, true, false, false]))
-    @test isequal(dvint .> 1, @data([false, true, false, true]))
+    @test isequal(dvint .== 2, @data([false, true, null, false]))
+    @test isequal(dvint .> 1, @data([false, true, null, true]))
 
     #test_group("PooledDataVector operations")
     # @test isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, null, false, false])

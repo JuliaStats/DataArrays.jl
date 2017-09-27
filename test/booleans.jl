@@ -19,11 +19,11 @@
 
     @test any((@data [1, 2, null]) .== 1) === true
     @test any((@data [null, 1, 2]) .== 1) === true
-    @test any((@data [1, 2, null]) .== 3) === false
+    @test isnull(any((@data [1, 2, null]) .== 3))
     @test any((@data [1, 2, 3] ).== 4) === false
 
-    @test all((@data [1, 1, null]) .== 1) === false
-    @test all((@data [null, 1, 1]) .== 1) === false
+    @test isnull(all((@data [1, 1, null]) .== 1))
+    @test isnull(all((@data [null, 1, 1]) .== 1))
     @test all((@data [1, 1, 1]) .== 1) === true
     @test all((@data [1, 2, 1]) .== 1) === false
 end

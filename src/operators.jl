@@ -380,15 +380,41 @@ function (==)(a::DataArray, b::DataArray)
     adata = a.data
     bdata = b.data
     bchunks = b.na.chunks
-    @inbounds @bitenumerate a.na i na begin
-        bna = Base.unsafe_bitgetindex(bchunks, i)
-        if na != bna
-            return false
-        elseif !na && !bna && adata[i] != bdata[i]
-            return false
+    has_null = false
+    @bitenumerate a.na i anull begin
+        if anull || Base.unsafe_bitgetindex(bchunks, i)
+            has_null = true
+        else
+            @inbounds adata[i] == bdata[i] || return false
         end
     end
-    return true
+    has_null ? null : true
+end
+
+function (==)(a::AbstractDataArray, b::AbstractDataArray)
+    size(a) == size(b) || return false
+    has_null = false
+    for i = 1:length(a)
+        if isnull(a[i]) || isnull(b[i])
+            has_null = true
+        else
+            a[i] == b[i] || return false
+        end
+    end
+    has_null ? null : true
+end
+
+@swappable function (==)(a::AbstractDataArray, b::AbstractArray)
+    size(a) == size(b) || return false
+    has_null = false
+    for i = 1:length(a)
+        if isnull(a[i])
+            has_null = true
+        else
+            a[i] == b[i] || return false
+        end
+    end
+    has_null ? null : true
 end
 
 # ambiguity
@@ -398,16 +424,15 @@ end
 @swappable function (==)(a::DataArray, b::AbstractArray)
     size(a) == size(b) || return false
     adata = a.data
-    @inbounds @bitenumerate a.na i na begin
-        bval = b[i]
-        bna = isnull(bval)
-        if na != bna
-            return false
-        elseif !na && !bna && adata[i] != bval
-            return false
+    has_null = false
+    @bitenumerate a.na i anull begin
+        if anull
+            has_null = true
+        else
+            @inbounds adata[i] == b[i] || return false
         end
     end
-    return true
+    has_null ? null : true
 end
 
 #

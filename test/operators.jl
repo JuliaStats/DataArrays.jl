@@ -58,22 +58,14 @@ end
         @test isnull(f(null))
     end
 
-    # Comparison operators (null is greater than anything, and only equal to null)
-    @test null == null
-    @test !(1 == null)
-    @test !(null == 1)
-    @test !(null != null)
-    @test 1 != null
-    @test null != 1
-    @test !(null < null)
-    @test !(null < 1)
-    @test !(1 < null)
-    @test null <= null
-    @test !(null <= 1)
-    @test !(1 <= null)
-    @test !isless(null, null)
-    @test !isless(null, 1)
-    @test isless(1, null)
+    # All comparison operators return null when comparing null with null
+    # All comparison operators return null when comparing scalars with null
+    # All comparison operators return null when comparing null with scalars
+    for f in comparison_operators
+        @test isnull(f(null, null))
+        @test isnull(f(null, 1))
+        @test isnull(f(1, null))
+    end
 
     # All arithmetic operators return null when operating on two nulls
     # All arithmetic operators return null when operating on a scalar and an null
@@ -416,6 +408,9 @@ end
     pdv = convert(PooledDataArray, @data([1, null]))
     alt_pdv = convert(PooledDataArray, @data([2, null]))
 
+    @test isnull(null == null)
+    @test isnull(null != null)
+
     function test_da_eq(v1::AbstractArray, v2::AbstractArray, out)
         for a in (v1, convert(DataArray, v1), convert(PooledDataArray, v1))
             for b in (v2, convert(DataArray, v2), convert(PooledDataArray, v2))
@@ -435,15 +430,15 @@ end
         end
     end
 
-    # Comparing two equal DataArrays (with no nulls or nulls at the same places)
-    test_da_eq(dv, dv, true)
-    test_da_eq(dv, v, false)
-    test_da_eq(dv, @data([null, 1]), false)
+    # Comparing two otherwise equal DataArray with nulls returns null
+    test_da_eq(dv, dv, null)
+    test_da_eq(dv, v, null)
+    test_da_eq(dv, @data([null, 1]), null)
     # Comparing two equal arrays with no nulls returns true
     test_da_eq(v, v, true)
     # Comparing two unequal arrays with no nulls returns false
     test_da_eq(v, @data([1, 3]), false)
-    # Comparing two otherwise unequal arrays with nulls at the same places returns false
+    # Comparing two otherwise unequal arrays with nulls returns false
     test_da_eq(dv, alt_dv, false)
     # Comparing two arrays of unequal sizes returns false
     test_da_eq(dv, [1], false)
@@ -454,13 +449,13 @@ end
     @test !isequal(dv, alt_dv)
     @test !isequal(pdv, alt_pdv)
 
-    @test isequal(@data([1, null]) .== @data([1, null]), [true, true])
-    @test isequal(@pdata([1, null]) .== @pdata([1, null]), [true, true])
+    @test isequal(@data([1, null]) .== @data([1, null]), @data([true, null]))
+    @test isequal(@pdata([1, null]) .== @pdata([1, null]), @data([true, null]))
 
-    @test !any(null .== convert(DataArray, ones(5)))
-    @test !any(isnull, isnull.(convert(DataArray, ones(5))) .== null)
-    @test !any(isnull.(null .== PooledDataArray(convert(DataArray, ones(5)))))
-    @test !any(isnull, isnull.(convert(PooledDataArray, convert(DataArray, ones(5)))) .== null)
+    @test all(isnull.(null .== convert(DataArray, ones(5))))
+    @test all(isnull, isnull.(convert(DataArray, ones(5))) .== null)
+    @test all(isnull.(null .== PooledDataArray(convert(DataArray, ones(5)))))
+    @test all(isnull, isnull.(convert(PooledDataArray, convert(DataArray, ones(5)))) .== null)
 
     # Run length encoding
     dv = convert(DataArray, ones(5))
