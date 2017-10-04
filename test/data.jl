@@ -1,8 +1,6 @@
 @testset "Data types and nulls" begin
     # TODO: Convert these test_group things to nested testsets
     #test_group("nulls")
-    @test length(null) == 1
-    @test size(null) == ()
     @test isnull(3 == null)
     @test isnull(null == 3)
     @test isnull(null == null)
@@ -98,13 +96,13 @@
     @test all(convert(Vector, dvstr, asciithree) .== ["one", "two", "three", "four"])
     @test all(convert(Vector{Int}, dvint2) .== [5:8;])
     @test all([i + 1 for i in dvint2] .== [6:9;])
-    @test all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
+    #@test all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
     @test repr(dvint) == "Union{$Int, Nulls.Null}[1, 2, null, 4]"
 
     #test_group("PooledDataVector to something else")
     @test all(dropna(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
     @test all(convert(Vector, pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
-    @test all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
+    #@test all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
     @test string(pdvstr[1:3]) == "[one, one, two]"
 
     #test_group("DataVector Filter and Replace")
