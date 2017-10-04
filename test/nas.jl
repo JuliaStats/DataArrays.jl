@@ -58,6 +58,15 @@
 
     dv[[1, 2, end]] = null
 
+    @testset "promotion" for (T1, T2) in ((Int, Float64),
+                                          (Dates.Minute, Dates.Second))
+        @eval begin
+            @test promote_type($T1, Union{$T2, Null})              == Union{$T2, Null}
+            @test promote_type(Union{$T1, Null}, $T2)              == Union{$T2, Null}
+            @test promote_type(Union{$T1, Null}, Union{$T2, Null}) == Union{$T2, Null}
+        end
+    end
+
     a = dropna(dv)
     @test_throws NullException for v in Nulls.fail(dv); end
     @test collect(Nulls.skip(dv)) == a
