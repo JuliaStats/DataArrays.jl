@@ -77,7 +77,7 @@ end
 @deprecate_binding NAtype Null
 @deprecate_binding NA null
 @deprecate isna isnull
-@deprecate dropna(x) collect(Nulls.drop(x))
+@deprecate dropna dropnull
 @deprecate padna padnull
 @deprecate each_failna Nulls.fail
 @deprecate each_dropna Nulls.skip
@@ -89,4 +89,3 @@ import SpecialFunctions: digamma, erf, erfc
 @deprecate digamma(x::Null) isnull(x) ? null : SpecialFunctions.digamma(x)
 @deprecate erf(x::Null) isnull(x) ? null : SpecialFunctions.erf(x)
 @deprecate erfc(x::Null) isnull(x) ? null : SpecialFunctions.erfc(x)
-

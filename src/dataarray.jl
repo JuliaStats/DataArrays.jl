@@ -242,7 +242,7 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
     return convert(Array{T, N}, da, replacement)
 end
 
-dropna(dv::DataVector) = dv.data[.!dv.na] # -> Vector
+dropnull(dv::DataVector) = dv.data[.!dv.na] # -> Vector
 
 Base.any(::typeof(isnull), da::DataArray) = any(da.na) # -> Bool
 Base.all(::typeof(isnull), da::DataArray) = all(da.na) # -> Bool

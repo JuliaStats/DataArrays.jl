@@ -3,14 +3,14 @@
     pcopy = copy(p)
     @test levels(p) == [1, 8, 9]
     @test levels(setlevels(p, ["a", "b", "c"])) == ["a", "b", "c"]
-    @test dropna(setlevels(p, (@data ["a", "b", null]))) == ["b", "a", "a"]
-    @test dropna(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "a", "b", "a", "a"]
+    @test dropnull(setlevels(p, (@data ["a", "b", null]))) == ["b", "a", "a"]
+    @test dropnull(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "a", "b", "a", "a"]
     @test levels(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "b"]
     @test levels(setlevels(p, Dict([(1, 111)]))) == [111, 8, 9]
     @test levels(setlevels(p, Dict([(1, 111), (8, null)]))) == [111, 9]
     @test levels(PooledDataArray(p, [9, 8, 1])) == [9, 8, 1]
     @test levels(PooledDataArray(p, [9, 8])) == [9, 8]
-    @test dropna(PooledDataArray(p, [9, 8])) == [9, 9, 8]
+    @test dropnull(PooledDataArray(p, [9, 8])) == [9, 9, 8]
     @test levels(PooledDataArray(p, levels(p)[[3,2,1]])) == [9,8,1]
     v = collect(1:6)
     @test isequal(p, reorder(p))
@@ -29,14 +29,14 @@
     y = @pdata [1, null, -2, 1, null, 4, null]
     @test isequal(unique(y), @pdata [1, null, -2, 4])
     @test isequal(unique(reverse(y)), @data [null, 4, 1, -2])
-    @test isequal(unique(dropna(y)), @data [1, -2, 4])
-    @test isequal(unique(reverse(dropna(y))), @data [4, 1, -2])
+    @test isequal(unique(dropnull(y)), @data [1, -2, 4])
+    @test isequal(unique(reverse(dropnull(y))), @data [4, 1, -2])
 
     z = @pdata ["frank", null, "gertrude", "frank", null, "herbert", null]
     @test isequal(unique(z), @pdata ["frank", null, "gertrude", "herbert"])
     @test isequal(unique(reverse(z)), @pdata [null, "herbert", "frank", "gertrude"])
-    @test isequal(unique(dropna(z)), @pdata ["frank", "gertrude", "herbert"])
-    @test isequal(unique(reverse(dropna(z))), @pdata ["herbert", "frank", "gertrude"])
+    @test isequal(unique(dropnull(z)), @pdata ["frank", "gertrude", "herbert"])
+    @test isequal(unique(reverse(dropnull(z))), @pdata ["herbert", "frank", "gertrude"])
 
     # check case where only null occurs in final position
     @test isequal(unique(@pdata [1, 2, 1, null]), @pdata [1, 2, null])

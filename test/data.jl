@@ -87,7 +87,7 @@
     # @test isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, null, false, false])
 
     #test_group("DataVector to something else")
-    @test all(dropna(dvint) .== [1, 2, 4])
+    @test all(dropnull(dvint) .== [1, 2, 4])
     @test all(convert(Vector, dvint, 0) .== [1, 2, 0, 4])
     @test all(convert(Vector, dvany, 0) .== [1, 2, 0, 4])
     utf8three = convert(String, "three")
@@ -102,19 +102,19 @@
                           "Union{Nulls.Null, $Int}[1, 2, null, 4]")
 
     #test_group("PooledDataVector to something else")
-    @test all(dropna(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
+    @test all(dropnull(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
     @test all(convert(Vector, pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
     #@test all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
     @test string(pdvstr[1:3]) == "[one, one, two]"
 
     #test_group("DataVector Filter and Replace")
-    @test isequal(dropna(dvint), [1, 2, 4])
+    @test isequal(dropnull(dvint), [1, 2, 4])
     @test isequal(convert(Vector, dvint, 7), [1, 2, 7, 4])
-    @test sum(dropna(dvint)) == 7
+    @test sum(dropnull(dvint)) == 7
     @test sum(convert(Vector, dvint, 7)) == 14
 
     #test_group("PooledDataVector Filter and Replace")
-    @test reduce(string, "", dropna(pdvstr)) == "oneonetwotwooneone"
+    @test reduce(string, "", dropnull(pdvstr)) == "oneonetwotwooneone"
     @test reduce(string, "", convert(Vector, pdvstr, "!")) == "oneonetwotwo!oneone"
 
     #test_group("DataVector assignment")

@@ -49,26 +49,26 @@ true
 Base.isnull(a::AbstractArray{T}, i::Real) where {T} = Null <: T ? isa(a[i], Null) : false # -> Bool
 
 """
-    dropna(v::AbstractVector) -> AbstractVector
+    dropnull(v::AbstractVector) -> AbstractVector
 
 Return a copy of `v` with all `null` elements removed.
 
 # Examples
 
 ```jldoctest
-julia> dropna(@data [null, 1, null, 2])
+julia> dropnull(@data [null, 1, null, 2])
 2-element Array{Int64,1}:
  1
  2
 
-julia> dropna([4, 5, 6])
+julia> dropnull([4, 5, 6])
 3-element Array{Int64,1}:
  4
  5
  6
 ```
 """
-dropna(v::AbstractVector) = copy(v) # -> AbstractVector
+dropnull(v::AbstractVector) = copy(v) # -> AbstractVector
 
 # Iterators
 # TODO: Use values()

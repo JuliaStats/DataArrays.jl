@@ -51,7 +51,7 @@
     end
 
     dv = DataArray(collect(1:6), fill(false, 6))
-    a = dropna(dv)
+    a = dropnull(dv)
     @test collect(Nulls.fail(dv)) == a
     @test collect(Nulls.skip(dv)) == a
     @test collect(Nulls.replace(dv, 4)) == a
@@ -67,7 +67,7 @@
         end
     end
 
-    a = dropna(dv)
+    a = dropnull(dv)
     @test_throws NullException for v in Nulls.fail(dv); end
     @test collect(Nulls.skip(dv)) == a
     @test collect(Nulls.replace(dv, 4)) == [4, 4, a..., 4]

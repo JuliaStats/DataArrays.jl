@@ -17,11 +17,11 @@
         ra = randn(n-nna)
         a[.!na] = ra
         for da in (DataArray(a, na), PooledDataArray(a, na), (pda = PooledDataArray(a, na); setlevels!(pda, shuffle!(pda.pool))))
-            @test isequal(sort(da), [DataArray(sort(dropna(da))); DataArray(T, nna)])
-            @test isequal(sort(da; lt=(x,y)->isless(x,y)), [DataArray(sort(dropna(da))); DataArray(T, nna)])
-            @test isequal(da[sortperm(da)], [DataArray(sort(dropna(da))); DataArray(T, nna)])
-            @test isequal(sort(da, rev=true), [DataArray(T, nna); DataArray(sort(dropna(da), rev=true))])
-            @test isequal(da[sortperm(da, rev=true)], [DataArray(T, nna); DataArray(sort(dropna(da), rev=true))])
+            @test isequal(sort(da), [DataArray(sort(dropnull(da))); DataArray(T, nna)])
+            @test isequal(sort(da; lt=(x,y)->isless(x,y)), [DataArray(sort(dropnull(da))); DataArray(T, nna)])
+            @test isequal(da[sortperm(da)], [DataArray(sort(dropnull(da))); DataArray(T, nna)])
+            @test isequal(sort(da, rev=true), [DataArray(T, nna); DataArray(sort(dropnull(da), rev=true))])
+            @test isequal(da[sortperm(da, rev=true)], [DataArray(T, nna); DataArray(sort(dropnull(da), rev=true))])
         end
     end
 end

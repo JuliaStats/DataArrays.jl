@@ -26,6 +26,7 @@ module DataArrays
            DataArray,
            DataMatrix,
            DataVector,
+           dropnull,
            EachFailNull,
            EachDropNull,
            EachReplaceNull,

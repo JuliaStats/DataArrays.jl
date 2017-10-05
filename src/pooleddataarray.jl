@@ -372,7 +372,7 @@ function PooledDataArray(x::PooledDataArray{S,R,N},
 end
 
 myunique(x::AbstractVector) = unique(x)
-myunique(x::AbstractDataVector) = unique(dropna(x))
+myunique(x::AbstractDataVector) = unique(dropnull(x))
 
 """
     setlevels(x::PooledDataArray, newpool::Union{AbstractVector, Dict})
@@ -915,7 +915,7 @@ function Base.convert{T, R, N}(::Type{Array}, pda::PooledDataArray{T, R, N}, rep
     return convert(Array{T, N}, pda, replacement)
 end
 
-function dropna(pdv::PooledDataVector{T}) where T
+function dropnull(pdv::PooledDataVector{T}) where T
     n = length(pdv)
     res = Array{T}(n)
     total = 0
