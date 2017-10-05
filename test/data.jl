@@ -97,7 +97,9 @@
     @test all(convert(Vector{Int}, dvint2) .== [5:8;])
     @test all([i + 1 for i in dvint2] .== [6:9;])
     #@test all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
-    @test repr(dvint) == "Union{$Int, Nulls.Null}[1, 2, null, 4]"
+    # Julia 0.6 and 0.7 differ in ordering of Unions
+    @test repr(dvint) in ("Union{$Int, Nulls.Null}[1, 2, null, 4]",
+                          "Union{Nulls.Null, $Int}[1, 2, null, 4]")
 
     #test_group("PooledDataVector to something else")
     @test all(dropna(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
