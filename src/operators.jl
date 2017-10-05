@@ -208,7 +208,6 @@ end
 # Treat ctranspose and * in a special way
 for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
     @eval begin
-        $(f)(::Null) = null
         function $(f){T}(d::DataMatrix{T})
             # (c)transpose in Base uses a cache-friendly algorithm for
             # numeric arrays, which is faster than our naive algorithm,
@@ -312,7 +311,6 @@ end
 ## SpecialFunctions (should be a conditional module when supported)
 for f in (:(SpecialFunctions.digamma), :(SpecialFunctions.erf), :(SpecialFunctions.erfc))
     @eval begin
-        ($f)(::Null) = null
         @dataarray_unary $(f) AbstractFloat T
         @dataarray_unary $(f) Real Float64
     end
@@ -321,8 +319,6 @@ end
 # Elementary functions that take varargs
 for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
     @eval begin
-        ($f)(::Null, args::Integer...) = null
-
         # ambiguity
         @dataarray_unary $(f) Real T 1
         @dataarray_unary $(f) Real T 2
@@ -538,13 +534,6 @@ end
 (/)(b::AbstractArray{T,N}, ::Null) where {T,N} =
     DataArray(Array{T,N}(size(b)), trues(size(b)))
 @dataarray_binary_scalar(/, /, nothing, false)
-
-for f in [:(Base.maximum), :(Base.minimum)]
-    @eval begin
-        ($f)(::Null, ::Null) = null
-        @swappable $(f)(::Number, ::Null) = null
-    end
-end
 
 function Base.LinAlg.diff(dv::DataVector)
     n = length(dv)

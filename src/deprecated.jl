@@ -85,3 +85,8 @@ end
 @deprecate_binding EachFailNA EachFailNull
 @deprecate_binding EachDropNA EachDropNull
 @deprecate_binding EachReplaceNA EachReplaceNull
+import SpecialFunctions: digamma, erf, erfc
+@deprecate digamma(x::Null) isnull(x) ? null : SpecialFunctions.digamma(x)
+@deprecate erf(x::Null) isnull(x) ? null : SpecialFunctions.erf(x)
+@deprecate erfc(x::Null) isnull(x) ? null : SpecialFunctions.erfc(x)
+
