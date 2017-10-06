@@ -48,39 +48,18 @@ true
 """
 Base.isnull(a::AbstractArray{T}, i::Real) where {T} = Null <: T ? isa(a[i], Null) : false # -> Bool
 
-"""
-    dropnull(v::AbstractVector) -> AbstractVector
-
-Return a copy of `v` with all `null` elements removed.
-
-# Examples
-
-```jldoctest
-julia> dropnull(@data [null, 1, null, 2])
-2-element Array{Int64,1}:
- 1
- 2
-
-julia> dropnull([4, 5, 6])
-3-element Array{Int64,1}:
- 4
- 5
- 6
-```
-"""
-dropnull(v::AbstractVector) = copy(v) # -> AbstractVector
-
 # Iterators
 # TODO: Use values()
 #       Use DataValueIterator type?
 
-struct EachFailNull{T}
-    da::AbstractDataArray{T}
+struct EachFailNull{T<:AbstractDataArray}
+    da::T
 end
-Nulls.fail(da::AbstractDataArray{T}) where {T} = EachFailNull(da)
+Nulls.fail(da::AbstractDataArray) = EachFailNull(da)
 Base.length(itr::EachFailNull) = length(itr.da)
 Base.start(itr::EachFailNull) = 1
 Base.done(itr::EachFailNull, ind::Integer) = ind > length(itr)
+Base.eltype(itr::EachFailNull) = Nulls.T(eltype(itr.da))
 function Base.next(itr::EachFailNull, ind::Integer)
     if isnull(itr.da[ind])
         throw(NullException())
@@ -89,11 +68,11 @@ function Base.next(itr::EachFailNull, ind::Integer)
     end
 end
 
-struct EachDropNull{T}
-    da::AbstractDataArray{T}
+struct EachDropNull{T<:AbstractDataArray}
+    da::T
 end
-Nulls.skip(da::AbstractDataArray{T}) where {T} = EachDropNull(da)
-function _next_nonna_ind(da::AbstractDataArray{T}, ind::Int) where T
+Nulls.skip(da::AbstractDataArray) = EachDropNull(da)
+function _next_nonna_ind(da::AbstractDataArray, ind::Int)
     ind += 1
     while ind <= length(da) && isnull(da, ind)
         ind += 1
@@ -103,20 +82,21 @@ end
 Base.length(itr::EachDropNull) = length(itr.da) - sum(itr.da.na)
 Base.start(itr::EachDropNull) = _next_nonna_ind(itr.da, 0)
 Base.done(itr::EachDropNull, ind::Int) = ind > length(itr.da)
+Base.eltype(itr::EachDropNull) = Nulls.T(eltype(itr.da))
 function Base.next(itr::EachDropNull, ind::Int)
     (itr.da[ind], _next_nonna_ind(itr.da, ind))
 end
 
-struct EachReplaceNull{S, T}
-    da::AbstractDataArray{S}
+struct EachReplaceNull{S<:AbstractDataArray, T}
+    da::S
     replacement::T
 end
-function Nulls.replace(da::AbstractDataArray, replacement::Any)
-    EachReplaceNull(da, convert(eltype(da), replacement))
-end
+Nulls.replace(da::AbstractDataArray, replacement::Any) =
+    EachReplaceNull(da, replacement)
 Base.length(itr::EachReplaceNull) = length(itr.da)
 Base.start(itr::EachReplaceNull) = 1
 Base.done(itr::EachReplaceNull, ind::Integer) = ind > length(itr)
+Base.eltype(itr::EachReplaceNull) = Union{Nulls.T(eltype(itr.da)), typeof(itr.replacement)}
 function Base.next(itr::EachReplaceNull, ind::Integer)
     item = isnull(itr.da, ind) ? itr.replacement : itr.da[ind]
     (item, ind + 1)

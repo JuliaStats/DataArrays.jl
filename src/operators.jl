@@ -431,6 +431,10 @@ end
     has_null ? null : true
 end
 
+# ambiguity
+@swappable (==)(a::DataArray, b::AbstractArray{>:Null}) =
+    invoke(==, Tuple{AbstractDataArray,AbstractArray}, a, b)
+
 #
 # Binary operators
 #

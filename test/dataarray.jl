@@ -44,8 +44,8 @@
     x = @data [1, null, -2, 1, null, 4]
     @test isequal(unique(x), @data [1, null, -2, 4])
     @test isequal(unique(reverse(x)), @data [4, null, 1, -2])
-    @test isequal(unique(dropnull(x)), @data [1, -2, 4])
-    @test isequal(unique(reverse(dropnull(x))), @data [4, 1, -2])
+    @test isequal(unique(Nulls.skip(x)), @data [1, -2, 4])
+    @test isequal(unique(reverse(collect(Nulls.skip(x)))), @data [4, 1, -2])
     @test isequal(levels(x), @data [1, -2, 4])
     @test isequal(levels(reverse(x)), @data [4, 1, -2])
 

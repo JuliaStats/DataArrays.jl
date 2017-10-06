@@ -119,11 +119,9 @@ module TestDataArrays
     convert(Vector, DataArray([1, 0, 3], [false, true, false]), -1)
     convert(Vector, DataArray([1, 2, 3], [false, false, false]), -1)
 
-    # dropnull(da::DataArray)
-    dropnull(DataArray([1, 0, 3], [false, true, false]))
-    dropnull(DataArray([1, 2, 3], [false, false, false]))
-    # dropnull{T}(da::AbstractDataVector{T})
-    # dropnull(@data([1, null, 3]))
+    # Nulls.skip(da::DataArray)
+    Nulls.skip(DataArray([1, 0, 3], [false, true, false]))
+    Nulls.skip(DataArray([1, 2, 3], [false, false, false]))
 
     # Iterators
 

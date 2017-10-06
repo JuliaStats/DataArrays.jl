@@ -77,14 +77,14 @@ end
 @deprecate_binding NAtype Null
 @deprecate_binding NA null
 @deprecate isna isnull
-@deprecate dropna dropnull
+@deprecate dropna(x) collect(Nulls.skip(x))
 @deprecate padna padnull
 @deprecate each_failna Nulls.fail
 @deprecate each_dropna Nulls.skip
 @deprecate each_replacena Nulls.replace
-@deprecate_binding EachFailNA EachFailNull
-@deprecate_binding EachDropNA EachDropNull
-@deprecate_binding EachReplaceNA EachReplaceNull
+@deprecate_binding EachFailNA DataArrays.EachFailNull
+@deprecate_binding EachDropNA DataArrays.EachDropNull
+@deprecate_binding EachReplaceNA DataArrays.EachReplaceNull
 import SpecialFunctions: digamma, erf, erfc
 @deprecate digamma(x::Null) isnull(x) ? null : SpecialFunctions.digamma(x)
 @deprecate erf(x::Null) isnull(x) ? null : SpecialFunctions.erf(x)

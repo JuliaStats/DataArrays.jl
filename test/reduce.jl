@@ -60,20 +60,20 @@ end
         da2 = copy(da)
         da2[1:2:end] = null
         @test isnull(sum(da2))
-        @test sum(da2; skipna=true) ≈ sum(dropnull(da2))
+        @test sum(da2; skipna=true) ≈ sum(Nulls.skip(da2))
 
         da2 = convert(DataArray{BigFloat}, da2)
         @test isnull(sum(da2))
-        @test sum(da2; skipna=true) ≈ sum(dropnull(da2))
+        @test sum(da2; skipna=true) ≈ sum(Nulls.skip(da2))
 
         da2 = copy(da)
         da2[2:2:end] = null
         @test isnull(sum(da2))
-        @test sum(da2; skipna=true) ≈ sum(dropnull(da2))
+        @test sum(da2; skipna=true) ≈ sum(Nulls.skip(da2))
 
         da2 = convert(DataArray{BigFloat}, da2)
         @test isnull(sum(da2))
-        @test sum(da2; skipna=true) ≈ sum(dropnull(da2))
+        @test sum(da2; skipna=true) ≈ sum(Nulls.skip(da2))
     end
 
     ## other reductions
@@ -96,20 +96,20 @@ end
             da2 = copy(da)
             da2[1:2:end] = null
             n > 0 && @test isnull(fn(da2))
-            @same_behavior fn(da2; skipna=true) fn(dropnull(da2))
+            @same_behavior fn(da2; skipna=true) fn(Nulls.skip(da2))
 
             da2 = convert(DataArray{BigFloat}, da2)
             n > 0 && @test isnull(fn(da2))
-            @same_behavior fn(da2; skipna=true) fn(dropnull(da2))
+            @same_behavior fn(da2; skipna=true) fn(Nulls.skip(da2))
 
             da2 = copy(da)
             da2[2:2:end] = null
             n > 1 && @test isnull(fn(da2))
-            @same_behavior fn(da2; skipna=true) fn(dropnull(da2))
+            @same_behavior fn(da2; skipna=true) fn(Nulls.skip(da2))
 
             da2 = convert(DataArray{BigFloat}, da2)
             n > 1 && @test isnull(fn(da2))
-            @same_behavior fn(da2; skipna=true) fn(dropnull(da2))
+            @same_behavior fn(da2; skipna=true) fn(Nulls.skip(da2))
         end
     end
 
@@ -140,8 +140,8 @@ end
     @same_behavior mean(da1, weights(da2.data); skipna=true) mean(da1.data, weights(da2.data))
 
     da1[1:3:end] = null
-    @same_behavior mean(da1, weights(da2); skipna=true) mean(dropnull(da1), weights(da2.data[(!).(da1.na)]))
-    @same_behavior mean(da1, weights(da2.data); skipna=true) mean(dropnull(da1), weights(da2.data[(!).(da1.na)]))
+    @same_behavior mean(da1, weights(da2); skipna=true) mean(Nulls.skip(da1), weights(da2.data[(!).(da1.na)]))
+    @same_behavior mean(da1, weights(da2.data); skipna=true) mean(Nulls.skip(da1), weights(da2.data[(!).(da1.na)]))
 
     da2[1:2:end] = null
     keep = .!da1.na .& .!da2.na
