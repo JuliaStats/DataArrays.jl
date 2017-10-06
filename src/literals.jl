@@ -3,7 +3,7 @@ function fixargs(args::Vector{Any}, stub::Any)
     data = Array{Any}(n)
     na = BitArray(n)
     for i in 1:n
-        if args[i] == :null
+        if args[i] == :null || args[i] == :NA
             data[i] = stub
             na[i] = true
         else
@@ -16,11 +16,11 @@ end
 
 # We assume that data has at least one "value" that isn't null
 function findstub_vector(ex::Expr)
-    if ex.args[1] != :null
+    if ex.args[1] != :null && ex.args[1] != :NA
         return ex.args[1]
     end
     for i in 2:length(ex.args)
-        if ex.args[i] != :null
+        if ex.args[i] != :null && ex.args[i] != :NA
             return ex.args[i]
         end
     end
@@ -29,14 +29,14 @@ end
 
 # We assume that data has at least one "value" that isn't null
 function findstub_matrix(ex::Expr)
-    if ex.args[1].args[1] != :null
+    if ex.args[1].args[1] != :null && ex.args[1].args[1] != :NA
         return ex.args[1].args[1]
     end
     nrows = length(ex.args)
     for row in 1:nrows
         subex = ex.args[row]
         for i in 1:length(subex.args)
-            if subex.args[i] != :null
+            if subex.args[i] != :null && subex.args[i] != :NA
                 return subex.args[i]
             end
         end
