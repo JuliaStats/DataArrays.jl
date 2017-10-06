@@ -6,10 +6,10 @@ srand(1776)
 
 const TEST_NAMES = [
     "Vector",
-    "DataVector No NA skipna=false",
-    "DataVector No NA skipna=true",
-    "DataVector Half NA skipna=false",
-    "DataVector Half NA skipna=true"
+    "DataVector No null skipna=false",
+    "DataVector No null skipna=true",
+    "DataVector Half null skipna=false",
+    "DataVector Half null skipna=true"
 ]
 
 function make_test_types(genfunc, sz)

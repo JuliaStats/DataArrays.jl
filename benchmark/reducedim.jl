@@ -6,10 +6,10 @@ srand(1776)
 
 const TEST_NAMES = [
     "Matrix",
-    "DataMatrix No NA skipna=false",
-    "DataMatrix No NA skipna=true",
-    "DataMatrix Half NA skipna=false",
-    "DataMatrix Half NA skipna=true"
+    "DataMatrix No null skipna=false",
+    "DataMatrix No null skipna=true",
+    "DataMatrix Half null skipna=false",
+    "DataMatrix Half null skipna=true"
 ]
 
 function make_test_types(genfunc, sz)
