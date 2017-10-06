@@ -1,9 +1,9 @@
 # This code is heavily based on the floating point sort code in Base
 
-nas2end!(v::AbstractVector, o::Base.Sort.ForwardOrdering) = nas2right!(v,o)
-nas2end!(v::AbstractVector, o::Base.Sort.ReverseOrdering) = nas2left!(v,o)
-nas2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ForwardOrdering} = nas2right!(v,o)
-nas2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ReverseOrdering} = nas2left!(v,o)
+nulls2end!(v::AbstractVector, o::Base.Sort.ForwardOrdering) = nulls2right!(v,o)
+nulls2end!(v::AbstractVector, o::Base.Sort.ReverseOrdering) = nas2left!(v,o)
+nulls2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ForwardOrdering} = nulls2right!(v,o)
+nulls2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ReverseOrdering} = nas2left!(v,o)
 
 myisnull(o::Base.Order.Ordering, chunks, i::Int) = Base.unsafe_bitgetindex(chunks, i)
 
@@ -37,7 +37,7 @@ function nas2left!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.Orde
     return i, hi
 end
 
-function nas2right!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.Ordering, lo::Int=1, hi::Int=length(v))
+function nulls2right!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.Ordering, lo::Int=1, hi::Int=length(v))
     data, chunks = datachunks(o, v)
 
     i = hi
@@ -60,13 +60,13 @@ function nas2right!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.Ord
 end
 
 function dasort!(v::DataVector, a::Base.Sort.Algorithm, o::Base.Order.DirectOrdering)
-    lo, hi = nas2end!(v, o)
+    lo, hi = nulls2end!(v, o)
     sort!(v.data, lo, hi, a, o)
     v
 end
 
 function dapermsort!(v::AbstractVector{Int}, a::Base.Sort.Algorithm, o::Base.Order.Perm{O,T}) where {O<:Base.Order.DirectOrdering,T<:DataVector}
-    lo, hi = nas2end!(v, o)
+    lo, hi = nulls2end!(v, o)
     sort!(v, lo, hi, a, Base.Order.Perm(o.order, o.data.data))
 end
 

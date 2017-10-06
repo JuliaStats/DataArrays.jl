@@ -15,7 +15,7 @@ function impute!(X::Matrix, missing_entries::Vector,
 end
 
 # Should be done with a proper N-dimensional Int array.
-function findna(dm::DataMatrix)
+function findnull(dm::DataMatrix)
     indices = Any[]
     n, p = size(dm)
     for i = 1:n
@@ -72,7 +72,7 @@ function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
     n, p = size(dm)
 
     # Estimate missingness and print a message.
-    missing_entries = findna(dm)
+    missing_entries = findnull(dm)
     missingness = length(missing_entries) / (n * p)
     if tracing
         @printf "Matrix is missing %.2f%% of entries\n" missingness * 100

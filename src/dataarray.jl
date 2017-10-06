@@ -337,11 +337,11 @@ function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
     out = Vector{T}(0)
     seen = Set{T}()
     n = length(da)
-    firstna = 0
+    firstnull = 0
     for i in 1:n
         if isnull(da, i)
-            if firstna == 0
-                firstna = length(out) + 1
+            if firstnull == 0
+                firstnull = length(out) + 1
             else
                 continue
             end
@@ -350,17 +350,17 @@ function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
             push!(out, da.data[i])
         end
     end
-    return out, firstna
+    return out, firstnull
 end
 
 function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
-    unique_values, firstna = finduniques(da)
+    unique_values, firstnull = finduniques(da)
     n = length(unique_values)
-    if firstna > 0
+    if firstnull > 0
         res = DataArray(Vector{T}(n + 1))
         i = 1
         for val in unique_values
-            if i == firstna
+            if i == firstnull
                 res.na[i] = true
                 i += 1
             end
@@ -368,7 +368,7 @@ function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
             i += 1
         end
 
-        if firstna == n + 1
+        if firstnull == n + 1
             res.na[n + 1] = true
         end
 
@@ -397,7 +397,7 @@ julia> levels(@data [1, 2, null])
 ```
 """
 function levels(da::DataArray) # -> DataVector{T}
-    unique_values, firstna = finduniques(da)
+    unique_values, firstnull = finduniques(da)
     return DataArray(unique_values)
 end
 

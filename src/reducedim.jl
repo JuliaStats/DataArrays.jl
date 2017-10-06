@@ -54,7 +54,7 @@ end
             extr = daextract(R)
             for i = 1:nslices
                 if _any(na, ibase+1, ibase+lsiz)
-                    unsafe_setna!(R, extr, i)
+                    unsafe_setnull!(R, extr, i)
                 else
                     v = Base.mapreduce_impl(f, op, data, ibase+1, ibase+lsiz)
                     @inbounds unsafe_dasetindex!(R, extr, v, i)
@@ -368,9 +368,9 @@ end
             extr = daextract(R)
             for i = 1:nslices
                 if unsafe_isnull(S, Sextr, i) || _any(na, ibase+1, ibase+lsiz)
-                    unsafe_setna!(R, extr, i)
+                    unsafe_setnull!(R, extr, i)
                 else
-                    @inbounds s = unsafe_getindex_notna(S, Sextr, i)
+                    @inbounds s = unsafe_getindex_notnull(S, Sextr, i)
                     v = Base.mapreduce_impl(MapReduceDim2ArgHelperFun(f, s), op, data, ibase+1, ibase+lsiz)
                     @inbounds unsafe_dasetindex!(R, extr, v, i)
                 end
@@ -392,7 +392,7 @@ end
                     if vna
                         @inbounds new_na[state_0] = true
                     else
-                        @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
+                        @inbounds s = unsafe_getindex_notnull(S, Sextr, state_0)
                         @inbounds x = data[k]
                         v = f(x, s)
                         @inbounds v0 = new_data[state_0]
@@ -445,7 +445,7 @@ end
                 # If S[i] is null, skip this iteration
                 @inbounds sna = unsafe_isnull(S, Sextr, i)
                 if !sna
-                    @inbounds s = unsafe_getindex_notna(S, Sextr, i)
+                    @inbounds s = unsafe_getindex_notnull(S, Sextr, i)
                     # TODO: use pairwise impl for sum
                     for k = ibase+1:ibase+lsiz
                         @inbounds Base.unsafe_bitgetindex(na_chunks, k) && continue
@@ -471,7 +471,7 @@ end
                     if xna
                         !isa(C, Void) && @inbounds C[state_0] -= 1
                     else
-                        @inbounds s = unsafe_getindex_notna(S, Sextr, state_0)
+                        @inbounds s = unsafe_getindex_notnull(S, Sextr, state_0)
                         @inbounds x = data[k]
                         v = f(x, s)
                         @inbounds v0 = new_data[state_0]

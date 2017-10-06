@@ -2,7 +2,7 @@
 
 # Extract relevant fields of a DataArray to a tuple
 # The extracted tuple can be passed to `unsafe_isnull`,
-# `unsafe_getindex_notna`, `unsafe_setna!`, `unsafe_setnotna!`, and
+# `unsafe_getindex_notnull`, `unsafe_setnull!`, `unsafe_setnotnull!`, and
 # `unsafe_dasetindex!`. This has a meaningful performance impact within
 # very tight loops.
 daextract(da::DataArray) = (da.data, da.na.chunks)
@@ -13,9 +13,9 @@ daextract(a) = nothing
 unsafe_isnull(da::DataArray, extr, idx::Real) = Base.unsafe_bitgetindex(extr[2], idx)
 unsafe_isnull(pda::PooledDataArray, extr, idx::Real) = extr[1][idx] == 0
 unsafe_isnull(a, extr, idx::Real) = false
-unsafe_getindex_notna(da::DataArray, extr, idx::Real) = getindex(extr[1], idx)
-unsafe_getindex_notna(pda::PooledDataArray, extr, idx::Real) = getindex(extr[2], extr[1][idx])
-unsafe_getindex_notna(a, extr, idx::Real) = Base.unsafe_getindex(a, idx)
+unsafe_getindex_notnull(da::DataArray, extr, idx::Real) = getindex(extr[1], idx)
+unsafe_getindex_notnull(pda::PooledDataArray, extr, idx::Real) = getindex(extr[2], extr[1][idx])
+unsafe_getindex_notnull(a, extr, idx::Real) = Base.unsafe_getindex(a, idx)
 
 # Set null or data portion of DataArray
 
@@ -24,10 +24,10 @@ unsafe_bitsettrue!(chunks::Vector{UInt64}, idx::Real) =
 unsafe_bitsetfalse!(chunks::Vector{UInt64}, idx::Real) =
     chunks[Base._div64(Int(idx)-1)+1] &= ~(UInt64(1) << Base._mod64(Int(idx)-1))
 
-unsafe_setna!(da::DataArray, extr, idx::Real) = unsafe_bitsettrue!(extr[2], idx)
-unsafe_setna!(da::PooledDataArray, extr, idx::Real) = setindex!(extr[1], 0, idx)
-unsafe_setnotna!(da::DataArray, extr, idx::Real) = unsafe_bitsetfalse!(extr[2], idx)
-unsafe_setnotna!(da::PooledDataArray, extr, idx::Real) = nothing
+unsafe_setnull!(da::DataArray, extr, idx::Real) = unsafe_bitsettrue!(extr[2], idx)
+unsafe_setnull!(da::PooledDataArray, extr, idx::Real) = setindex!(extr[1], 0, idx)
+unsafe_setnotnull!(da::DataArray, extr, idx::Real) = unsafe_bitsetfalse!(extr[2], idx)
+unsafe_setnotnull!(da::PooledDataArray, extr, idx::Real) = nothing
 
 # Fast setting of null values in DataArrays
 # These take the data and chunks (extracted as da.data and
@@ -41,7 +41,7 @@ unsafe_dasetindex!(data::Array, na_chunks::Vector{UInt64}, val::Null, idx::Real)
 unsafe_dasetindex!(data::Array, na_chunks::Vector{UInt64}, val, idx::Real) =
     setindex!(data, val, idx)
 unsafe_dasetindex!(da::DataArray, extr, val::Null, idx::Real) =
-    unsafe_setna!(da, extr, idx)
+    unsafe_setnull!(da, extr, idx)
 unsafe_dasetindex!(da::PooledDataArray, extr, val::Null, idx::Real) = nothing
 unsafe_dasetindex!(da::DataArray, extr, val, idx::Real) = setindex!(extr[1], val, idx)
 unsafe_dasetindex!(pda::PooledDataArray, extr, val, idx::Real) =
@@ -91,7 +91,7 @@ else
         extr = daextract(I)
         b = true
         for i = 1:length(I)
-            @inbounds v = unsafe_getindex_notna(I, extr, i)
+            @inbounds v = unsafe_getindex_notnull(I, extr, i)
             b &= Base.checkbounds(Bool, sz, v)
         end
         b
@@ -142,7 +142,7 @@ end
             if unsafe_isnull(src, srcextr, offset_0)
                 unsafe_dasetindex!(dest, destextr, null, d)
             else
-                unsafe_dasetindex!(dest, destextr, unsafe_getindex_notna(src, srcextr, offset_0), d)
+                unsafe_dasetindex!(dest, destextr, unsafe_getindex_notnull(src, srcextr, offset_0), d)
             end
         end
         dest
@@ -219,9 +219,9 @@ end
         if !isa(x, AbstractArray)
             @nloops $N i d->I_d d->(@inbounds offset_{d-1} = offset_d + (i_d - 1)*stride_d) begin
                 if isa(x, Null)
-                    @inbounds unsafe_setna!(A, Aextr, offset_0)
+                    @inbounds unsafe_setnull!(A, Aextr, offset_0)
                 else
-                    @inbounds unsafe_setnotna!(A, Aextr, offset_0)
+                    @inbounds unsafe_setnotnull!(A, Aextr, offset_0)
                     @inbounds unsafe_dasetindex!(A, Aextr, x, offset_0)
                 end
             end
@@ -244,10 +244,10 @@ end
                 Xextr = daextract(X)
                 @nloops $N i d->I_d d->(@inbounds offset_{d-1} = offset_d + (i_d - 1)*stride_d) begin
                     @inbounds if isa(X, AbstractDataArray) && unsafe_isnull(X, Xextr, k)
-                        unsafe_setna!(A, Aextr, offset_0)
+                        unsafe_setnull!(A, Aextr, offset_0)
                     else
-                        unsafe_setnotna!(A, Aextr, offset_0)
-                        unsafe_dasetindex!(A, Aextr, unsafe_getindex_notna(X, Xextr, k), offset_0)
+                        unsafe_setnotnull!(A, Aextr, offset_0)
+                        unsafe_dasetindex!(A, Aextr, unsafe_getindex_notnull(X, Xextr, k), offset_0)
                     end
                     k += 1
                 end

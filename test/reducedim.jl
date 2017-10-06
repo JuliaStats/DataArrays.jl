@@ -126,8 +126,8 @@ end
                 # println("region = $region, skipnull = $skipnull")
 
                 outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
-                has_na = any(isnull, Areduc)
-                if has_na && !skipnull
+                hasnulls = any(isnull, Areduc)
+                if hasnulls && !skipnull
                     # Should throw an error reducing to non-DataArray
                     @test_throws NullException sum!(outputs[1].data, Areduc; skipnull=skipnull)
                 else
@@ -138,7 +138,7 @@ end
                 for r in outputs
                     @test_da_approx_eq sum!(r, Areduc; skipnull=skipnull) safe_mapslices(sum, Areduc, region, skipnull)
                     @test_da_approx_eq prod!(r, Areduc; skipnull=skipnull) safe_mapslices(prod, Areduc, region, skipnull)
-                    if !has_na
+                    if !hasnulls
                         @test_da_approx_eq maximum!(r, Areduc; skipnull=skipnull) safe_mapslices(maximum, Areduc, region, skipnull)
                         @test_da_approx_eq minimum!(r, Areduc; skipnull=skipnull) safe_mapslices(minimum, Areduc, region, skipnull)
                     end

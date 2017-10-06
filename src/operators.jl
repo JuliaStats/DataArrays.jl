@@ -623,56 +623,56 @@ end
 
 function Base.all(dv::DataArray{Bool})
     data = dv.data
-    has_na = false
+    hasnulls = false
     @bitenumerate dv.na i na begin
         if !na
             data[i] || return false
         else
-            has_na = true
+            hasnulls = true
         end
     end
-    has_na ? null : true
+    hasnulls ? null : true
 end
 
 function Base.all(dv::AbstractDataArray{Bool})
-    has_na = false
+    hasnulls = false
     for i in 1:length(dv)
         x = dv[i]
         if !isnull(x)
             x || return false
         else
-            has_na = true
+            hasnulls = true
         end
     end
-    has_na ? null : true
+    hasnulls ? null : true
 end
 
 function Base.any(dv::DataArray{Bool})
-    has_na = false
+    hasnulls = false
     @bitenumerate dv.na i na begin
         if !na
             if dv.data[i]
                 return true
             end
         else
-            has_na = true
+            hasnulls = true
         end
     end
-    has_na ? null : false
+    hasnulls ? null : false
 end
 
 function Base.any(dv::AbstractDataArray{Bool})
-    has_na = false
+    hasnulls = false
     for i in 1:length(dv)
         if !isnull(dv[i])
             if dv[i]
                 return true
             end
         else
-            has_na = true
+            hasnulls = true
         end
     end
-    has_na ? null : false
+    hasnulls ? null : false
 end
 
 function rle(v::AbstractVector{T}) where T

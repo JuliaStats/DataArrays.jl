@@ -315,11 +315,11 @@ function Base.unique(pda::PooledDataArray{T}) where T
     sizehint!(unique_values, nlevels)
     seen = Set{eltype(pda.refs)}()
 
-    firstna = 0
+    firstnull = 0
     for i in 1:n
         if isnull(pda, i)
-            if firstna == 0
-                firstna = length(unique_values) + 1
+            if firstnull == 0
+                firstnull = length(unique_values) + 1
             end
         elseif !in(pda.refs[i], seen)
             push!(seen, pda.refs[i])
@@ -328,25 +328,25 @@ function Base.unique(pda::PooledDataArray{T}) where T
             continue
         end
 
-        if firstna > 0 && length(unique_values) == nlevels
+        if firstnull > 0 && length(unique_values) == nlevels
             break
         end
     end
 
-    if firstna > 0
+    if firstnull > 0
         n = length(unique_values)
         res = DataArray(Vector{T}(n + 1))
         i = 0
         for val in unique_values
             i += 1
-            if i == firstna
+            if i == firstnull
                 res.na[i] = true
                 i += 1
             end
             res.data[i] = val
         end
 
-        if firstna == n + 1
+        if firstnull == n + 1
             res.na[n + 1] = true
         end
 
