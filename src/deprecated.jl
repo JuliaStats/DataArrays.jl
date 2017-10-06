@@ -76,6 +76,7 @@ end
 
 @deprecate_binding NAtype Null
 @deprecate_binding NA null
+@deprecate_binding NAException NullException
 @deprecate isna isnull
 @deprecate dropna(x) collect(Nulls.skip(x))
 @deprecate padna padnull
