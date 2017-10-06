@@ -6,10 +6,10 @@ srand(1776)
 
 const TEST_NAMES = [
     "Matrix",
-    "DataMatrix No null skipna=false",
-    "DataMatrix No null skipna=true",
-    "DataMatrix Half null skipna=false",
-    "DataMatrix Half null skipna=true"
+    "DataMatrix No null skipnull=false",
+    "DataMatrix No null skipnull=true",
+    "DataMatrix Half null skipnull=false",
+    "DataMatrix Half null skipnull=true"
 ]
 
 function make_test_types(genfunc, sz)
@@ -29,9 +29,9 @@ macro perf(fn, dim, replications)
         println($fn, " (region = ", $dim, ")")
         fns = [()->$fn(Data[1], $dim),
                ()->$fn(Data[2], $dim),
-               ()->$fn(Data[2], $dim; skipna=true),
+               ()->$fn(Data[2], $dim; skipnull=true),
                ()->$fn(Data[3], $dim),
-               ()->$fn(Data[3], $dim; skipna=true)]
+               ()->$fn(Data[3], $dim; skipnull=true)]
         gc_disable()
         df = compare(fns, $replications)
         gc_enable()

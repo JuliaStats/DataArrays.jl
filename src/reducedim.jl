@@ -3,7 +3,7 @@
 using Base.check_reducedims
 
 # Determine if there are any true values in a BitArray in a given
-# range. We use this for reductions with skipna=false along the first
+# range. We use this for reductions with skipnull=false along the first
 # dimension.
 function _any(B::BitArray, istart::Int, iend::Int)
     chunks = B.chunks
@@ -20,7 +20,7 @@ function _any(B::BitArray, istart::Int, iend::Int)
 end
 
 # Counts the number of ones in a given range. We use this for counting
-# the values for mean and var with skipna=false along the first
+# the values for mean and var with skipnull=false along the first
 # dimension.
 function _count(B::BitArray, istart::Int, iend::Int)
     chunks = B.chunks
@@ -148,9 +148,9 @@ _getdata(A::DataArray) = A.data
 
 # mapreduce across a dimension. If specified, C contains the number of
 # non-null values reduced into each element of R.
-@generated function _mapreducedim_skipna_impl!(f, op, R::AbstractArray,
-                                                      C::Union{Array{Int}, Void},
-                                                      A::DataArray{T,N} where {T}) where {N}
+@generated function _mapreducedim_skipnull_impl!(f, op, R::AbstractArray,
+                                                        C::Union{Array{Int}, Void},
+                                                        A::DataArray{T,N} where {T}) where {N}
     quote
 
         data = A.data
@@ -207,19 +207,19 @@ _getdata(A::DataArray) = A.data
     end
 end
 
-_mapreducedim_skipna!(f, op, R::AbstractArray, A::DataArray) =
-    _mapreducedim_skipna_impl!(f, op, R, nothing, A)
+_mapreducedim_skipnull!(f, op, R::AbstractArray, A::DataArray) =
+    _mapreducedim_skipnull_impl!(f, op, R, nothing, A)
 
 # for MinFun/MaxFun, min or max is null if all values along a dimension are null
-function _mapreducedim_skipna!(f, op::Union{typeof(min), typeof(max)}, R::DataArray, A::DataArray)
+function _mapreducedim_skipnull!(f, op::Union{typeof(min), typeof(max)}, R::DataArray, A::DataArray)
     R.na = BitArray(all!(fill(true, size(R)), A.na))
-    _mapreducedim_skipna_impl!(f, op, R, nothing, A)
+    _mapreducedim_skipnull_impl!(f, op, R, nothing, A)
 end
-function _mapreducedim_skipna!(f, op::Union{typeof(min), typeof(max)}, R::AbstractArray, A::DataArray)
+function _mapreducedim_skipnull!(f, op::Union{typeof(min), typeof(max)}, R::AbstractArray, A::DataArray)
     if any(all!(fill(true, size(R)), A.na))
         throw(NullException())
     end
-    _mapreducedim_skipna_impl!(f, op, R, nothing, A)
+    _mapreducedim_skipnull_impl!(f, op, R, nothing, A)
 end
 
 ## general reducedim interface
@@ -245,23 +245,39 @@ function Base.reducedim_initarray0(A::DataArray, region, v0, ::Type{R}) where R
     DataArray(fill!(similar(A.data, R, rd), v0), falses(rd))
 end
 
-function Base.mapreducedim!(f::Function, op, R::AbstractArray, A::DataArray; skipna::Bool=false)
-    skipna ? _mapreducedim_skipna!(f, op, R, A) : _mapreducedim!(f, op, R, A)
+function Base.mapreducedim!(f::Function, op, R::AbstractArray, A::DataArray;
+                            skipnull::Bool=false, skipna::Bool=false)
+    if skipna && !skipnull
+        Base.depwarn("skipna=$skipna is deprecated, use skipnull=$skipna instead", :mapreduce)
+        skipnull = true
+    end
+    skipnull ? _mapreducedim_skipnull!(f, op, R, A) : _mapreducedim!(f, op, R, A)
 end
-Base.mapreducedim!(f, op, R::AbstractArray, A::DataArray; skipna::Bool=false) =
-    skipna ? _mapreducedim_skipna!(f, op, R, A) : _mapreducedim!(f, op, R, A)
-Base.reducedim!(op, R::DataArray{RT}, A::AbstractArray; skipna::Bool=false) where {RT} =
+function Base.mapreducedim!(f, op, R::AbstractArray, A::DataArray;
+                            skipnull::Bool=false, skipna::Bool=false)
+    if skipn && !skipnull
+        Base.depwarn("skipna=$skipna is deprecated, use skipnull=$skipna instead", :mapreduce)
+        skipnull = true
+    end
+    skipnull ? _mapreducedim_skipna!(f, op, R, A) : _mapreducedim!(f, op, R, A)
+end
+Base.reducedim!(op, R::DataArray{RT}, A::AbstractArray;
+                skipnull::Bool=false, skipna::Bool=false) where {RT} =
     Base.mapreducedim!(identity, op, R, A, zero(RT); skipna=skipna)
 
-Base.mapreducedim(f, op, A::DataArray, region, v0; skipna::Bool=false) =
-    Base.mapreducedim!(f, op, Base.reducedim_initarray(A, region, v0), A; skipna=skipna)
-Base.mapreducedim(f, op, A::DataArray{T}, region; skipna::Bool=false) where {T} =
-    Base.mapreducedim!(f, op, Base.reducedim_init(f, op, A, region), A; skipna=skipna)
+Base.mapreducedim(f, op, A::DataArray, region, v0;
+                  skipnull::Bool=false, skipna::Bool=false) =
+    Base.mapreducedim!(f, op, Base.reducedim_initarray(A, region, v0), A;
+                       skipnull=skipnull, skipna=skipna)
+Base.mapreducedim(f, op, A::DataArray{T}, region;
+                  skipnull::Bool=false, skipna::Bool=false) where {T} =
+    Base.mapreducedim!(f, op, Base.reducedim_init(f, op, A, region), A;
+                       skipnull=skipnull, skipna=skipna)
 
 Base.reducedim(op, A::DataArray, region, v0; skipna::Bool=false) =
-    Base.mapreducedim(identity, op, A, region, v0; skipna=skipna)
+    Base.mapreducedim(identity, op, A, region, v0; skipnull=skipnull, skipna=skipna)
 Base.reducedim(op, A::DataArray, region; skipna::Bool=false) =
-    Base.mapreducedim(identity, op, A, region; skipna=skipna)
+    Base.mapreducedim(identity, op, A, region; skipnull=skipnull, skipna=skipna)
 
 ## usual reductions
 
@@ -272,15 +288,18 @@ for (basfn, Op) in [(:sum, +), (:prod, *),
     fname! = Expr(:., :Base, Base.Meta.quot(Symbol(string(basfn, '!'))))
     @eval begin
         $(fname!)(f::Union{Function,$(supertype(typeof(abs)))}, r::AbstractArray, A::DataArray;
-                  init::Bool=true, skipna::Bool=false) =
-            Base.mapreducedim!(f, $(Op), Base.initarray!(r, $(Op), init), A; skipna=skipna)
-        $(fname!)(r::AbstractArray, A::DataArray; init::Bool=true, skipna::Bool=false) =
-            $(fname!)(identity, r, A; init=init, skipna=skipna)
+                  init::Bool=true, skipnull::Bool=false, skipna::Bool=false) =
+            Base.mapreducedim!(f, $(Op), Base.initarray!(r, $(Op), init), A;
+                               skipnull=skipnull, skipna=skipna)
+        $(fname!)(r::AbstractArray, A::DataArray;
+                  init::Bool=true, skipnull::Bool=false, skipna::Bool=false) =
+            $(fname!)(identity, r, A; init=init, skipnull=skipnull, skipna=skipna)
 
-        $(fname)(f::Union{Function,$(supertype(typeof(abs)))}, A::DataArray, region; skipna::Bool=false) =
-            Base.mapreducedim(f, $(Op), A, region; skipna=skipna)
-        $(fname)(A::DataArray, region; skipna::Bool=false) =
-            $(fname)(identity, A, region; skipna=skipna)
+        $(fname)(f::Union{Function,$(supertype(typeof(abs)))}, A::DataArray, region;
+                 skipnull::Bool=false, skipna::Bool=false) =
+            Base.mapreducedim(f, $(Op), A, region; skipnull=skipnull, skipna=skipna)
+        $(fname)(A::DataArray, region; skipnull::Bool=false, skipna::Bool=false) =
+            $(fname)(identity, A, region; skipnull=skipnull, skipna=skipna)
     end
 end
 
@@ -292,32 +311,33 @@ for (basfn, fbase, Fun) in [(:sumabs, :sum, abs),
     fname! = Expr(:., :Base, Base.Meta.quot(Symbol(string(basfn, '!'))))
     fbase! = Expr(:., :Base, Base.Meta.quot(Symbol(string(fbase, '!'))))
     @eval begin
-        $(fname!)(r::AbstractArray, A::DataArray; init::Bool=true, skipna::Bool=false) =
-            $(fbase!)($(Fun), r, A; init=init, skipna=skipna)
-        $(fname)(A::DataArray, region; skipna::Bool=false) =
-            $(fbase)($(Fun), A, region; skipna=skipna)
+        $(fname!)(r::AbstractArray, A::DataArray;
+                  init::Bool=true, skipnull::Bool=false, skipna::Bool=false) =
+            $(fbase!)($(Fun), r, A; init=init, skipnull=skipnull, skipna=skipna)
+        $(fname)(A::DataArray, region; skipnull::Bool=false, skipna::Bool=false) =
+            $(fbase)($(Fun), A, region; skipnull=skipnull, skipna=skipna)
     end
 end
 
 ## mean
 
-function Base.mean!(R::AbstractArray{T}, A::DataArray; skipna::Bool=false,
-                       init::Bool=true) where {T}
+function Base.mean!(R::AbstractArray{T}, A::DataArray;
+                    skipnull::Bool=false, skipna::Bool=false, init::Bool=true) where {T}
     init && fill!(R, 0)
-    if skipna
+    if skipna || skipnull
         C = Array{Int}(size(R))
-        _mapreducedim_skipna_impl!(identity, +, R, C, A)
+        _mapreducedim_skipnull_impl!(identity, +, R, C, A)
         broadcast!(/, R, R, C)
     else
-        sum!(R, A; skipna=false)
+        sum!(R, A; skipnull=false)
         broadcast!(/, R, R, convert(T, length(A)/length(R)))
         R
     end
 end
 
-Base.mean(A::DataArray{T}, region; skipna::Bool=false) where {T} =
-    mean!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A; skipna=skipna,
-          init=false)
+Base.mean(A::DataArray{T}, region; skipnull::Bool=false, skipna::Bool=false) where {T} =
+    mean!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A;
+          skipnull=skipnull, skipna=skipna, init=false)
 
 ## var
 
@@ -390,11 +410,11 @@ end
     end
 end
 
-# A version of _mapreducedim_skipna! that accepts an array S of the same size
+# A version of _mapreducedim_skipnull! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
-@generated function _mapreducedim_skipna_2arg!(f, op, R::AbstractArray,
-                                                      C::Union{Array{Int}, Void},
-                                                      A::DataArray{T,N} where {T}, S::AbstractArray) where {N}
+@generated function _mapreducedim_skipnull_2arg!(f, op, R::AbstractArray,
+                                                        C::Union{Array{Int}, Void},
+                                                        A::DataArray{T,N} where {T}, S::AbstractArray) where {N}
     quote
         data = A.data
         na = A.na
@@ -471,16 +491,20 @@ struct Abs2MinusFun end
 (::Abs2MinusFun)(x, m) = abs2(x - m)
 
 function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected::Bool=true,
-                    skipna::Bool=false, init::Bool=true)
+                    skipnull::Bool=false, skipna::Bool=false, init::Bool=true)
+    if skipna && !skipnull
+            Base.depwarn("skipna=$skipna is deprecated, use skipnull=$skipna instead", :mapreduce)
+            skipnull = true
+    end
     if isempty(A)
         fill!(R, convert(eltype(R), NaN))
     else
         init && fill!(R, zero(eltype(R)))
-        if skipna
+        if skipnull
             C = Array{Int}(size(R))
 
             # Compute R = abs2(A-m)
-            _mapreducedim_skipna_2arg!(Abs2MinusFun(), +, R, C, A, m)
+            _mapreducedim_skipnull_2arg!(Abs2MinusFun(), +, R, C, A, m)
 
             # Divide by number of non-null values
             if corrected
@@ -500,27 +524,29 @@ function Base.varm!(R::AbstractArray, A::DataArray, m::AbstractArray; corrected:
 end
 
 Base.varm(A::DataArray{T}, m::AbstractArray, region; corrected::Bool=true,
-          skipna::Bool=false) where {T} =
+          skipnull::Bool=false, skipna::Bool=false) where {T} =
     Base.varm!(Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), A, m;
-               corrected=corrected, skipna=skipna, init=false)
+               corrected=corrected, skipnull=skipnull, skipna=skipna, init=false)
 
 function Base.var(A::DataArray{T}, region::Union{Integer, AbstractArray, Tuple};
-                  corrected::Bool=true, mean=nothing, skipna::Bool=false) where T
+                  corrected::Bool=true, mean=nothing,
+                  skipnull::Bool=false, skipna::Bool=false) where T
     if mean == 0
         Base.varm(A, Base.reducedim_initarray(A, region, zero(Base.momenttype(T))), region;
-                  corrected=corrected, skipna=skipna)
+                  corrected=corrected, skipnull=skipnull, skipna=skipna)
     elseif mean == nothing
-        if skipna
+        if skipna || skipnull
             # Can reduce mean into ordinary array
             m = zeros(Base.momenttype(T), length.(Base.reduced_indices(A, region)))
-            Base.varm(A, Base.mean!(m, A; skipna=skipna), region;
-                 corrected=corrected, skipna=skipna)
+            Base.varm(A, Base.mean!(m, A; skipnull=skipnull, skipna=skipna), region;
+                      corrected=corrected, skipnull=skipnull, skipna=skipna)
         else
-            Base.varm(A, Base.mean(A, region; skipna=skipna), region;
-                 corrected=corrected, skipna=skipna)
+            Base.varm(A, Base.mean(A, region; skipnull=skipnull, skipna=skipna), region;
+                      corrected=corrected, skipnull=skipnull, skipna=skipna)
         end
     elseif isa(mean, AbstractArray)
-        Base.varm(A, mean::AbstractArray, region; corrected=corrected, skipna=skipna)
+        Base.varm(A, mean::AbstractArray, region;
+                  corrected=corrected, skipnull=skipnull, skipna=skipna)
     else
         throw(ErrorException("invalid value of mean"))
     end
