@@ -33,18 +33,34 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
     na::BitArray{N}
 
-    function DataArray{T,N}(d::Array{T, N}, m::BitArray{N}) where {T, N}
+    function DataArray{T,N}(d::Array{<:Union{T, Null}, N}, m::BitArray{N}) where {T, N}
         # Ensure data values and missingness metadata match
         if size(d) != size(m)
             msg = "Data and missingness arrays must be the same size"
             throw(ArgumentError(msg))
         end
-        # additionally check that d does not contain null entries
-        if eltype(d) === Any
-            for i in eachindex(d)
-                if isassigned(d, i) && isnull(d, i)
-                    m[i] = true
+        # if input array can contain null values, we need to mark corresponding entries as missing
+        if eltype(d) >: Null
+            # If the original eltype is wider than the target eltype T, conversion may fail
+            # in the presence of nulls: we need to allocate a copy, leaving entries
+            # corresponding to nulls uninitialized
+            if eltype(d) <: T
+                @inbounds for i in eachindex(d)
+                    if isassigned(d, i) && isnull(d, i)
+                        m[i] = true
+                    end
                 end
+            else
+                d2 = similar(d, T)
+                @inbounds for i in eachindex(d)
+                    isassigned(d, i) || continue
+                    if isnull(d, i)
+                        m[i] = true
+                    else
+                        d2[i] = d[i]
+                    end
+                end
+                return new(d2, m)
             end
         elseif eltype(d) <: Null
             m = trues(m)
@@ -55,7 +71,7 @@ end
 
 function DataArray(d::Array{T, N},
                    m::BitArray{N} = falses(size(d))) where {T, N} # -> DataArray{T}
-    return DataArray{T, N}(d, m)
+    return DataArray{Nulls.T(T), N}(d, m)
 end
 
 function DataArray(d::Array, m::AbstractArray{Bool}) # -> DataArray{T}
@@ -63,11 +79,11 @@ function DataArray(d::Array, m::AbstractArray{Bool}) # -> DataArray{T}
 end
 
 function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
-    return DataArray(Array{T}(dims...), trues(dims...))
+    return DataArray(Array{Nulls.T(T)}(dims...), trues(dims...))
 end
 
 function DataArray(T::Type, dims::NTuple{N, Int}) where N # -> DataArray{T}
-    return DataArray(Array{T}(dims...), trues(dims...))
+    return DataArray(Array{Nulls.T(T)}(dims...), trues(dims...))
 end
 
 """
@@ -189,12 +205,7 @@ end
 
 function Base.convert{S, T, N}(::Type{Array{S, N}},
                                x::DataArray{T, N}) # -> Array{S, N}
-    if any(isnull, x)
-        err = "Cannot convert DataArray with nulls to desired type"
-        throw(NullException(err))
-    else
-        return convert(Array{S, N}, x.data)
-    end
+    return S[v for v in x]
 end
 
 function Base.convert{S, T, N}(::Type{Array{S}}, da::DataArray{T, N})
@@ -202,15 +213,15 @@ function Base.convert{S, T, N}(::Type{Array{S}}, da::DataArray{T, N})
 end
 
 function Base.convert{T}(::Type{Vector}, dv::DataVector{T})
-    return convert(Array{T, 1}, dv)
+    return convert(Array{Union{T, Null}, 1}, dv)
 end
 
 function Base.convert{T}(::Type{Matrix}, dm::DataMatrix{T})
-    return convert(Array{T, 2}, dm)
+    return convert(Array{Union{T, Null}, 2}, dm)
 end
 
 function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N})
-    return convert(Array{T, N}, da)
+    return convert(Array{Union{T, Null}, N}, da)
 end
 
 function Base.convert{S, T, N}(
@@ -273,10 +284,14 @@ function Base.convert{S, T, N}(::Type{DataArray{S, N}},
                                a::AbstractArray{T, N}) # -> DataArray{S, N}
     return DataArray(convert(Array{S, N}, a), falses(size(a)))
 end
+function Base.convert{S, T>:Null, N}(::Type{DataArray{S, N}},
+                                     a::AbstractArray{T, N}) # -> DataArray{S, N}
+    return DataArray(convert(Array{Union{S, Null}, N}, a), falses(size(a)))
+end
 Base.convert{S, T, N}(::Type{DataArray{S}}, x::AbstractArray{T, N}) =
-    convert(DataArray{S, N}, x)
+    convert(DataArray{Nulls.T(S), N}, x)
 Base.convert{T, N}(::Type{DataArray}, x::AbstractArray{T, N}) =
-    convert(DataArray{T, N}, x)
+    convert(DataArray{Nulls.T(T), N}, x)
 Base.convert{T, N}(::Type{DataArray{T, N}}, x::DataArray{T, N}) = x
 function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N}) # -> DataArray{S, N}
     v = similar(x.data, S)

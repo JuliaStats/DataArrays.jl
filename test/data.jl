@@ -11,7 +11,8 @@
     dvint3 = convert(DataArray, 5:8)
     dvflt = @data [1.0, 2, null, 4]
     dvstr = @data ["one", "two", null, "four"]
-    dvdict = DataArray(Dict, 4) # for issue #199
+    # FIXME: triggers a segfault on Julia 0.6.0
+    # dvdict = DataArray(Dict, 4) # for issue DataFrames#199
     dvany = convert(DataArray{Any, 1}, dvint)
 
     @test isa(dvint, DataVector{Int})

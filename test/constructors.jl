@@ -46,6 +46,17 @@
     dv = convert(DataArray, trues(3))
     @test isequal(dv, convert(DataArray, trues(3)))
 
+    @test DataArray([1, null]) isa DataVector{Int}
+    @test isequal(DataArray([1, null]), [1, null])
+    @test DataArray{Int}([1, null]) isa DataVector{Int}
+    @test isequal(DataArray{Int}([1, null]), [1, null])
+    @test DataArray{Any}([1, null]) isa DataVector{Any}
+    @test isequal(DataArray{Any}([1, null]), [1, null])
+    @test DataArray{Int, 1}([1, null]) isa DataVector{Int}
+    @test isequal(DataArray{Int, 1}([1, null]), [1, null])
+    @test DataArray{Any, 1}([1, null]) isa DataVector{Any}
+    @test isequal(DataArray{Any, 1}([1, null]), [1, null])
+
     #
     # PooledDataArray's
     #
@@ -122,4 +133,15 @@
     @test_nowarn convert(DataArray, eye(3, 2))
     @test_nowarn convert(DataArray, eye(2))
     @test_nowarn convert(DataArray, diagm(Float64[pi, pi]))
+
+    @test DataArray([1 null]) isa DataMatrix{Int}
+    @test isequal(DataArray([1 null]), [1 null])
+    @test DataArray{Int}([1 null]) isa DataMatrix{Int}
+    @test isequal(DataArray{Int}([1 null]), [1 null])
+    @test DataArray{Any}([1 null]) isa DataMatrix{Any}
+    @test isequal(DataArray{Any}([1 null]), [1 null])
+    @test DataArray{Int, 2}([1 null]) isa DataMatrix{Int}
+    @test isequal(DataArray{Int, 2}([1 null]), [1 null])
+    @test DataArray{Any, 2}([1 null]) isa DataMatrix{Any}
+    @test isequal(DataArray{Any, 2}([1 null]), [1 null])
 end
