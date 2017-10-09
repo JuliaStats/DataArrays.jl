@@ -29,7 +29,6 @@ module DataArrays
            FastPerm,
            getpoolidx,
            gl,
-           head,
            levels,
            padnull,
            pdata,
@@ -41,8 +40,7 @@ module DataArrays
            rep,
            replace!,
            setlevels!,
-           setlevels,
-           tail
+           setlevels
 
     include("utils.jl")
     include("abstractdataarray.jl")
