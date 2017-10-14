@@ -356,7 +356,7 @@ function Base.unique(pda::PooledDataArray{T}) where T
     end
 end
 
-levels(pda::PooledDataArray{T}) where {T} = copy(pda.pool)
+Nulls.levels(pda::PooledDataArray{T}) where {T} = copy(pda.pool)
 
 function PooledDataArray(x::PooledDataArray{S,R,N},
                          newpool::Vector{S}) where {S,R,N}

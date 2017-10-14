@@ -393,29 +393,7 @@ function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
     end
 end
 
-"""
-    levels(da::DataArray) -> DataVector
-
-Return a vector of the unique values in `da`, excluding any `null`s.
-
-    levels(a::AbstractArray) -> Vector
-
-Equivalent to `unique(a)`.
-
-# Examples
-
-```jldoctest
-julia> levels(@data [1, 2, null])
-2-element DataArrays.DataArray{Int64,1}:
- 1
- 2
-```
-"""
-function levels(da::DataArray) # -> DataVector{T}
+function Nulls.levels(da::DataArray) # -> DataVector{T}
     unique_values, firstnull = finduniques(da)
     return DataArray(unique_values)
-end
-
-function levels(a::AbstractArray) # -> Vector{T}
-    return unique(a)
 end

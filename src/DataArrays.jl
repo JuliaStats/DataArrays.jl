@@ -29,7 +29,6 @@ module DataArrays
            FastPerm,
            getpoolidx,
            gl,
-           levels,
            padnull,
            pdata,
            PooledDataArray,
