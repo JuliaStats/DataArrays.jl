@@ -387,36 +387,6 @@ function (==)(a::DataArray, b::DataArray)
     has_null ? null : true
 end
 
-function (==)(a::AbstractDataArray, b::AbstractDataArray)
-    size(a) == size(b) || return false
-    has_null = false
-    for i = 1:length(a)
-        if isnull(a[i]) || isnull(b[i])
-            has_null = true
-        else
-            a[i] == b[i] || return false
-        end
-    end
-    has_null ? null : true
-end
-
-@swappable function (==)(a::AbstractDataArray, b::AbstractArray)
-    size(a) == size(b) || return false
-    has_null = false
-    for i = 1:length(a)
-        if isnull(a[i])
-            has_null = true
-        else
-            a[i] == b[i] || return false
-        end
-    end
-    has_null ? null : true
-end
-
-# ambiguity
-@swappable (==)(a::DataArray, b::AbstractDataArray) =
-    invoke(==, Tuple{AbstractDataArray,AbstractDataArray}, a, b)
-
 @swappable function (==)(a::DataArray, b::AbstractArray)
     size(a) == size(b) || return false
     adata = a.data
