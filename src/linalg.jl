@@ -15,12 +15,12 @@ function impute!(X::Matrix, missing_entries::Vector,
 end
 
 # Should be done with a proper N-dimensional Int array.
-function findna(dm::DataMatrix)
+function findnull(dm::DataMatrix)
     indices = Any[]
     n, p = size(dm)
     for i = 1:n
         for j = 1:p
-            if isna(dm[i, j])
+            if isnull(dm[i, j])
                 push!(indices, [i, j])
             end
         end
@@ -34,7 +34,7 @@ function global_mean(dm::DataMatrix)
     n, p = size(dm)
     for i = 1:n
         for j = 1:p
-            if !isna(dm[i, j])
+            if !isnull(dm[i, j])
                 mu += dm[i, j]
                 n += 1
             end
@@ -50,7 +50,7 @@ function na_safe_rowmeans(dm::DataMatrix)
         mu = 0.0
         n = 0
         for j = 1:p
-            if !isna(dm[i, j])
+            if !isnull(dm[i, j])
                 mu += dm[i, j]
                 n += 1
             end
@@ -62,7 +62,7 @@ function na_safe_rowmeans(dm::DataMatrix)
     return mus
 end
 
-# TODO: Default to failure in the face of NA's
+# TODO: Default to failure in the face of nulls
 function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
 
     # Make a copy of the data that we can alter in place
@@ -72,7 +72,7 @@ function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
     n, p = size(dm)
 
     # Estimate missingness and print a message.
-    missing_entries = findna(dm)
+    missing_entries = findnull(dm)
     missingness = length(missing_entries) / (n * p)
     if tracing
         @printf "Matrix is missing %.2f%% of entries\n" missingness * 100
@@ -83,8 +83,8 @@ function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
     mu_i = na_safe_rowmeans(dm)
     for i = 1:n
         for j = 1:p
-            if isna(dm[i, j])
-                if isna(mu_i[i])
+            if isnull(dm[i, j])
+                if isnull(mu_i[i])
                     dm[i, j] = global_mu
                 else
                     dm[i, j] = mu_i[i]
@@ -93,7 +93,7 @@ function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
         end
     end
 
-    # Convert dm to a Float array now that we've removed all NA's
+    # Convert dm to a Float array now that we've removed all nulls
     dm = float(dm)
 
     # Count iterations of proper imputation method

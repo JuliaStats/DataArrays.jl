@@ -72,7 +72,7 @@ end
 # Unary operator macros for DataArrays
 #
 
-# Apply unary operator to non-NA members of a DataArray or
+# Apply unary operator to non-null members of a DataArray or
 # AbstractDataArray
 macro dataarray_unary(f, intype, outtype, N...)
     esc(quote
@@ -199,11 +199,6 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
     ))
 end
 
-# Unary operators, NA
-for f in [:+,:-,:*,:/]
-    @eval $(f)(d::NAtype) = NA
-end
-
 # Unary operators, DataArrays.
 @dataarray_unary(+, Any, T)
 @dataarray_unary(-, Bool, Int)
@@ -213,7 +208,6 @@ end
 # Treat ctranspose and * in a special way
 for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
     @eval begin
-        $(f)(::NAtype) = NA
         function $(f){T}(d::DataMatrix{T})
             # (c)transpose in Base uses a cache-friendly algorithm for
             # numeric arrays, which is faster than our naive algorithm,
@@ -238,10 +232,10 @@ for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
     end
 end
 
-# Propagates NA's
+# Propagates nulls
 # For a dissenting view,
 # http://radfordneal.wordpress.com/2011/05/21/slowing-down-matrix-multiplication-in-r/
-# But we're getting 10x R while maintaining NA's
+# But we're getting 10x R while maintaining nulls
 for (adata, bdata) in ((true, false), (false, true), (true, true))
     @eval begin
         function (*)(a::$(adata ? :(Union{DataVector, DataMatrix}) : :(Union{Vector, Matrix})),
@@ -256,7 +250,7 @@ for (adata, bdata) in ((true, false), (false, true), (true, true))
                     p1 = size(a, 2)
                     corrupt_rows = falses(n1)
                     for j in 1:p1, i in 1:n1
-                        # Propagate NA's
+                        # Propagate nulls
                         # Corrupt all rows based on i
                         corrupt_rows[i] |= a.na[i, j]
                     end
@@ -269,7 +263,7 @@ for (adata, bdata) in ((true, false), (false, true), (true, true))
                     p2 = size(b, 2)
                     corrupt_cols = falses(p2)
                     for j in 1:p2, i in 1:n2
-                        # Propagate NA's
+                        # Propagate nulls
                         # Corrupt all columns based on j
                         corrupt_cols[j] |= b.na[i, j]
                     end
@@ -299,7 +293,6 @@ end
 # inputs
 for f in (:(Base.abs), :(Base.abs2), :(Base.conj), :(Base.sign))
     @eval begin
-        $(f)(::NAtype) = NA
         @dataarray_unary $(f) Number T
     end
 end
@@ -311,7 +304,6 @@ for f in (:(Base.acos), :(Base.acosh), :(Base.asin), :(Base.asinh), :(Base.atan)
           :(Base.exp), :(Base.exp2), :(Base.expm1), :(Base.log), :(Base.log10), :(Base.log1p),
           :(Base.log2), :(Base.exponent), :(Base.sqrt), :(Base.gamma), :(Base.lgamma))
     @eval begin
-        ($f)(::NAtype) = NA
         @dataarray_unary $(f) AbstractFloat T
         @dataarray_unary $(f) Real Float64
     end
@@ -319,7 +311,6 @@ end
 ## SpecialFunctions (should be a conditional module when supported)
 for f in (:(SpecialFunctions.digamma), :(SpecialFunctions.erf), :(SpecialFunctions.erfc))
     @eval begin
-        ($f)(::NAtype) = NA
         @dataarray_unary $(f) AbstractFloat T
         @dataarray_unary $(f) Real Float64
     end
@@ -328,8 +319,6 @@ end
 # Elementary functions that take varargs
 for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
     @eval begin
-        ($f)(::NAtype, args::Integer...) = NA
-
         # ambiguity
         @dataarray_unary $(f) Real T 1
         @dataarray_unary $(f) Real T 2
@@ -355,34 +344,8 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
 end
 
 #
-# Bit operators
-#
-
-@swappable (&)(a::NAtype, b::Bool) = b ? NA : false
-@swappable (|)(a::NAtype, b::Bool) = b ? true : NA
-@swappable (⊻)(a::NAtype, b::Bool) = NA
-
-# To avoid ambiguity warning
-@swappable (|)(a::NAtype, b::Function) = NA
-
-for f in (:(&), :(|), :(⊻))
-    @eval begin
-        # Scalar with NA
-        ($f)(::NAtype, ::NAtype) = NA
-        @swappable ($f)(::NAtype, b::Integer) = NA
-    end
-end
-
-#
 # Comparison operators
 #
-
-Base.isequal(::NAtype, ::NAtype) = true
-Base.isequal(::NAtype, b) = false
-Base.isequal(a, ::NAtype) = false
-Base.isless(::NAtype, ::NAtype) = false
-Base.isless(::NAtype, b) = false
-Base.isless(a, ::NAtype) = true
 
 # This is for performance only; the definition in Base is sufficient
 # for AbstractDataArrays
@@ -413,84 +376,38 @@ function (==)(a::DataArray, b::DataArray)
     adata = a.data
     bdata = b.data
     bchunks = b.na.chunks
-    has_na = false
-    @bitenumerate a.na i na begin
-        if na || Base.unsafe_bitgetindex(bchunks, i)
-            has_na = true
+    has_null = false
+    @bitenumerate a.na i anull begin
+        if anull || Base.unsafe_bitgetindex(bchunks, i)
+            has_null = true
         else
             @inbounds adata[i] == bdata[i] || return false
         end
     end
-    has_na ? NA : true
+    has_null ? null : true
 end
-
-# ambiguity
-@swappable (==)(a::DataArray, b::AbstractDataArray) =
-    invoke(==, Tuple{AbstractDataArray,AbstractDataArray}, a, b)
 
 @swappable function (==)(a::DataArray, b::AbstractArray)
     size(a) == size(b) || return false
     adata = a.data
-    has_na = false
-    @bitenumerate a.na i na begin
-        if na
-            has_na = true
+    has_null = false
+    @bitenumerate a.na i anull begin
+        if anull
+            has_null = true
         else
             @inbounds adata[i] == b[i] || return false
         end
     end
-    has_na ? NA : true
-end
-
-function (==)(a::AbstractDataArray, b::AbstractDataArray)
-    size(a) == size(b) || return false
-    has_na = false
-    for i = 1:length(a)
-        if isna(a[i]) || isna(b[i])
-            has_na = true
-        else
-            a[i] == b[i] || return false
-        end
-    end
-    has_na ? NA : true
-end
-
-@swappable function (==)(a::AbstractDataArray, b::AbstractArray)
-    size(a) == size(b) || return false
-    has_na = false
-    for i = 1:length(a)
-        if isna(a[i])
-            has_na = true
-        else
-            a[i] == b[i] || return false
-        end
-    end
-    has_na ? NA : true
+    has_null ? null : true
 end
 
 # ambiguity
-@swappable (==)(::NAtype, ::WeakRef) = NA
-
-for sf in [:(==),:(!=),:(>),:(>=),:(<),:(<=)]
-    @eval begin
-        # Scalar with NA
-        ($(sf))(::NAtype, ::NAtype) = NA
-        @swappable ($(sf))(::NAtype, b) = NA
-    end
-end
+@swappable (==)(a::DataArray, b::AbstractArray{>:Null}) =
+    invoke(==, Tuple{AbstractDataArray,AbstractArray}, a, b)
 
 #
 # Binary operators
 #
-
-for f in (:(+), :(-), :(*), :(/),
-          :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem), :(Base.min), :(Base.max))
-    @eval begin
-        # Scalar with NA
-        ($f)(::NAtype, ::NAtype) = NA
-        @swappable ($f)(d::NAtype, x::Number) = NA
-    end
-end
 
 # Define methods for UniformScaling. Otherwise we get ambiguity
 # warnings...
@@ -532,38 +449,38 @@ function (-)(J::UniformScaling{TJ},A::DataArray{TA,2}) where {TA,TJ<:Number}
 end
 
 (+)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(+, Tuple{AbstractArray{Data{Bool},2},UniformScaling{Bool}}, A, J)
+    invoke(+, Tuple{AbstractArray{Union{Bool,Null},2},UniformScaling{Bool}}, A, J)
 (+)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
-    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Data{Bool},2}}, J, A)
+    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Null},2}}, J, A)
 (-)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(-, Tuple{AbstractArray{Data{Bool},2},UniformScaling{Bool}}, A, J)
+    invoke(-, Tuple{AbstractArray{Union{Bool,Null},2},UniformScaling{Bool}}, A, J)
 (-)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
-    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Data{Bool},2}}, J, A)
+    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Null},2}}, J, A)
 
 (+)(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ} =
-    invoke(+, Tuple{AbstractArray{Data{TA},2},UniformScaling{TJ}}, A, J)
+    invoke(+, Tuple{AbstractArray{Union{TA,Null},2},UniformScaling{TJ}}, A, J)
 (+)(J::UniformScaling,A::AbstractDataArray{TA,2}) where {TA} =
-    invoke(+, Tuple{UniformScaling,AbstractArray{Data{TA},2}}, J, A)
+    invoke(+, Tuple{UniformScaling,AbstractArray{Union{TA,Null},2}}, J, A)
 (-)(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ<:Number} =
-    invoke(-, Tuple{AbstractArray{Data{TA},2},UniformScaling{TJ}}, A, J)
+    invoke(-, Tuple{AbstractArray{Union{TA,Null},2},UniformScaling{TJ}}, A, J)
 (-)(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) where {TA,TJ<:Number} =
-    invoke(-, Tuple{UniformScaling{TJ},AbstractArray{Data{TA},2}}, J, A)
+    invoke(-, Tuple{UniformScaling{TJ},AbstractArray{Union{TA,Null},2}}, J, A)
 
 (+)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(+, Tuple{AbstractArray{Data{Bool},2},UniformScaling{Bool}}, A, J)
+    invoke(+, Tuple{AbstractArray{Union{Bool,Null},2},UniformScaling{Bool}}, A, J)
 (+)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
-    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Data{Bool},2}}, J, A)
+    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Null},2}}, J, A)
 (-)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(-, Tuple{AbstractArray{Data{Bool},2},UniformScaling{Bool}}, A, J)
+    invoke(-, Tuple{AbstractArray{Union{Bool,Null},2},UniformScaling{Bool}}, A, J)
 (-)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
-    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Data{Bool},2}}, J, A)
+    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Null},2}}, J, A)
 
 end # if isdefined(Base, :UniformScaling)
 
 for f in (:(*), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
-        # Array with NA
-        @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
+        # Array with null
+        @swappable $(f){T,N}(::Null, b::AbstractArray{T,N}) =
             DataArray(Array{T,N}(size(b)), trues(size(b)))
 
         # DataArray with scalar
@@ -572,15 +489,10 @@ for f in (:(*), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
 end
 
 for f in (:(+), :(-))
-    # Array with NA
-    @eval @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
+    # Array with null
+    @eval @swappable $(f){T,N}(::Null, b::AbstractArray{T,N}) =
         DataArray(Array{T,N}(size(b)), trues(size(b)))
 end
-
-(^)(::NAtype, ::NAtype) = NA
-(^)(a, ::NAtype) = NA
-(^)(::NAtype, ::Integer) = NA
-(^)(::NAtype, ::Number) = NA
 
 for f in (:(+), :(-))
     @eval begin
@@ -593,16 +505,9 @@ for f in (:(+), :(-))
 end
 
 # / is defined separately since it is not swappable
-(/)(b::AbstractArray{T,N}, ::NAtype) where {T,N} =
+(/)(b::AbstractArray{T,N}, ::Null) where {T,N} =
     DataArray(Array{T,N}(size(b)), trues(size(b)))
 @dataarray_binary_scalar(/, /, nothing, false)
-
-for f in [:(Base.maximum), :(Base.minimum)]
-    @eval begin
-        ($f)(::NAtype, ::NAtype) = NA
-        @swappable $(f)(::Number, ::NAtype) = NA
-    end
-end
 
 function Base.LinAlg.diff(dv::DataVector)
     n = length(dv)
@@ -649,12 +554,12 @@ Base.cumsum(dv::DataVector) = accumulate(+, dv)
 Base.cumprod(dv::DataVector)   = accumulate(*, dv)
 
 for f in unary_vector_operators
-    @eval ($f)(dv::DataVector) = any(dv.na) ? NA : ($f)(dv.data)
+    @eval ($f)(dv::DataVector) = any(dv.na) ? null : ($f)(dv.data)
 end
 
 for f in binary_vector_operators
     @eval ($f)(dv1::DataVector, dv2::DataVector) =
-            any(dv1.na) || any(dv2.na) ? NA : ($f)(dv1.data, dv2.data)
+            any(dv1.na) || any(dv2.na) ? null : ($f)(dv1.data, dv2.data)
 end
 
 for f in (:(Base.minimum), :(Base.maximum), :(Base.prod), :(Base.sum),
@@ -688,56 +593,56 @@ end
 
 function Base.all(dv::DataArray{Bool})
     data = dv.data
-    has_na = false
+    hasnulls = false
     @bitenumerate dv.na i na begin
         if !na
             data[i] || return false
         else
-            has_na = true
+            hasnulls = true
         end
     end
-    has_na ? NA : true
+    hasnulls ? null : true
 end
 
 function Base.all(dv::AbstractDataArray{Bool})
-    has_na = false
+    hasnulls = false
     for i in 1:length(dv)
         x = dv[i]
-        if !isna(x)
+        if !isnull(x)
             x || return false
         else
-            has_na = true
+            hasnulls = true
         end
     end
-    has_na ? NA : true
+    hasnulls ? null : true
 end
 
 function Base.any(dv::DataArray{Bool})
-    has_na = false
+    hasnulls = false
     @bitenumerate dv.na i na begin
         if !na
             if dv.data[i]
                 return true
             end
         else
-            has_na = true
+            hasnulls = true
         end
     end
-    has_na ? NA : false
+    hasnulls ? null : false
 end
 
 function Base.any(dv::AbstractDataArray{Bool})
-    has_na = false
+    hasnulls = false
     for i in 1:length(dv)
-        if !isna(dv[i])
+        if !isnull(dv[i])
             if dv[i]
                 return true
             end
         else
-            has_na = true
+            hasnulls = true
         end
     end
-    has_na ? NA : false
+    hasnulls ? null : false
 end
 
 function rle(v::AbstractVector{T}) where T
@@ -774,8 +679,8 @@ function rle(v::AbstractDataVector{T}) where T
     lengths = Vector{Int16}(n)
     total_lengths = 1
     for i in 2:n
-        if isna(v[i]) || isna(current_value)
-            if isna(v[i]) && isna(current_value)
+        if isnull(v[i]) || isnull(current_value)
+            if isnull(v[i]) && isnull(current_value)
                 current_length += 1
             else
                 values[total_values] = current_value

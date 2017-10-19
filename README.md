@@ -11,30 +11,22 @@ Documentation:
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaStats.github.io/DataArrays.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaStats.github.io/DataArrays.jl/latest)
 
+The DataArrays package provides array types for working efficiently with [missing data](https://en.wikipedia.org/wiki/Missing_data)
+in Julia, based on the `null` value from the [Nulls.jl](https://github.com/JuliaData/Nulls.jl) package.
+In particular, it provides the following:
 
-The DataArrays package extends Julia by introducing data structures that can contain missing data. In particular, the package introduces three new data types to Julia:
-
-* `NA`: A singleton type that represents a single missing value.
 * `DataArray{T}`: An array-like data structure that can contain values of type `T`, but can also contain missing values.
 * `PooledDataArray{T}`: A variant of `DataArray{T}` optimized for representing arrays that contain many repetitions of a small number of unique values -- as commonly occurs when working with categorical data.
 
-# The `NA` Value
-
-Many languages represent missing values using a reserved value like `NULL` or `NA`. A missing integer value, for example, might be represented as a `NULL` value in SQL or as an `NA` value in R.
-
-Julia takes its conception of `NA` from R, where `NA` denotes missingness based on lack of information. If, for example, we were to measure people's heights as integers, an `NA` might reflect our ignorance of a specific person's height.
-
-Conceptualizing the use of `NA` as a signal of uncertainty will help you understand how `NA` interacts with other values. For example, it explains why `NA + 1` is `NA`, but `NA & false` is `false`. In general, `NA` corrupts any computation whose results cannot be determined without knowledge of the value that is `NA`.
-
 # DataArray's
 
-Most Julian arrays cannot contain `NA` values: only `Array{NAtype}` and heterogeneous Arrays can contain `NA` values. Of these, only heterogeneous arrays could contain values of any type other than `NAtype`.
+Most Julian arrays cannot contain `null` values: only `Array{Union{T, Null}}` and more generally `Array{>:Null}` can contain `null` values.
 
-The generic use of heterogeneous Arrays is discouraged in Julia because it is inefficient: accessing any value requires dereferencing a pointer. The `DataArray` type allows one to work around this inefficiency by providing tightly-typed arrays that can contain values of exactly one type, but can also contain `NA` values.
+The generic use of heterogeneous `Array` is discouraged in Julia versions below 0.7 because it is inefficient: accessing any value requires dereferencing a pointer. The `DataArray` type allows one to work around this inefficiency by providing tightly-typed arrays that can contain values of exactly one type, but can also contain `null` values.
 
-For example, a `DataArray{Int}` can contain integers and NA values. We can construct one as follows:
+For example, a `DataArray{Int}` can contain integers and `null` values. We can construct one as follows:
 
-	da = @data([1, 2, NA, 4])
+	da = @data([1, 2, null, 4])
 
 # PooledDataArray's
 

@@ -7,14 +7,14 @@
         # Scalar getindex
         for i = 1:100
             if na[i]
-                @test isna(A[i])
+                @test isnull(A[i])
             else
                 @test A[i] == data[i]
             end
         end
         for i = 1:10, j = 1:10
             if na[i, j]
-                @test isna(A[i, j])
+                @test isnull(A[i, j])
             else
                 @test A[i, j] == data[i, j]
             end
@@ -25,7 +25,7 @@
         v = A[rg]
         for i = 1:length(rg)
             if na[rg[i]]
-                @test isna(v[i])
+                @test isnull(v[i])
             else
                 @test v[i] == data[rg[i]]
             end
@@ -34,7 +34,7 @@
         v = A[rg, 9]
         for i = 1:length(rg)
             if na[rg[i], 9]
-                @test isna(v[i])
+                @test isnull(v[i])
             else
                 @test v[i] == data[rg[i], 9]
             end
@@ -44,7 +44,7 @@
         v = A[rg, rg2]
         for j = 1:length(rg2), i = 1:length(rg)
             if na[rg[i], rg2[j]]
-                @test isna(v[i, j])
+                @test isnull(v[i, j])
             else
                 @test v[i, j] == data[rg[i], rg2[j]]
             end
@@ -56,14 +56,14 @@
         v = A[b]
         for i = 1:length(rg)
             if na[rg[i]]
-                @test isna(v[i])
+                @test isnull(v[i])
             else
                 @test v[i] == data[rg[i]]
             end
         end
 
         # getindex with DataVectors with missingness throws
-        @test_throws NAException A[@data([1, 2, 3, NA])]
+        @test_throws NullException A[@data([1, 2, 3, null])]
 
         # setindex! with scalar indices
         data = rand(10, 10)
@@ -80,7 +80,7 @@
 
         na = bitrand(10, 10)
         for i = 1:100
-            na[i] && (A[i] = NA)
+            na[i] && (A[i] = null)
         end
 
         # setindex! with scalar and vector indices
@@ -91,12 +91,12 @@
             @test A[rg[i]] == 1.0
         end
 
-        # setindex! with NA and vector indices
+        # setindex! with null and vector indices
         rg = 5:13
         na[rg] = true
-        A[rg] = NA
+        A[rg] = null
         for i = 1:length(rg)
-            @test isna(A[rg[i]])
+            @test isnull(A[rg[i]])
         end
 
         # setindex! with vector and vector indices
@@ -118,7 +118,7 @@
             A[rg1, rg2] = datype2(newdata, newna)
             for j = rg2, i = rg1
                 if na[i, j]
-                    @test isna(A[i, j])
+                    @test isnull(A[i, j])
                 else
                     @test A[i, j] == data[i, j]
                 end

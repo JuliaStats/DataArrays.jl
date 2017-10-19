@@ -2,8 +2,8 @@ macro test_da_approx_eq(da1, da2)
     quote
         v1 = $(esc(da1))
         v2 = $(esc(da2))
-        na = isna.(v1)
-        @test na == isna.(v2)
+        na = isnull.(v1)
+        @test na == isnull.(v2)
         defined = (!).(na)
         if any(defined)
             @test isapprox(v1[defined], v2[defined], nans = true)
@@ -38,13 +38,13 @@ end
     test_count()
 
     # mapslices from Base, hacked to work for these cases
-    function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipna)
+    function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipnull)
         dims = intersect(region, 1:ndims(A))
         if isempty(dims)
-            if skipna
-                naval = f(T[], 1)
+            if skipnull
+                naval = f(Nulls.T(T)[], 1)
                 A = copy(A)
-                A[isna.(A)] = isempty(naval) ? NA : naval[1]
+                A[isnull.(A)] = isempty(naval) ? null : naval[1]
             end
             return A
         end
@@ -67,7 +67,7 @@ end
             idx[d] = 1:size(A,d)
         end
 
-        r1 = f(copy(reshape(A[idx...], Asliceshape)); skipna=skipna)
+        r1 = f(copy(reshape(A[idx...], Asliceshape)); skipnull=skipnull)
 
         # determine result size and allocate
         Rsize = copy(dimsA)
@@ -98,11 +98,11 @@ end
                 idx[otherdims] = ia
                 ridx[otherdims] = ia
                 try
-                    R[ridx...] = f(copy(reshape(A[idx...], Asliceshape)); skipna=skipna)
+                    R[ridx...] = f(copy(reshape(A[idx...], Asliceshape)); skipnull=skipnull)
                 catch e
                     if (isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed.") || (isa(e, ArgumentError) && e.msg == "reducing over an empty collection is not allowed")
 
-                        R[ridx...] = NA
+                        R[ridx...] = null
                     else
                         println(typeof(e))
                         rethrow(e)
@@ -114,65 +114,65 @@ end
         return R
     end
 
-    myvarzm(x; skipna::Bool=false) = var(x; mean=0, skipna=skipna)
-    myvar1m(x; skipna::Bool=false) = var(x; mean=1, skipna=skipna)
+    myvarzm(x; skipnull::Bool=false) = var(x; mean=0, skipnull=skipnull)
+    myvar1m(x; skipnull::Bool=false) = var(x; mean=1, skipnull=skipnull)
 
     for Areduc in (DataArray(rand(3, 4, 5, 6)),
                    DataArray(rand(3, 4, 5, 6), rand(3, 4, 5, 6) .< 0.2))
-        for skipna = (false, true)
+        for skipnull = (false, true)
             for region in Any[
                 1, 2, 3, 4, 5, (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4),
                 (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)]
-                # println("region = $region, skipna = $skipna")
+                # println("region = $region, skipnull = $skipnull")
 
                 outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
-                has_na = any(isna, Areduc)
-                if has_na && !skipna
+                hasnulls = any(isnull, Areduc)
+                if hasnulls && !skipnull
                     # Should throw an error reducing to non-DataArray
-                    @test_throws NAException sum!(outputs[1].data, Areduc; skipna=skipna)
+                    @test_throws NullException sum!(outputs[1].data, Areduc; skipnull=skipnull)
                 else
                     # Should be able to reduce to non-DataArray
                     push!(outputs, outputs[1].data)
                 end
 
                 for r in outputs
-                    @test_da_approx_eq sum!(r, Areduc; skipna=skipna) safe_mapslices(sum, Areduc, region, skipna)
-                    @test_da_approx_eq prod!(r, Areduc; skipna=skipna) safe_mapslices(prod, Areduc, region, skipna)
-                    if !has_na
-                        @test_da_approx_eq maximum!(r, Areduc; skipna=skipna) safe_mapslices(maximum, Areduc, region, skipna)
-                        @test_da_approx_eq minimum!(r, Areduc; skipna=skipna) safe_mapslices(minimum, Areduc, region, skipna)
+                    @test_da_approx_eq sum!(r, Areduc; skipnull=skipnull) safe_mapslices(sum, Areduc, region, skipnull)
+                    @test_da_approx_eq prod!(r, Areduc; skipnull=skipnull) safe_mapslices(prod, Areduc, region, skipnull)
+                    if !hasnulls
+                        @test_da_approx_eq maximum!(r, Areduc; skipnull=skipnull) safe_mapslices(maximum, Areduc, region, skipnull)
+                        @test_da_approx_eq minimum!(r, Areduc; skipnull=skipnull) safe_mapslices(minimum, Areduc, region, skipnull)
                     end
-                    @test_da_approx_eq Base.sumabs!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs(Areduc), region, skipna)
-                    @test_da_approx_eq Base.sumabs2!(r, Areduc; skipna=skipna) safe_mapslices(sum, abs2(Areduc), region, skipna)
-                    @test_da_approx_eq mean!(r, Areduc; skipna=skipna) safe_mapslices(mean, Areduc, region, skipna)
+                    @test_da_approx_eq Base.sumabs!(r, Areduc; skipnull=skipnull) safe_mapslices(sum, abs(Areduc), region, skipnull)
+                    @test_da_approx_eq Base.sumabs2!(r, Areduc; skipnull=skipnull) safe_mapslices(sum, abs2(Areduc), region, skipnull)
+                    @test_da_approx_eq mean!(r, Areduc; skipnull=skipnull) safe_mapslices(mean, Areduc, region, skipnull)
                 end
 
-                @test_da_approx_eq sum(Areduc, region; skipna=skipna) safe_mapslices(sum, Areduc, region, skipna)
-                @test_da_approx_eq prod(Areduc, region; skipna=skipna) safe_mapslices(prod, Areduc, region, skipna)
-                @test_da_approx_eq maximum(Areduc, region; skipna=skipna) safe_mapslices(maximum, Areduc, region, skipna)
-                @test_da_approx_eq minimum(Areduc, region; skipna=skipna) safe_mapslices(minimum, Areduc, region, skipna)
-                @test_da_approx_eq Base.sumabs(Areduc, region; skipna=skipna) safe_mapslices(sum, abs(Areduc), region, skipna)
-                @test_da_approx_eq Base.sumabs2(Areduc, region; skipna=skipna) safe_mapslices(sum, abs2(Areduc), region, skipna)
-                @test_da_approx_eq mean(Areduc, region; skipna=skipna) safe_mapslices(mean, Areduc, region, skipna)
+                @test_da_approx_eq sum(Areduc, region; skipnull=skipnull) safe_mapslices(sum, Areduc, region, skipnull)
+                @test_da_approx_eq prod(Areduc, region; skipnull=skipnull) safe_mapslices(prod, Areduc, region, skipnull)
+                @test_da_approx_eq maximum(Areduc, region; skipnull=skipnull) safe_mapslices(maximum, Areduc, region, skipnull)
+                @test_da_approx_eq minimum(Areduc, region; skipnull=skipnull) safe_mapslices(minimum, Areduc, region, skipnull)
+                @test_da_approx_eq Base.sumabs(Areduc, region; skipnull=skipnull) safe_mapslices(sum, abs(Areduc), region, skipnull)
+                @test_da_approx_eq Base.sumabs2(Areduc, region; skipnull=skipnull) safe_mapslices(sum, abs2(Areduc), region, skipnull)
+                @test_da_approx_eq mean(Areduc, region; skipnull=skipnull) safe_mapslices(mean, Areduc, region, skipnull)
 
                 if region != 5
-                    @test_da_approx_eq var(Areduc, region; skipna=skipna) safe_mapslices(var, Areduc, region, skipna)
-                    @test_da_approx_eq var(Areduc, region; mean=0, skipna=skipna) safe_mapslices(myvarzm, Areduc, region, skipna)
+                    @test_da_approx_eq var(Areduc, region; skipnull=skipnull) safe_mapslices(var, Areduc, region, skipnull)
+                    @test_da_approx_eq var(Areduc, region; mean=0, skipnull=skipnull) safe_mapslices(myvarzm, Areduc, region, skipnull)
                     for r in outputs
-                        @test_da_approx_eq var(Areduc, region; mean=fill!(r, 1), skipna=skipna) safe_mapslices(myvar1m, Areduc, region, skipna)
+                        @test_da_approx_eq var(Areduc, region; mean=fill!(r, 1), skipnull=skipnull) safe_mapslices(myvar1m, Areduc, region, skipnull)
                     end
                 end
             end
         end
     end
 
-    # Test NA-skipping behavior for maximum
-    a = @data([NA NA; 3 4])
-    @test isequal(maximum(a, 1; skipna=true), [3 4])
-    @test isequal(maximum!(zeros(1, 2), a; skipna=true), [3 4])
+    # Test null-skipping behavior for maximum
+    a = @data([null null; 3 4])
+    @test isequal(maximum(a, 1; skipnull=true), [3 4])
+    @test isequal(maximum!(zeros(1, 2), a; skipnull=true), [3 4])
 
-    # Maximum should give an NA in the output if all values along dimension are NA
-    @test isequal(maximum(a, 2; skipna=true), @data([NA 4])')
+    # Maximum should give an null in the output if all values along dimension are null
+    @test isequal(maximum(a, 2; skipnull=true), @data([null 4])')
     # Maximum should refuse to reduce to a non-DataArray
-    @test_throws NAException maximum!(zeros(2, 1), a; skipna=true)
+    @test_throws NullException maximum!(zeros(2, 1), a; skipnull=true)
 end

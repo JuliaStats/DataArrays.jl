@@ -1,4 +1,4 @@
-using Base: @deprecate, depwarn
+using Base: @deprecate, @deprecate_binding, depwarn
 
 # Deprecate in Julia 0.6 cycle
 function Base.isnan(da::DataArray)
@@ -6,10 +6,9 @@ function Base.isnan(da::DataArray)
     return isnan.(da)
 end
 
-@deprecate isna(x::AbstractArray) isna.(x)
-@deprecate anyna(x) any(isna, x)
-@deprecate allna(x) all(isna, x)
-@deprecate padNA(dv::AbstractDataVector, front::Integer, back::Integer) padna(dv, front, back)
+@deprecate isna(x::AbstractArray) isnull.(x)
+@deprecate anyna(x) any(isnull, x)
+@deprecate allna(x) all(isnull, x)
 
 function reldiff(v::Vector{T}) where T
     depwarn("reldiff is deprecated.", :reldiff)
@@ -74,3 +73,20 @@ for f in [:(&), :(|), :(xor)]
         @deprecate ($f)(a::DataArray{<:Integer}, b::DataArray{<:Integer}) ($f).(a, b)
     end
 end
+
+@deprecate_binding NAtype Null
+@deprecate_binding NA null
+@deprecate_binding NAException NullException
+@deprecate isna isnull
+@deprecate dropna(x) collect(Nulls.skip(x))
+@deprecate padna padnull
+@deprecate each_failna Nulls.fail
+@deprecate each_dropna Nulls.skip
+@deprecate each_replacena Nulls.replace
+@deprecate_binding EachFailNA DataArrays.EachFailNull
+@deprecate_binding EachDropNA DataArrays.EachDropNull
+@deprecate_binding EachReplaceNA DataArrays.EachReplaceNull
+import SpecialFunctions: digamma, erf, erfc
+@deprecate digamma(x::Null) isnull(x) ? null : SpecialFunctions.digamma(x)
+@deprecate erf(x::Null) isnull(x) ? null : SpecialFunctions.erf(x)
+@deprecate erfc(x::Null) isnull(x) ? null : SpecialFunctions.erfc(x)

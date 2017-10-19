@@ -1,21 +1,21 @@
 @testset "Containers" begin
     dv = @data ones(3)
     push!(dv, 3.0)
-    push!(dv, NA)
+    push!(dv, null)
 
-    @test isequal(dv, (@data [1.0, 1.0, 1.0, 3.0, NA]))
+    @test isequal(dv, (@data [1.0, 1.0, 1.0, 3.0, null]))
 
     a, b = pop!(dv), pop!(dv)
-    @test isna(a)
+    @test isnull(a)
     @test b == 3.0
 
     unshift!(dv, 3.0)
-    unshift!(dv, NA)
+    unshift!(dv, null)
 
-    @test isequal(dv, (@data [NA, 3.0, 1.0, 1.0, 1.0]))
+    @test isequal(dv, (@data [null, 3.0, 1.0, 1.0, 1.0]))
 
     a, b = shift!(dv), shift!(dv)
-    @test isna(a)
+    @test isnull(a)
     @test b == 3.0
 
     ## SPLICE
@@ -44,15 +44,15 @@
         end
     end
 
-    dv1 = @data [1.0, 2.0, NA, 2.0, NA, 3.0]
+    dv1 = @data [1.0, 2.0, null, 2.0, null, 3.0]
     for dv in (dv1, convert(DataVector{Number}, dv1), convert(PooledDataArray, dv1))
         for spliceout in (2, 3, 2:3, 5:6)
             test_splice(dv, spliceout)
             test_deleteat(dv, spliceout)
             for splicein in ([], [3], @data([3]), @pdata([3]),
-                             [3, 4, 5], [3., 4., 5.], @data([3, NA, 4]),
-                             @pdata([3, NA, 4]), @data([NA, 3.0, 4.0]),
-                             @pdata([NA, 3.0, 4.0]))
+                             [3, 4, 5], [3., 4., 5.], @data([3, null, 4]),
+                             @pdata([3, null, 4]), @data([null, 3.0, 4.0]),
+                             @pdata([null, 3.0, 4.0]))
                 test_splice(dv, spliceout, splicein)
             end
         end

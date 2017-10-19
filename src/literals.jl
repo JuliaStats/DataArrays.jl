@@ -3,7 +3,7 @@ function fixargs(args::Vector{Any}, stub::Any)
     data = Array{Any}(n)
     na = BitArray(n)
     for i in 1:n
-        if args[i] == :NA
+        if args[i] == :null || args[i] == :NA
             data[i] = stub
             na[i] = true
         else
@@ -14,34 +14,34 @@ function fixargs(args::Vector{Any}, stub::Any)
     return data, na
 end
 
-# We assume that data has at least one "value" that isn't NA
+# We assume that data has at least one "value" that isn't null
 function findstub_vector(ex::Expr)
-    if ex.args[1] != :NA
+    if ex.args[1] != :null && ex.args[1] != :NA
         return ex.args[1]
     end
     for i in 2:length(ex.args)
-        if ex.args[i] != :NA
+        if ex.args[i] != :null && ex.args[i] != :NA
             return ex.args[i]
         end
     end
-    return NA
+    return null
 end
 
-# We assume that data has at least one "value" that isn't NA
+# We assume that data has at least one "value" that isn't null
 function findstub_matrix(ex::Expr)
-    if ex.args[1].args[1] != :NA
+    if ex.args[1].args[1] != :null && ex.args[1].args[1] != :NA
         return ex.args[1].args[1]
     end
     nrows = length(ex.args)
     for row in 1:nrows
         subex = ex.args[row]
         for i in 1:length(subex.args)
-            if subex.args[i] != :NA
+            if subex.args[i] != :null && subex.args[i] != :NA
                 return subex.args[i]
             end
         end
     end
-    return NA
+    return null
 end
 
 function parsevector(ex::Expr)
@@ -55,7 +55,7 @@ function parsevector(ex::Expr)
             na = reshape(na, 1, length(na))
         end
 
-        if isequal(stub, NA)
+        if isequal(stub, null)
             return Expr(ex.head == :hcat ? (:typed_hcat) : (:ref), Any, data...), na
         else
             return Expr(ex.head, data...), na
@@ -82,7 +82,7 @@ function parsematrix(ex::Expr)
     end
     if ex.head == :typed_vcat
         return Expr(:typed_vcat, ex.args[1], datarows...), Expr(:vcat, narows...)
-    elseif isequal(stub, NA)
+    elseif isequal(stub, null)
         return Expr(:typed_vcat, Any, datarows...), Expr(:vcat, narows...)
     else
         return Expr(:vcat, datarows...), Expr(:vcat, narows...)
@@ -108,10 +108,10 @@ Create a [`DataArray`](@ref) based on the given expression.
 # Examples
 
 ```jldoctest
-julia> @data [1, NA, 3]
+julia> @data [1, null, 3]
 3-element DataArrays.DataArray{Int64,1}:
  1
-  NA
+  null
  3
 
 julia> @data hcat(1:3, 4:6)
@@ -125,7 +125,7 @@ macro data(ex)
     if !(ex.head in (:vect, :vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
             tmp = $(esc(ex))
-            DataArray(tmp, broadcast(x->isequal(x, NA), tmp))
+            DataArray(tmp, broadcast(x->isequal(x, null), tmp))
         end
     end
     dataexpr, naexpr = parsedata(ex)
@@ -140,10 +140,10 @@ Create a [`PooledDataArray`](@ref) based on the given expression.
 # Examples
 
 ```jldoctest
-julia> @pdata ["Hello", NA, "World"]
+julia> @pdata ["Hello", null, "World"]
 3-element DataArrays.PooledDataArray{String,UInt32,1}:
  "Hello"
- NA
+ null
  "World"
 ```
 """
@@ -151,7 +151,7 @@ macro pdata(ex)
     if !(ex.head in (:vect, :vcat, :hcat, :ref, :typed_vcat, :typed_hcat))
         return quote
             tmp = $(esc(ex))
-            PooledDataArray(tmp, broadcast(x->isequal(x, NA), tmp))
+            PooledDataArray(tmp, broadcast(x->isequal(x, null), tmp))
         end
     end
     dataexpr, naexpr = parsedata(ex)

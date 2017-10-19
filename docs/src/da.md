@@ -1,12 +1,5 @@
-# Representing missing data
-
 ```@meta
 CurrentModule = DataArrays
-```
-
-```@docs
-NA
-NAtype
 ```
 
 ## Arrays with possibly missing data
@@ -19,9 +12,7 @@ DataArray
 DataVector
 DataMatrix
 @data
-isna
-dropna
-padna
+padnull
 levels
 ```
 
