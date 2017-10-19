@@ -61,10 +61,10 @@ Base.start(itr::EachFailNull) = 1
 Base.done(itr::EachFailNull, ind::Integer) = ind > length(itr)
 Base.eltype(itr::EachFailNull) = Nulls.T(eltype(itr.da))
 function Base.next(itr::EachFailNull, ind::Integer)
-    if isnull(itr.da[ind])
+    if itr.da.na[ind]
         throw(NullException())
     else
-        (itr.da[ind], ind + 1)
+        (itr.da.data[ind], ind + 1)
     end
 end
 
@@ -74,7 +74,7 @@ end
 Nulls.skip(da::AbstractDataArray) = EachDropNull(da)
 function _next_nonna_ind(da::AbstractDataArray, ind::Int)
     ind += 1
-    while ind <= length(da) && isnull(da, ind)
+    @inbounds while ind <= length(da) && da.na[ind]
         ind += 1
     end
     ind
@@ -84,7 +84,7 @@ Base.start(itr::EachDropNull) = _next_nonna_ind(itr.da, 0)
 Base.done(itr::EachDropNull, ind::Int) = ind > length(itr.da)
 Base.eltype(itr::EachDropNull) = Nulls.T(eltype(itr.da))
 function Base.next(itr::EachDropNull, ind::Int)
-    (itr.da[ind], _next_nonna_ind(itr.da, ind))
+    (itr.da.data[ind], _next_nonna_ind(itr.da, ind))
 end
 
 struct EachReplaceNull{S<:AbstractDataArray, T}
@@ -96,8 +96,8 @@ Nulls.replace(da::AbstractDataArray, replacement::Any) =
 Base.length(itr::EachReplaceNull) = length(itr.da)
 Base.start(itr::EachReplaceNull) = 1
 Base.done(itr::EachReplaceNull, ind::Integer) = ind > length(itr)
-Base.eltype(itr::EachReplaceNull) = Union{Nulls.T(eltype(itr.da)), typeof(itr.replacement)}
+Base.eltype(itr::EachReplaceNull) = Nulls.T(eltype(itr.da))
 function Base.next(itr::EachReplaceNull, ind::Integer)
-    item = isnull(itr.da, ind) ? itr.replacement : itr.da[ind]
+    item = itr.da.na[ind] ? itr.replacement : itr.da.data[ind]
     (item, ind + 1)
 end
