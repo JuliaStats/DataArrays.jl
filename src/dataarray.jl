@@ -253,6 +253,57 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
     return convert(Array{T, N}, da, replacement)
 end
 
+
+struct EachFailNull{T<:DataArray}
+    da::T
+end
+Nulls.fail(da::DataArray) = EachFailNull(da)
+Base.length(itr::EachFailNull) = length(itr.da)
+Base.start(itr::EachFailNull) = 1
+Base.done(itr::EachFailNull, ind::Integer) = ind > length(itr)
+Base.eltype(itr::EachFailNull) = Nulls.T(eltype(itr.da))
+function Base.next(itr::EachFailNull, ind::Integer)
+    if itr.da.na[ind]
+        throw(NullException())
+    else
+        (itr.da.data[ind], ind + 1)
+    end
+end
+
+struct EachDropNull{T<:DataArray}
+    da::T
+end
+Nulls.skip(da::DataArray) = EachDropNull(da)
+function _next_nonna_ind(da::DataArray, ind::Int)
+    ind += 1
+    @inbounds while ind <= length(da) && da.na[ind]
+        ind += 1
+    end
+    ind
+end
+Base.length(itr::EachDropNull) = length(itr.da) - sum(itr.da.na)
+Base.start(itr::EachDropNull) = _next_nonna_ind(itr.da, 0)
+Base.done(itr::EachDropNull, ind::Int) = ind > length(itr.da)
+Base.eltype(itr::EachDropNull) = Nulls.T(eltype(itr.da))
+function Base.next(itr::EachDropNull, ind::Int)
+    (itr.da.data[ind], _next_nonna_ind(itr.da, ind))
+end
+
+struct EachReplaceNull{S<:DataArray, T}
+    da::S
+    replacement::T
+end
+Nulls.replace(da::DataArray, replacement::Any) =
+    EachReplaceNull(da, replacement)
+Base.length(itr::EachReplaceNull) = length(itr.da)
+Base.start(itr::EachReplaceNull) = 1
+Base.done(itr::EachReplaceNull, ind::Integer) = ind > length(itr)
+Base.eltype(itr::EachReplaceNull) = Nulls.T(eltype(itr.da))
+function Base.next(itr::EachReplaceNull, ind::Integer)
+    item = itr.da.na[ind] ? itr.replacement : itr.da.data[ind]
+    (item, ind + 1)
+end
+
 Base.collect(itr::EachDropNull{<:DataVector}) = itr.da.data[.!itr.da.na] # -> Vector
 Base.collect(itr::EachFailNull{<:DataVector}) = copy(itr.da.data) # -> Vector
 
