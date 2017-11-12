@@ -69,6 +69,9 @@ mutable struct PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
     pool::Vector{T}
 
     function PooledDataArray{T,R,N}(rs::RefArray{R, N}, p::Vector{T}) where {T,R,N}
+        Base.depwarn("PooledDataArray is deprecated, use CategoricalArray " *
+                     "from the CategoricalArrays package or PooledArray " *
+                     "from the PooledArrays package instead.", :PooledDataArray)
         # refs mustn't overflow pool
         if length(rs.a) > 0 && maximum(rs.a) > prod(size(p))
             throw(ArgumentError("Reference array points beyond the end of the pool"))
