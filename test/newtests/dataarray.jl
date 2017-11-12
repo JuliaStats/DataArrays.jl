@@ -119,9 +119,9 @@ module TestDataArrays
     convert(Vector, DataArray([1, 0, 3], [false, true, false]), -1)
     convert(Vector, DataArray([1, 2, 3], [false, false, false]), -1)
 
-    # Nulls.skip(da::DataArray)
-    Nulls.skip(DataArray([1, 0, 3], [false, true, false]))
-    Nulls.skip(DataArray([1, 2, 3], [false, false, false]))
+    # Missings.skip(da::DataArray)
+    Missings.skip(DataArray([1, 0, 3], [false, true, false]))
+    Missings.skip(DataArray([1, 2, 3], [false, false, false]))
 
     # Iterators
 
@@ -135,83 +135,83 @@ module TestDataArrays
     [1, 2, 3][dinds]
 
     # Base.getindex{S, T}(x::Vector{S}, inds::AbstractDataArray{T})
-    dinds = @data([1, 2, null])
-    @test_throws NullException [1.0, 2.0, 3.0, 4.0][dinds]
+    dinds = @data([1, 2, missing])
+    @test_throws MissingException [1.0, 2.0, 3.0, 4.0][dinds]
 
     # Base.getindex{S, T}(x::Array{S}, inds::AbstractDataArray{T})
-    dinds = @data([1, 2, null])
-    @test_throws NullException [1.0 2.0; 3.0 4.0][dinds]
+    dinds = @data([1, 2, missing])
+    @test_throws MissingException [1.0 2.0; 3.0 4.0][dinds]
 
     # Base.getindex(d::DataArray, i::SingleIndex)
-    da = @data([1, 2, null, 4])
+    da = @data([1, 2, missing, 4])
     da[1]
     da[3]
     # da[1.0] deprecated
     # da[3.0] deprecated
 
     # Base.getindex(d::DataArray, inds::AbstractDataVector{Bool})
-    da = @data([1, 2, null, 4])
-    dinds = @data([true, false, false, null])
-    @test_throws NullException da[dinds]
+    da = @data([1, 2, missing, 4])
+    dinds = @data([true, false, false, missing])
+    @test_throws MissingException da[dinds]
 
     # Base.getindex(d::DataArray, inds::AbstractDataVector)
-    da = @data([1, 2, null, 4])
-    dinds = @data([1, 2, null, 2])
-    @test_throws NullException da[dinds]
+    da = @data([1, 2, missing, 4])
+    dinds = @data([1, 2, missing, 2])
+    @test_throws MissingException da[dinds]
 
     # Base.getindex{T <: Number, N}(d::DataArray{T,N}, inds::BooleanIndex)
-    # da = @data([1, 2, null, 4])
-    # inds = [1, 2, null, 2]
+    # da = @data([1, 2, missing, 4])
+    # inds = [1, 2, missing, 2]
     # da[inds]
 
     # Base.getindex(d::DataArray, inds::BooleanIndex)
-    # da = @data([1.0, 2.0, null, 4.0])
-    # inds = [1, 2, null, 2]
+    # da = @data([1.0, 2.0, missing, 4.0])
+    # inds = [1, 2, missing, 2]
     # da[inds]
 
     # Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::MultiIndex)
-    da = @data([1.0, 2.0, null, 4.0])
+    da = @data([1.0, 2.0, missing, 4.0])
     inds = [1, 2, 2]
     da[inds]
 
     # Base.getindex(d::DataArray, inds::MultiIndex)
-    da = @data([1.0, 2.0, null, 4.0])
+    da = @data([1.0, 2.0, missing, 4.0])
     inds = [1, 2, 2]
     da[inds]
 
     # Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::BooleanIndex)
-    da = @data([1.0, 2.0, null, 4.0])
+    da = @data([1.0, 2.0, missing, 4.0])
     inds = [true, true, false, false]
     da[inds]
 
     # Base.getindex{T <: Number, N}(d::DataArray{T, N}, inds::MultiIndex)
-    da = @data([1.0, 2.0, null, 4.0])
+    da = @data([1.0, 2.0, missing, 4.0])
     inds = [1, 2, 2]
     da[inds]
 
-    # Base.setindex!(da::DataArray, val::nulltype, i::SingleIndex)
-    da = @data([1.0, 2.0, null, 4.0])
-    da[1] = null
+    # Base.setindex!(da::DataArray, val::missingtype, i::SingleIndex)
+    da = @data([1.0, 2.0, missing, 4.0])
+    da[1] = missing
 
     # Base.setindex!(da::DataArray, val::Any, i::SingleIndex)
-    da = @data([1.0, 2.0, null, 4.0])
+    da = @data([1.0, 2.0, missing, 4.0])
     da[1] = 3.0
 
-    # Base.setindex!(da::DataArray{Null}, val::Null, inds::AbstractVector{Bool})
-    # da = DataArray([null, null], falses(2))
-    # da[[true, false]] = null
+    # Base.setindex!(da::DataArray{Missing}, val::Missing, inds::AbstractVector{Bool})
+    # da = DataArray([missing, missing], falses(2))
+    # da[[true, false]] = missing
 
-    # Base.setindex!(da::DataArray{Null}, val::Null, inds::AbstractVector)
-    # da = DataArray([null, null], falses(2))
-    # da[[1, 2]] = null
+    # Base.setindex!(da::DataArray{Missing}, val::Missing, inds::AbstractVector)
+    # da = DataArray([missing, missing], falses(2))
+    # da[[1, 2]] = missing
 
-    # Base.setindex!(da::DataArray, val::Null, inds::AbstractVector{Bool})
+    # Base.setindex!(da::DataArray, val::Missing, inds::AbstractVector{Bool})
     da = @data([1, 2])
-    da[[true, false]] = null
+    da[[true, false]] = missing
 
-    # Base.setindex!(da::DataArray, val::Null, inds::AbstractVector)
+    # Base.setindex!(da::DataArray, val::Missing, inds::AbstractVector)
     da = @data([1, 2])
-    da[[1, 2]] = null
+    da[[1, 2]] = missing
 
     # Base.setindex!(da::AbstractDataArray, vals::AbstractVector, inds::AbstractVector{Bool})
     da = @data([1, 2])
@@ -237,15 +237,15 @@ module TestDataArrays
     da = @data([1, 2])
     da[[1, 2]] = 5
 
-    # isnull(a::AbstractArray)
-    isnull.([1, 2])
-    isnull.(repeat([1, 2], outer = [1, 2]))
-    isnull.(repeat([1, 2], outer = [1, 2, 2]))
+    # ismissing(a::AbstractArray)
+    ismissing.([1, 2])
+    ismissing.(repeat([1, 2], outer = [1, 2]))
+    ismissing.(repeat([1, 2], outer = [1, 2, 2]))
 
-    # isnull(da::DataArray)
-    isnull.(DataArray([1, 2], falses(2)))
-    isnull.(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
-    isnull.(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
+    # ismissing(da::DataArray)
+    ismissing.(DataArray([1, 2], falses(2)))
+    ismissing.(DataArray(repeat([1, 2], outer = [1, 2]), falses(2, 2)))
+    ismissing.(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # Base.isnan(da::DataArray)
     isnan.(DataArray([1, 2], falses(2)))

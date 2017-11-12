@@ -6,10 +6,10 @@ srand(1776)
 
 const TEST_NAMES = [
     "Vector",
-    "DataVector No null skipnull=false",
-    "DataVector No null skipnull=true",
-    "DataVector Half null skipnull=false",
-    "DataVector Half null skipnull=true"
+    "DataVector No missing skipmissing=false",
+    "DataVector No missing skipmissing=true",
+    "DataVector Half missing skipmissing=false",
+    "DataVector Half missing skipmissing=true"
 ]
 
 function make_test_types(genfunc, sz)
@@ -29,9 +29,9 @@ macro perf(fn, replications)
         println($fn)
         fns = [()->$fn(Data[1]),
                ()->$fn(Data[2]),
-               ()->$fn(Data[2]; skipnull=true),
+               ()->$fn(Data[2]; skipmissing=true),
                ()->$fn(Data[3]),
-               ()->$fn(Data[3]; skipnull=true)]
+               ()->$fn(Data[3]; skipmissing=true)]
         gc_disable()
         df = compare(fns, $replications)
         gc_enable()

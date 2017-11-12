@@ -3,12 +3,12 @@
     ## countmap
     ##########
 
-    d = @data [null,3,3]
+    d = @data [missing,3,3]
     w = weights([1.1,2.2,3.3])
-    # cm = Dict{Union{Int,Null}, Int}([(null, 1), (3, 2)])
-    # cmw = Dict{Union{Int,Null}, Real}([(null, 1.1), (3, 5.5)])
-    cm = Dict{Union{Null,Int}, Int}([(null, 1), (3, 2)])
-    cmw = Dict{Union{Null,Int}, Real}([(null, 1.1), (3, 5.5)])
+    # cm = Dict{Union{Int,Missing}, Int}([(missing, 1), (3, 2)])
+    # cmw = Dict{Union{Int,Missing}, Real}([(missing, 1.1), (3, 5.5)])
+    cm = Dict{Union{Missing,Int}, Int}([(missing, 1), (3, 2)])
+    cmw = Dict{Union{Missing,Int}, Real}([(missing, 1.1), (3, 5.5)])
     @test isequal(countmap(d), cm)
     @test isequal(countmap(d, w), cmw)
 
@@ -37,13 +37,13 @@
     ## repeat
     ##########
 
-    @test isequal(repeat(@data [3.0, 2.0, null]; inner = 2, outer = 1),
-                  @data [3.0, 3.0, 2.0, 2.0, null, null])
-    @test isequal(repeat(@pdata ["a", "b", null]; inner = 2, outer = 1),
-                  @pdata ["a", "a", "b", "b", null, null])
-    @test isequal(repeat(@data [1 2; 3 null]; inner = [1, 2], outer = [2, 1]),
-                  @data [1 1 2 2; 3 3 null null; 1 1 2 2; 3 3 null null])
-    @test isequal(repeat(@pdata [:a :b null]; inner = [2,1], outer = [1,3]),
-                  @pdata [:a :b null :a :b null :a :b null;
-                          :a :b null :a :b null :a :b null])
+    @test isequal(repeat(@data [3.0, 2.0, missing]; inner = 2, outer = 1),
+                  @data [3.0, 3.0, 2.0, 2.0, missing, missing])
+    @test isequal(repeat(@pdata ["a", "b", missing]; inner = 2, outer = 1),
+                  @pdata ["a", "a", "b", "b", missing, missing])
+    @test isequal(repeat(@data [1 2; 3 missing]; inner = [1, 2], outer = [2, 1]),
+                  @data [1 1 2 2; 3 3 missing missing; 1 1 2 2; 3 3 missing missing])
+    @test isequal(repeat(@pdata [:a :b missing]; inner = [2,1], outer = [1,3]),
+                  @pdata [:a :b missing :a :b missing :a :b missing;
+                          :a :b missing :a :b missing :a :b missing])
 # end

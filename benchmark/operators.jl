@@ -6,11 +6,11 @@ srand(1776)
 
 const TEST_NAMES = [
     "Vector",
-    "DataVector No null",
-    "DataVector Half null",
+    "DataVector No missing",
+    "DataVector Half missing",
     "Matrix",
-    "DataMatrix No null",
-    "DataMatrix Half null"
+    "DataMatrix No missing",
+    "DataMatrix Half missing"
 ]
 
 function make_test_types(genfunc, sz)

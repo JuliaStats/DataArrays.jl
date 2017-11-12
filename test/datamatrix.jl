@@ -35,25 +35,25 @@
     @test all(b * b .== m_b * m_b)
 
     #
-    # DataVector * DataMatrix w/ nulls
+    # DataVector * DataMatrix w/ missings
     #
 
-    b[1, 1] = null
+    b[1, 1] = missing
     res = a * b[1:1, :]
-    @test all(isnull.(res[:, 1]))
-    @test all(.!(isnull.(res[:, 2])))
-    @test all(.!(isnull.(res[:, 3])))
+    @test all(ismissing.(res[:, 1]))
+    @test all(.!(ismissing.(res[:, 2])))
+    @test all(.!(ismissing.(res[:, 3])))
     res = a * b[2:2, :]
-    @test all(.!(isnull.(res)))
+    @test all(.!(ismissing.(res)))
 
     #
-    # DataMatrix w nulls * DataVector
+    # DataMatrix w missings * DataVector
     #
 
     res = b * a
-    @test isnull.(res[1])
-    @test .!(isnull.(res[2]))
-    @test .!(isnull.(res[3]))
+    @test ismissing.(res[1])
+    @test .!(ismissing.(res[2]))
+    @test .!(ismissing.(res[3]))
 
     #
     # DataMatrix * DataMatrix
@@ -61,49 +61,49 @@
 
     res = b * b
     # 3x3 Float64 DataMatrix:
-    #  null   null   null
-    #  null  1.0  0.0
-    #  null  0.0  1.0
-    @test isnull.(res[1, 1])
-    @test isnull.(res[1, 2])
-    @test isnull.(res[1, 3])
-    @test isnull.(res[2, 1])
-    @test .!(isnull.(res[2, 2]))
-    @test .!(isnull.(res[2, 3]))
-    @test isnull.(res[3, 1])
-    @test .!(isnull.(res[3, 2]))
-    @test .!(isnull.(res[3, 3]))
+    #  missing   missing   missing
+    #  missing  1.0  0.0
+    #  missing  0.0  1.0
+    @test ismissing.(res[1, 1])
+    @test ismissing.(res[1, 2])
+    @test ismissing.(res[1, 3])
+    @test ismissing.(res[2, 1])
+    @test .!(ismissing.(res[2, 2]))
+    @test .!(ismissing.(res[2, 3]))
+    @test ismissing.(res[3, 1])
+    @test .!(ismissing.(res[3, 2]))
+    @test .!(ismissing.(res[3, 3]))
 
     res = b * @data eye(3)
     # 3x3 Float64 DataMatrix:
-    #   null   null   null
+    #   missing   missing   missing
     #  0.0  1.0  0.0
     #  0.0  0.0  1.0
-    @test isnull.(res[1, 1])
-    @test isnull.(res[1, 2])
-    @test isnull.(res[1, 3])
-    @test .!(isnull.(res[2, 1]))
-    @test .!(isnull.(res[2, 2]))
-    @test .!(isnull.(res[2, 3]))
-    @test .!(isnull.(res[3, 1]))
-    @test .!(isnull.(res[3, 2]))
-    @test .!(isnull.(res[3, 3]))
+    @test ismissing.(res[1, 1])
+    @test ismissing.(res[1, 2])
+    @test ismissing.(res[1, 3])
+    @test .!(ismissing.(res[2, 1]))
+    @test .!(ismissing.(res[2, 2]))
+    @test .!(ismissing.(res[2, 3]))
+    @test .!(ismissing.(res[3, 1]))
+    @test .!(ismissing.(res[3, 2]))
+    @test .!(ismissing.(res[3, 3]))
 
     res = (@data eye(3)) * b
     # julia> dataeye(3) * b
     # 3x3 Float64 DataMatrix:
-    #  null  0.0  0.0
-    #  null  1.0  0.0
-    #  null  0.0  1.0
-    @test isnull.(res[1, 1])
-    @test .!(isnull.(res[1, 2]))
-    @test .!(isnull.(res[1, 3]))
-    @test isnull.(res[2, 1])
-    @test .!(isnull.(res[2, 2]))
-    @test .!(isnull.(res[2, 3]))
-    @test isnull.(res[3, 1])
-    @test .!(isnull.(res[3, 2]))
-    @test .!(isnull.(res[3, 3]))
+    #  missing  0.0  0.0
+    #  missing  1.0  0.0
+    #  missing  0.0  1.0
+    @test ismissing.(res[1, 1])
+    @test .!(ismissing.(res[1, 2]))
+    @test .!(ismissing.(res[1, 3]))
+    @test ismissing.(res[2, 1])
+    @test .!(ismissing.(res[2, 2]))
+    @test .!(ismissing.(res[2, 3]))
+    @test ismissing.(res[3, 1])
+    @test .!(ismissing.(res[3, 2]))
+    @test .!(ismissing.(res[3, 3]))
 
     # Test row operations
     dm = @data eye(6, 2)

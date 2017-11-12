@@ -72,7 +72,7 @@ end
 # Unary operator macros for DataArrays
 #
 
-# Apply unary operator to non-null members of a DataArray or
+# Apply unary operator to non-missing members of a DataArray or
 # AbstractDataArray
 macro dataarray_unary(f, intype, outtype, N...)
     esc(quote
@@ -232,10 +232,10 @@ for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
     end
 end
 
-# Propagates nulls
+# Propagates missings
 # For a dissenting view,
 # http://radfordneal.wordpress.com/2011/05/21/slowing-down-matrix-multiplication-in-r/
-# But we're getting 10x R while maintaining nulls
+# But we're getting 10x R while maintaining missings
 for (adata, bdata) in ((true, false), (false, true), (true, true))
     @eval begin
         function (*)(a::$(adata ? :(Union{DataVector, DataMatrix}) : :(Union{Vector, Matrix})),
@@ -250,7 +250,7 @@ for (adata, bdata) in ((true, false), (false, true), (true, true))
                     p1 = size(a, 2)
                     corrupt_rows = falses(n1)
                     for j in 1:p1, i in 1:n1
-                        # Propagate nulls
+                        # Propagate missings
                         # Corrupt all rows based on i
                         corrupt_rows[i] |= a.na[i, j]
                     end
@@ -263,7 +263,7 @@ for (adata, bdata) in ((true, false), (false, true), (true, true))
                     p2 = size(b, 2)
                     corrupt_cols = falses(p2)
                     for j in 1:p2, i in 1:n2
-                        # Propagate nulls
+                        # Propagate missings
                         # Corrupt all columns based on j
                         corrupt_cols[j] |= b.na[i, j]
                     end
@@ -376,33 +376,33 @@ function (==)(a::DataArray, b::DataArray)
     adata = a.data
     bdata = b.data
     bchunks = b.na.chunks
-    has_null = false
-    @bitenumerate a.na i anull begin
-        if anull || Base.unsafe_bitgetindex(bchunks, i)
-            has_null = true
+    has_missing = false
+    @bitenumerate a.na i amissing begin
+        if amissing || Base.unsafe_bitgetindex(bchunks, i)
+            has_missing = true
         else
             @inbounds adata[i] == bdata[i] || return false
         end
     end
-    has_null ? null : true
+    has_missing ? missing : true
 end
 
 @swappable function (==)(a::DataArray, b::AbstractArray)
     size(a) == size(b) || return false
     adata = a.data
-    has_null = false
-    @bitenumerate a.na i anull begin
-        if anull
-            has_null = true
+    has_missing = false
+    @bitenumerate a.na i amissing begin
+        if amissing
+            has_missing = true
         else
             @inbounds adata[i] == b[i] || return false
         end
     end
-    has_null ? null : true
+    has_missing ? missing : true
 end
 
 # ambiguity
-@swappable (==)(a::DataArray, b::AbstractArray{>:Null}) =
+@swappable (==)(a::DataArray, b::AbstractArray{>:Missing}) =
     invoke(==, Tuple{AbstractDataArray,AbstractArray}, a, b)
 
 #
@@ -449,38 +449,38 @@ function (-)(J::UniformScaling{TJ},A::DataArray{TA,2}) where {TA,TJ<:Number}
 end
 
 (+)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(+, Tuple{AbstractArray{Union{Bool,Null},2},UniformScaling{Bool}}, A, J)
+    invoke(+, Tuple{AbstractArray{Union{Bool,Missing},2},UniformScaling{Bool}}, A, J)
 (+)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
-    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Null},2}}, J, A)
+    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Missing},2}}, J, A)
 (-)(A::DataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(-, Tuple{AbstractArray{Union{Bool,Null},2},UniformScaling{Bool}}, A, J)
+    invoke(-, Tuple{AbstractArray{Union{Bool,Missing},2},UniformScaling{Bool}}, A, J)
 (-)(J::UniformScaling{Bool},A::DataArray{Bool,2}) =
-    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Null},2}}, J, A)
+    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Missing},2}}, J, A)
 
 (+)(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ} =
-    invoke(+, Tuple{AbstractArray{Union{TA,Null},2},UniformScaling{TJ}}, A, J)
+    invoke(+, Tuple{AbstractArray{Union{TA,Missing},2},UniformScaling{TJ}}, A, J)
 (+)(J::UniformScaling,A::AbstractDataArray{TA,2}) where {TA} =
-    invoke(+, Tuple{UniformScaling,AbstractArray{Union{TA,Null},2}}, J, A)
+    invoke(+, Tuple{UniformScaling,AbstractArray{Union{TA,Missing},2}}, J, A)
 (-)(A::AbstractDataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ<:Number} =
-    invoke(-, Tuple{AbstractArray{Union{TA,Null},2},UniformScaling{TJ}}, A, J)
+    invoke(-, Tuple{AbstractArray{Union{TA,Missing},2},UniformScaling{TJ}}, A, J)
 (-)(J::UniformScaling{TJ},A::AbstractDataArray{TA,2}) where {TA,TJ<:Number} =
-    invoke(-, Tuple{UniformScaling{TJ},AbstractArray{Union{TA,Null},2}}, J, A)
+    invoke(-, Tuple{UniformScaling{TJ},AbstractArray{Union{TA,Missing},2}}, J, A)
 
 (+)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(+, Tuple{AbstractArray{Union{Bool,Null},2},UniformScaling{Bool}}, A, J)
+    invoke(+, Tuple{AbstractArray{Union{Bool,Missing},2},UniformScaling{Bool}}, A, J)
 (+)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
-    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Null},2}}, J, A)
+    invoke(+, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Missing},2}}, J, A)
 (-)(A::AbstractDataArray{Bool,2},J::UniformScaling{Bool}) =
-    invoke(-, Tuple{AbstractArray{Union{Bool,Null},2},UniformScaling{Bool}}, A, J)
+    invoke(-, Tuple{AbstractArray{Union{Bool,Missing},2},UniformScaling{Bool}}, A, J)
 (-)(J::UniformScaling{Bool},A::AbstractDataArray{Bool,2}) =
-    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Null},2}}, J, A)
+    invoke(-, Tuple{UniformScaling{Bool},AbstractArray{Union{Bool,Missing},2}}, J, A)
 
 end # if isdefined(Base, :UniformScaling)
 
 for f in (:(*), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
-        # Array with null
-        @swappable $(f){T,N}(::Null, b::AbstractArray{T,N}) =
+        # Array with missing
+        @swappable $(f){T,N}(::Missing, b::AbstractArray{T,N}) =
             DataArray(Array{T,N}(size(b)), trues(size(b)))
 
         # DataArray with scalar
@@ -489,8 +489,8 @@ for f in (:(*), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
 end
 
 for f in (:(+), :(-))
-    # Array with null
-    @eval @swappable $(f){T,N}(::Null, b::AbstractArray{T,N}) =
+    # Array with missing
+    @eval @swappable $(f){T,N}(::Missing, b::AbstractArray{T,N}) =
         DataArray(Array{T,N}(size(b)), trues(size(b)))
 end
 
@@ -505,7 +505,7 @@ for f in (:(+), :(-))
 end
 
 # / is defined separately since it is not swappable
-(/)(b::AbstractArray{T,N}, ::Null) where {T,N} =
+(/)(b::AbstractArray{T,N}, ::Missing) where {T,N} =
     DataArray(Array{T,N}(size(b)), trues(size(b)))
 @dataarray_binary_scalar(/, /, nothing, false)
 
@@ -554,12 +554,12 @@ Base.cumsum(dv::DataVector) = accumulate(+, dv)
 Base.cumprod(dv::DataVector)   = accumulate(*, dv)
 
 for f in unary_vector_operators
-    @eval ($f)(dv::DataVector) = any(dv.na) ? null : ($f)(dv.data)
+    @eval ($f)(dv::DataVector) = any(dv.na) ? missing : ($f)(dv.data)
 end
 
 for f in binary_vector_operators
     @eval ($f)(dv1::DataVector, dv2::DataVector) =
-            any(dv1.na) || any(dv2.na) ? null : ($f)(dv1.data, dv2.data)
+            any(dv1.na) || any(dv2.na) ? missing : ($f)(dv1.data, dv2.data)
 end
 
 for f in (:(Base.minimum), :(Base.maximum), :(Base.prod), :(Base.sum),
@@ -593,56 +593,56 @@ end
 
 function Base.all(dv::DataArray{Bool})
     data = dv.data
-    hasnulls = false
+    hasmissings = false
     @bitenumerate dv.na i na begin
         if !na
             data[i] || return false
         else
-            hasnulls = true
+            hasmissings = true
         end
     end
-    hasnulls ? null : true
+    hasmissings ? missing : true
 end
 
 function Base.all(dv::AbstractDataArray{Bool})
-    hasnulls = false
+    hasmissings = false
     for i in 1:length(dv)
         x = dv[i]
-        if !isnull(x)
+        if !ismissing(x)
             x || return false
         else
-            hasnulls = true
+            hasmissings = true
         end
     end
-    hasnulls ? null : true
+    hasmissings ? missing : true
 end
 
 function Base.any(dv::DataArray{Bool})
-    hasnulls = false
+    hasmissings = false
     @bitenumerate dv.na i na begin
         if !na
             if dv.data[i]
                 return true
             end
         else
-            hasnulls = true
+            hasmissings = true
         end
     end
-    hasnulls ? null : false
+    hasmissings ? missing : false
 end
 
 function Base.any(dv::AbstractDataArray{Bool})
-    hasnulls = false
+    hasmissings = false
     for i in 1:length(dv)
-        if !isnull(dv[i])
+        if !ismissing(dv[i])
             if dv[i]
                 return true
             end
         else
-            hasnulls = true
+            hasmissings = true
         end
     end
-    hasnulls ? null : false
+    hasmissings ? missing : false
 end
 
 function rle(v::AbstractVector{T}) where T
@@ -679,8 +679,8 @@ function rle(v::AbstractDataVector{T}) where T
     lengths = Vector{Int16}(n)
     total_lengths = 1
     for i in 2:n
-        if isnull(v[i]) || isnull(current_value)
-            if isnull(v[i]) && isnull(current_value)
+        if ismissing(v[i]) || ismissing(current_value)
+            if ismissing(v[i]) && ismissing(current_value)
                 current_length += 1
             else
                 values[total_values] = current_value

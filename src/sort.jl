@@ -1,11 +1,11 @@
 # This code is heavily based on the floating point sort code in Base
 
-nulls2end!(v::AbstractVector, o::Base.Sort.ForwardOrdering) = nulls2right!(v,o)
-nulls2end!(v::AbstractVector, o::Base.Sort.ReverseOrdering) = nas2left!(v,o)
-nulls2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ForwardOrdering} = nulls2right!(v,o)
-nulls2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ReverseOrdering} = nas2left!(v,o)
+missings2end!(v::AbstractVector, o::Base.Sort.ForwardOrdering) = missings2right!(v,o)
+missings2end!(v::AbstractVector, o::Base.Sort.ReverseOrdering) = nas2left!(v,o)
+missings2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ForwardOrdering} = missings2right!(v,o)
+missings2end!(v::AbstractVector{Int}, o::Base.Order.Perm{O}) where {O<:Base.Order.ReverseOrdering} = nas2left!(v,o)
 
-myisnull(o::Base.Order.Ordering, chunks, i::Int) = Base.unsafe_bitgetindex(chunks, i)
+myismissing(o::Base.Order.Ordering, chunks, i::Int) = Base.unsafe_bitgetindex(chunks, i)
 
 swap(o::Base.Order.DirectOrdering, data, i, j) = setindex!(data, data[i], j)
 function swap(o::Base.Order.Perm, data, i, j)
@@ -19,12 +19,12 @@ function nas2left!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.Orde
     data, chunks = datachunks(o, v)
 
     i = lo
-    @inbounds while i <= hi && myisnull(o, chunks, i)
+    @inbounds while i <= hi && myismissing(o, chunks, i)
         i += 1
     end
     j = i + 1
     @inbounds while j <= hi
-        if myisnull(o, chunks, j)
+        if myismissing(o, chunks, j)
             swap(o, data, i, j)
             i += 1
         end
@@ -37,16 +37,16 @@ function nas2left!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.Orde
     return i, hi
 end
 
-function nulls2right!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.Ordering, lo::Int=1, hi::Int=length(v))
+function missings2right!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.Ordering, lo::Int=1, hi::Int=length(v))
     data, chunks = datachunks(o, v)
 
     i = hi
-    @inbounds while lo <= i && myisnull(o, chunks, i)
+    @inbounds while lo <= i && myismissing(o, chunks, i)
         i -= 1
     end
     j = i - 1
     @inbounds while lo <= j
-        if myisnull(o, chunks, j)
+        if myismissing(o, chunks, j)
             swap(o, data, i, j)
             i -= 1
         end
@@ -60,13 +60,13 @@ function nulls2right!(v::Union{AbstractVector{Int}, DataVector}, o::Base.Order.O
 end
 
 function dasort!(v::DataVector, a::Base.Sort.Algorithm, o::Base.Order.DirectOrdering)
-    lo, hi = nulls2end!(v, o)
+    lo, hi = missings2end!(v, o)
     sort!(v.data, lo, hi, a, o)
     v
 end
 
 function dapermsort!(v::AbstractVector{Int}, a::Base.Sort.Algorithm, o::Base.Order.Perm{O,T}) where {O<:Base.Order.DirectOrdering,T<:DataVector}
-    lo, hi = nulls2end!(v, o)
+    lo, hi = missings2end!(v, o)
     sort!(v, lo, hi, a, Base.Order.Perm(o.order, o.data.data))
 end
 

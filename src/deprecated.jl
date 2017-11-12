@@ -6,9 +6,9 @@ function Base.isnan(da::DataArray)
     return isnan.(da)
 end
 
-@deprecate isna(x::AbstractArray) isnull.(x)
-@deprecate anyna(x) any(isnull, x)
-@deprecate allna(x) all(isnull, x)
+@deprecate isna(x::AbstractArray) ismissing.(x)
+@deprecate anyna(x) any(ismissing, x)
+@deprecate allna(x) all(ismissing, x)
 
 function reldiff(v::Vector{T}) where T
     depwarn("reldiff is deprecated.", :reldiff)
@@ -74,19 +74,19 @@ for f in [:(&), :(|), :(xor)]
     end
 end
 
-@deprecate_binding NAtype Null
-@deprecate_binding NA null
-@deprecate_binding NAException NullException
-@deprecate isna isnull
-@deprecate dropna(x) collect(Nulls.skip(x))
-@deprecate padna padnull
-@deprecate each_failna Nulls.fail
-@deprecate each_dropna Nulls.skip
-@deprecate each_replacena Nulls.replace
-@deprecate_binding EachFailNA DataArrays.EachFailNull
-@deprecate_binding EachDropNA DataArrays.EachDropNull
-@deprecate_binding EachReplaceNA DataArrays.EachReplaceNull
+@deprecate_binding NAtype Missing
+@deprecate_binding NA missing
+@deprecate_binding NAException MissingException
+@deprecate isna ismissing
+@deprecate dropna(x) collect(Missings.skip(x))
+@deprecate padna padmissing
+@deprecate each_failna Missings.fail
+@deprecate each_dropna Missings.skip
+@deprecate each_replacena Missings.replace
+@deprecate_binding EachFailNA DataArrays.EachFailMissing
+@deprecate_binding EachDropNA DataArrays.EachDropMissing
+@deprecate_binding EachReplaceNA DataArrays.EachReplaceMissing
 import SpecialFunctions: digamma, erf, erfc
-@deprecate digamma(x::Null) isnull(x) ? null : SpecialFunctions.digamma(x)
-@deprecate erf(x::Null) isnull(x) ? null : SpecialFunctions.erf(x)
-@deprecate erfc(x::Null) isnull(x) ? null : SpecialFunctions.erfc(x)
+@deprecate digamma(x::Missing) ismissing(x) ? missing : SpecialFunctions.digamma(x)
+@deprecate erf(x::Missing) ismissing(x) ? missing : SpecialFunctions.erf(x)
+@deprecate erfc(x::Missing) ismissing(x) ? missing : SpecialFunctions.erfc(x)

@@ -27,11 +27,11 @@ that will allow direct construction of `DataArray`s and `PooledDataArray`s.
 The basic mechanism that powers the `@data` and `@pdata` macros is the
 rewriting of array literals as a call to DataArray or PooledDataArray
 with a rewritten array literal and a Boolean mask that specifies where
-`null` occurred in the original literal.
+`missing` occurred in the original literal.
 
 For example,
 
-    @data [1, 2, null, 4]
+    @data [1, 2, missing, 4]
 
 will be rewritten as,
 
@@ -39,24 +39,24 @@ will be rewritten as,
 
 Note the added `1` created during the rewriting of the array literal.
 This value is called a `stub` and is always the first value found
-in the literal array that is not `null`. The use of stubs explains two
+in the literal array that is not `missing`. The use of stubs explains two
 important properties of the `@data` and `@pdata` macros:
 
 * If the entries of the array literal are not fixed values, but function calls, these function calls must be pure. Otherwise the impure funcion may be called more times than expected.
-* It is not possible to specify a literal DataArray that contains only `null` values.
-* None of the variables used in a literal array can be called `null`. This is just good style anyway, so it is not much of a limitation.
+* It is not possible to specify a literal DataArray that contains only `missing` values.
+* None of the variables used in a literal array can be called `missing`. This is just good style anyway, so it is not much of a limitation.
 
 # Limitations
 
 We restate the limitations noted above:
 
 * If the entries of the array literal are not fixed values, but function calls, these function calls must be pure. Otherwise the impure funcion may be called more times than expected.
-* It is not possible to specify a literal DataArray that contains only `null` values.
-* None of the variables used in a literal array can be called `null`. This is just good style anyway, so it is not much of a limitation.
+* It is not possible to specify a literal DataArray that contains only `missing` values.
+* None of the variables used in a literal array can be called `missing`. This is just good style anyway, so it is not much of a limitation.
 
 
 Note that the latter limitation is not very important, because a DataArray
-with only `null` values is already problematic because it has no well-defined
+with only `missing` values is already problematic because it has no well-defined
 type in Julia.
 
 One final limitation is that the rewriting rules are not able to

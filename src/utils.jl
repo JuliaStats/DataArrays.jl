@@ -1,8 +1,8 @@
-# iterate over vals array to find the most generic non-null type
+# iterate over vals array to find the most generic non-missing type
 function typeloop(vals)
     toptype = None
     for i = 1:length(vals)
-        if vals[i] != :null
+        if vals[i] != :missing
             toptype = promote_type(toptype, typeof(vals[i]))
         end
     end

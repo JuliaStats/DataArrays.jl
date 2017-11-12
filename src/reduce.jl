@@ -1,11 +1,11 @@
-## mapreduce implementation that skips null
+## mapreduce implementation that skips missing
 
-function skipnull_init(f, op, na::BitArray, data::Array, ifirst::Int, ilast::Int)
-    # Get first non-null element
+function skipmissing_init(f, op, na::BitArray, data::Array, ifirst::Int, ilast::Int)
+    # Get first non-missing element
     ifirst = Base.findnextnot(na, ifirst)
     @inbounds d1 = data[ifirst]
 
-    # Get next non-null element
+    # Get next non-missing element
     ifirst = Base.findnextnot(na, ifirst+1)
     @inbounds d2 = data[ifirst]
 
@@ -13,12 +13,12 @@ function skipnull_init(f, op, na::BitArray, data::Array, ifirst::Int, ilast::Int
     (op(f(d1), f(d2)), ifirst)
 end
 
-function mapreduce_seq_impl_skipnull(f, op, T, A::DataArray, ifirst::Int, ilast::Int)
+function mapreduce_seq_impl_skipmissing(f, op, T, A::DataArray, ifirst::Int, ilast::Int)
     data = A.data
     na = A.na
     chunks = na.chunks
 
-    v, i = skipnull_init(f, op, na, data, ifirst, ilast)
+    v, i = skipmissing_init(f, op, na, data, ifirst, ilast)
 
     while i < ilast
         i += 1
@@ -31,18 +31,18 @@ function mapreduce_seq_impl_skipnull(f, op, T, A::DataArray, ifirst::Int, ilast:
 end
 
 # Pairwise map-reduce
-function mapreduce_pairwise_impl_skipnull(f, op, A::DataArray{T}, bytefirst::Int, bytelast::Int, n_notna::Int, blksize::Int) where T
+function mapreduce_pairwise_impl_skipmissing(f, op, A::DataArray{T}, bytefirst::Int, bytelast::Int, n_notna::Int, blksize::Int) where T
     if n_notna <= blksize
         ifirst = 64*(bytefirst-1)+1
         ilast = min(64*bytelast, length(A))
-        # Fall back to Base implementation if no nulls in block
+        # Fall back to Base implementation if no missings in block
         return ilast - ifirst + 1 == n_notna ? Base.mapreduce_seq_impl(f, op, A.data, ifirst, ilast) :
-                                               mapreduce_seq_impl_skipnull(f, op, T, A, ifirst, ilast)
+                                               mapreduce_seq_impl_skipmissing(f, op, T, A, ifirst, ilast)
     end
 
     # Find byte in the middle of range
     # The block size is restricted so that there will always be at
-    # least two non-null elements in the returned range
+    # least two non-missing elements in the returned range
     chunks = A.na.chunks
     nmid = 0
     imid = bytefirst-1
@@ -51,8 +51,8 @@ function mapreduce_pairwise_impl_skipnull(f, op, A::DataArray{T}, bytefirst::Int
         @inbounds nmid += count_zeros(chunks[imid])
     end
 
-    v1 = mapreduce_pairwise_impl_skipnull(f, op, A, bytefirst, imid, nmid, blksize)
-    v2 = mapreduce_pairwise_impl_skipnull(f, op, A, imid+1, bytelast, n_notna-nmid, blksize)
+    v1 = mapreduce_pairwise_impl_skipmissing(f, op, A, bytefirst, imid, nmid, blksize)
+    v2 = mapreduce_pairwise_impl_skipmissing(f, op, A, imid+1, bytelast, n_notna-nmid, blksize)
     op(v1, v2)
 end
 
@@ -62,16 +62,16 @@ else
     const sum_pairwise_blocksize = Base.sum_pairwise_blocksize
 end
 
-mapreduce_impl_skipnull(f, op, A::DataArray{T}) where {T} =
-    mapreduce_seq_impl_skipnull(f, op, T, A, 1, length(A.data))
-mapreduce_impl_skipnull(f, op::typeof(+), A::DataArray) =
-    mapreduce_pairwise_impl_skipnull(f, op, A, 1, length(A.na.chunks),
+mapreduce_impl_skipmissing(f, op, A::DataArray{T}) where {T} =
+    mapreduce_seq_impl_skipmissing(f, op, T, A, 1, length(A.data))
+mapreduce_impl_skipmissing(f, op::typeof(+), A::DataArray) =
+    mapreduce_pairwise_impl_skipmissing(f, op, A, 1, length(A.na.chunks),
                                      length(A.na)-countnz(A.na),
                                      max(128, sum_pairwise_blocksize(f)))
 
 ## general mapreduce interface
 
-function _mapreduce_skipnull(f, op, A::DataArray{T}) where T
+function _mapreduce_skipmissing(f, op, A::DataArray{T}) where T
     n = length(A)
     na = A.na
 
@@ -80,56 +80,56 @@ function _mapreduce_skipnull(f, op, A::DataArray{T}) where T
     nna == n-1 && return Base.r_promote(op, f(A.data[Base.findnextnot(na, 1)]))
     nna == 0 && return Base.mapreduce_impl(f, op, A.data, 1, n)
 
-    mapreduce_impl_skipnull(f, op, A)
+    mapreduce_impl_skipmissing(f, op, A)
 end
 
 # This is only safe when we can guarantee that if a function is passed
-# null, it returns null. Otherwise we will fall back to the implementation
+# missing, it returns missing. Otherwise we will fall back to the implementation
 # in Base, which is slow because it's type-unstable, but guarantees the
 # correct semantics
 const SafeMapFuns = Union{typeof(identity), typeof(abs), typeof(abs2),
                             typeof(exp), typeof(log), typeof(Base.centralizedabs2fun)}
 const SafeReduceFuns = Union{typeof(+), typeof(*), typeof(max), typeof(min)}
 function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
-    any(A.na) && return null
+    any(A.na) && return missing
     Base._mapreduce(f, op, A.data)
 end
 
 function Base.mapreduce(f, op::Function, A::DataArray;
-                        skipnull::Bool=false, skipna::Bool=false)
-    if skipna && !skipnull
-        Base.depwarn("skipna=$skipna is deprecated, use skipnull=$skipna instead", :mapreduce)
-        skipnull = true
+                        skipmissing::Bool=false, skipna::Bool=false)
+    if skipna && !skipmissing
+        Base.depwarn("skipna=$skipna is deprecated, use skipmissing=$skipna instead", :mapreduce)
+        skipmissing = true
     end
-    (op === +) ? (skipnull ? _mapreduce_skipnull(f, +, A) : Base._mapreduce(f, +, A)) :
-    (op === *) ? (skipnull ? _mapreduce_skipnull(f, *, A) : Base._mapreduce(f, *, A)) :
-    (op === &) ? (skipnull ? _mapreduce_skipnull(f, &, A) : Base._mapreduce(f, &, A)) :
-    (op === |) ? (skipnull ? _mapreduce_skipnull(f, |, A) : Base._mapreduce(f, |, A)) :
-    skipnull ? _mapreduce_skipnull(f, op, A) : Base._mapreduce(f, op, A)
+    (op === +) ? (skipmissing ? _mapreduce_skipmissing(f, +, A) : Base._mapreduce(f, +, A)) :
+    (op === *) ? (skipmissing ? _mapreduce_skipmissing(f, *, A) : Base._mapreduce(f, *, A)) :
+    (op === &) ? (skipmissing ? _mapreduce_skipmissing(f, &, A) : Base._mapreduce(f, &, A)) :
+    (op === |) ? (skipmissing ? _mapreduce_skipmissing(f, |, A) : Base._mapreduce(f, |, A)) :
+    skipmissing ? _mapreduce_skipmissing(f, op, A) : Base._mapreduce(f, op, A)
 end
 
 # To silence deprecations, but could be more efficient
 function Base.mapreduce(f, op::Union{typeof(|), typeof(&)}, A::DataArray;
-                        skipnull::Bool=false, skipna::Bool=false)
-    if skipna && !skipnull
-        Base.depwarn("skipna=$skipna is deprecated, use skipnull=$skipna instead", :mapreduce)
-        skipnull = true
+                        skipmissing::Bool=false, skipna::Bool=false)
+    if skipna && !skipmissing
+        Base.depwarn("skipna=$skipna is deprecated, use skipmissing=$skipna instead", :mapreduce)
+        skipmissing = true
     end
-    skipnull ? _mapreduce_skipnull(f, op, A) : Base._mapreduce(f, op, A)
+    skipmissing ? _mapreduce_skipmissing(f, op, A) : Base._mapreduce(f, op, A)
 end
 
 function Base.mapreduce(f, op, A::DataArray;
-                        skipnull::Bool=false, skipna::Bool=false)
-    if skipna && !skipnull
-        Base.depwarn("skipna=$skipna is deprecated, use skipnull=$skipna instead", :mapreduce)
-        skipnull = true
+                        skipmissing::Bool=false, skipna::Bool=false)
+    if skipna && !skipmissing
+        Base.depwarn("skipna=$skipna is deprecated, use skipmissing=$skipna instead", :mapreduce)
+        skipmissing = true
     end
-    skipnull ? _mapreduce_skipnull(f, op, A) : Base._mapreduce(f, op, A)
+    skipmissing ? _mapreduce_skipmissing(f, op, A) : Base._mapreduce(f, op, A)
 end
 
 Base.reduce(op, A::DataArray;
-            skipnull::Bool=false, skipna::Bool=false) =
-    mapreduce(identity, op, A; skipnull=skipnull, skipna=skipna)
+            skipmissing::Bool=false, skipna::Bool=false) =
+    mapreduce(identity, op, A; skipmissing=skipmissing, skipna=skipna)
 
 ## usual reductions
 
@@ -139,31 +139,31 @@ for (fn, op) in ((:(Base.sum), +),
                  (:(Base.maximum), max))
     @eval begin
         $fn(f::Union{Function,$(supertype(typeof(abs)))}, a::DataArray;
-            skipnull::Bool=false, skipna::Bool=false) =
-            mapreduce(f, $op, a; skipnull=skipnull, skipna=skipna)
-        $fn(a::DataArray; skipnull::Bool=false, skipna::Bool=false) =
-            mapreduce(identity, $op, a; skipnull=skipnull, skipna=skipna)
+            skipmissing::Bool=false, skipna::Bool=false) =
+            mapreduce(f, $op, a; skipmissing=skipmissing, skipna=skipna)
+        $fn(a::DataArray; skipmissing::Bool=false, skipna::Bool=false) =
+            mapreduce(identity, $op, a; skipmissing=skipmissing, skipna=skipna)
     end
 end
 
 for (fn, f, op) in ((:(Base.sumabs), abs, +),
                     (:(Base.sumabs2), abs2, +))
-    @eval $fn(a::DataArray; skipnull::Bool=false, skipna::Bool=false) =
-        mapreduce($f, $op, a; skipnull=skipnull, skipna=skipna)
+    @eval $fn(a::DataArray; skipmissing::Bool=false, skipna::Bool=false) =
+        mapreduce($f, $op, a; skipmissing=skipmissing, skipna=skipna)
 end
 
 ## mean
 
-Base.mean(a::DataArray; skipnull::Bool=false, skipna::Bool=false) =
-    sum(a; skipnull=skipnull, skipna=skipna) / (length(a.na)-(skipna || skipnull ? countnz(a.na) : 0))
+Base.mean(a::DataArray; skipmissing::Bool=false, skipna::Bool=false) =
+    sum(a; skipmissing=skipmissing, skipna=skipna) / (length(a.na)-(skipna || skipmissing ? countnz(a.na) : 0))
 
 ## variance
 
 function Base.varm(A::DataArray{T}, m::Number;
-                   corrected::Bool=true, skipnull::Bool=false, skipna::Bool=false) where T
-    if skipna || skipnull
-        if skipna && !skipnull
-            Base.depwarn("skipna=$skipna is deprecated, use skipnull=$skipna instead", :mapreduce)
+                   corrected::Bool=true, skipmissing::Bool=false, skipna::Bool=false) where T
+    if skipna || skipmissing
+        if skipna && !skipmissing
+            Base.depwarn("skipna=$skipna is deprecated, use skipmissing=$skipna instead", :mapreduce)
         end
 
         n = length(A)
@@ -175,51 +175,51 @@ function Base.varm(A::DataArray{T}, m::Number;
                                      abs2(A.data[Base.findnextnot(na, 1)] - m)/(1 - corrected))
 
         /(nna == 0 ? Base.centralize_sumabs2(A.data, m, 1, n) :
-                     mapreduce_impl_skipnull(Base.centralizedabs2fun(m), +, A),
+                     mapreduce_impl_skipmissing(Base.centralizedabs2fun(m), +, A),
           n - nna - corrected)
     else
-        any(A.na) && return null
+        any(A.na) && return missing
         Base.varm(A.data, m; corrected=corrected)
     end
 end
-Base.varm(A::DataArray{T}, m::Null;
-          corrected::Bool=true, skipnull::Bool=false, skipna::Bool=false) where {T} = null
+Base.varm(A::DataArray{T}, m::Missing;
+          corrected::Bool=true, skipmissing::Bool=false, skipna::Bool=false) where {T} = missing
 
 function Base.var(A::DataArray;
-                  corrected::Bool=true, mean=nothing, skipnull::Bool=false, skipna::Bool=false)
-    mean == 0 ? Base.varm(A, 0; corrected=corrected, skipnull=skipnull, skipna=skipna) :
-    mean == nothing ? varm(A, Base.mean(A; skipnull=skipnull, skipna=skipna);
-                           corrected=corrected, skipnull=skipnull, skipna=skipna) :
-    isa(mean, Union{Number,Null}) ?
-        varm(A, mean; corrected=corrected, skipnull=skipnull, skipna=skipna) :
+                  corrected::Bool=true, mean=nothing, skipmissing::Bool=false, skipna::Bool=false)
+    mean == 0 ? Base.varm(A, 0; corrected=corrected, skipmissing=skipmissing, skipna=skipna) :
+    mean == nothing ? varm(A, Base.mean(A; skipmissing=skipmissing, skipna=skipna);
+                           corrected=corrected, skipmissing=skipmissing, skipna=skipna) :
+    isa(mean, Union{Number,Missing}) ?
+        varm(A, mean; corrected=corrected, skipmissing=skipmissing, skipna=skipna) :
         throw(ErrorException("Invalid value of mean."))
 end
 
 Base.stdm(A::DataArray, m::Number;
-          corrected::Bool=true, skipnull::Bool=false, skipna::Bool=false) =
-    sqrt(varm(A, m; corrected=corrected, skipnull=skipnull, skipna=skipna))
+          corrected::Bool=true, skipmissing::Bool=false, skipna::Bool=false) =
+    sqrt(varm(A, m; corrected=corrected, skipmissing=skipmissing, skipna=skipna))
 
 Base.std(A::DataArray;
-         corrected::Bool=true, mean=nothing, skipnull::Bool=false, skipna::Bool=false) =
-    sqrt(var(A; corrected=corrected, mean=mean, skipnull=skipnull, skipna=skipna))
+         corrected::Bool=true, mean=nothing, skipmissing::Bool=false, skipna::Bool=false) =
+    sqrt(var(A; corrected=corrected, mean=mean, skipmissing=skipmissing, skipna=skipna))
 
 ## weighted mean
 
-function Base.mean(a::DataArray, w::Weights; skipnull::Bool=false, skipna::Bool=false)
-    if skipna || skipnull
+function Base.mean(a::DataArray, w::Weights; skipmissing::Bool=false, skipna::Bool=false)
+    if skipna || skipmissing
         v = a .* w.values
-        sum(v; skipnull=true) / sum(DataArray(w.values, v.na); skipnull=true)
+        sum(v; skipmissing=true) / sum(DataArray(w.values, v.na); skipmissing=true)
     else
-        any(isnull, a) ? null : mean(a.data, w)
+        any(ismissing, a) ? missing : mean(a.data, w)
     end
 end
 
 function Base.mean(a::DataArray, w::Weights{W,V};
-                   skipnull::Bool=false, skipna::Bool=false) where {W,V<:DataArray}
-    if skipna || skipnull
+                   skipmissing::Bool=false, skipna::Bool=false) where {W,V<:DataArray}
+    if skipna || skipmissing
         v = a .* w.values
-        sum(v; skipnull=true) / sum(DataArray(w.values.data, v.na); skipnull=true)
+        sum(v; skipmissing=true) / sum(DataArray(w.values.data, v.na); skipmissing=true)
     else
-        any(isnull, a) || any(isnull, w.values) ? null : wsum(a.data, w.values.data) / w.sum
+        any(ismissing, a) || any(ismissing, w.values) ? missing : wsum(a.data, w.values.data) / w.sum
     end
 end

@@ -2,8 +2,8 @@ macro test_da_approx_eq(da1, da2)
     quote
         v1 = $(esc(da1))
         v2 = $(esc(da2))
-        na = isnull.(v1)
-        @test na == isnull.(v2)
+        na = ismissing.(v1)
+        @test na == ismissing.(v2)
         defined = (!).(na)
         if any(defined)
             @test isapprox(v1[defined], v2[defined], nans = true)
@@ -38,13 +38,13 @@ end
     test_count()
 
     # mapslices from Base, hacked to work for these cases
-    function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipnull)
+    function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipmissing)
         dims = intersect(region, 1:ndims(A))
         if isempty(dims)
-            if skipnull
-                naval = f(Nulls.T(T)[], 1)
+            if skipmissing
+                naval = f(Missings.T(T)[], 1)
                 A = copy(A)
-                A[isnull.(A)] = isempty(naval) ? null : naval[1]
+                A[ismissing.(A)] = isempty(naval) ? missing : naval[1]
             end
             return A
         end
@@ -67,7 +67,7 @@ end
             idx[d] = 1:size(A,d)
         end
 
-        r1 = f(copy(reshape(A[idx...], Asliceshape)); skipnull=skipnull)
+        r1 = f(copy(reshape(A[idx...], Asliceshape)); skipmissing=skipmissing)
 
         # determine result size and allocate
         Rsize = copy(dimsA)
@@ -98,11 +98,11 @@ end
                 idx[otherdims] = ia
                 ridx[otherdims] = ia
                 try
-                    R[ridx...] = f(copy(reshape(A[idx...], Asliceshape)); skipnull=skipnull)
+                    R[ridx...] = f(copy(reshape(A[idx...], Asliceshape)); skipmissing=skipmissing)
                 catch e
                     if (isa(e, ErrorException) && e.msg == "Reducing over an empty array is not allowed.") || (isa(e, ArgumentError) && e.msg == "reducing over an empty collection is not allowed")
 
-                        R[ridx...] = null
+                        R[ridx...] = missing
                     else
                         println(typeof(e))
                         rethrow(e)
@@ -114,65 +114,65 @@ end
         return R
     end
 
-    myvarzm(x; skipnull::Bool=false) = var(x; mean=0, skipnull=skipnull)
-    myvar1m(x; skipnull::Bool=false) = var(x; mean=1, skipnull=skipnull)
+    myvarzm(x; skipmissing::Bool=false) = var(x; mean=0, skipmissing=skipmissing)
+    myvar1m(x; skipmissing::Bool=false) = var(x; mean=1, skipmissing=skipmissing)
 
     for Areduc in (DataArray(rand(3, 4, 5, 6)),
                    DataArray(rand(3, 4, 5, 6), rand(3, 4, 5, 6) .< 0.2))
-        for skipnull = (false, true)
+        for skipmissing = (false, true)
             for region in Any[
                 1, 2, 3, 4, 5, (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4),
                 (1, 2, 3), (1, 3, 4), (2, 3, 4), (1, 2, 3, 4)]
-                # println("region = $region, skipnull = $skipnull")
+                # println("region = $region, skipmissing = $skipmissing")
 
                 outputs = Any[DataArray(fill(NaN, length.(Base.reduced_indices(indices(Areduc), region))))]
-                hasnulls = any(isnull, Areduc)
-                if hasnulls && !skipnull
+                hasmissings = any(ismissing, Areduc)
+                if hasmissings && !skipmissing
                     # Should throw an error reducing to non-DataArray
-                    @test_throws NullException sum!(outputs[1].data, Areduc; skipnull=skipnull)
+                    @test_throws MissingException sum!(outputs[1].data, Areduc; skipmissing=skipmissing)
                 else
                     # Should be able to reduce to non-DataArray
                     push!(outputs, outputs[1].data)
                 end
 
                 for r in outputs
-                    @test_da_approx_eq sum!(r, Areduc; skipnull=skipnull) safe_mapslices(sum, Areduc, region, skipnull)
-                    @test_da_approx_eq prod!(r, Areduc; skipnull=skipnull) safe_mapslices(prod, Areduc, region, skipnull)
-                    if !hasnulls
-                        @test_da_approx_eq maximum!(r, Areduc; skipnull=skipnull) safe_mapslices(maximum, Areduc, region, skipnull)
-                        @test_da_approx_eq minimum!(r, Areduc; skipnull=skipnull) safe_mapslices(minimum, Areduc, region, skipnull)
+                    @test_da_approx_eq sum!(r, Areduc; skipmissing=skipmissing) safe_mapslices(sum, Areduc, region, skipmissing)
+                    @test_da_approx_eq prod!(r, Areduc; skipmissing=skipmissing) safe_mapslices(prod, Areduc, region, skipmissing)
+                    if !hasmissings
+                        @test_da_approx_eq maximum!(r, Areduc; skipmissing=skipmissing) safe_mapslices(maximum, Areduc, region, skipmissing)
+                        @test_da_approx_eq minimum!(r, Areduc; skipmissing=skipmissing) safe_mapslices(minimum, Areduc, region, skipmissing)
                     end
-                    @test_da_approx_eq Base.sumabs!(r, Areduc; skipnull=skipnull) safe_mapslices(sum, abs(Areduc), region, skipnull)
-                    @test_da_approx_eq Base.sumabs2!(r, Areduc; skipnull=skipnull) safe_mapslices(sum, abs2(Areduc), region, skipnull)
-                    @test_da_approx_eq mean!(r, Areduc; skipnull=skipnull) safe_mapslices(mean, Areduc, region, skipnull)
+                    @test_da_approx_eq Base.sumabs!(r, Areduc; skipmissing=skipmissing) safe_mapslices(sum, abs(Areduc), region, skipmissing)
+                    @test_da_approx_eq Base.sumabs2!(r, Areduc; skipmissing=skipmissing) safe_mapslices(sum, abs2(Areduc), region, skipmissing)
+                    @test_da_approx_eq mean!(r, Areduc; skipmissing=skipmissing) safe_mapslices(mean, Areduc, region, skipmissing)
                 end
 
-                @test_da_approx_eq sum(Areduc, region; skipnull=skipnull) safe_mapslices(sum, Areduc, region, skipnull)
-                @test_da_approx_eq prod(Areduc, region; skipnull=skipnull) safe_mapslices(prod, Areduc, region, skipnull)
-                @test_da_approx_eq maximum(Areduc, region; skipnull=skipnull) safe_mapslices(maximum, Areduc, region, skipnull)
-                @test_da_approx_eq minimum(Areduc, region; skipnull=skipnull) safe_mapslices(minimum, Areduc, region, skipnull)
-                @test_da_approx_eq Base.sumabs(Areduc, region; skipnull=skipnull) safe_mapslices(sum, abs(Areduc), region, skipnull)
-                @test_da_approx_eq Base.sumabs2(Areduc, region; skipnull=skipnull) safe_mapslices(sum, abs2(Areduc), region, skipnull)
-                @test_da_approx_eq mean(Areduc, region; skipnull=skipnull) safe_mapslices(mean, Areduc, region, skipnull)
+                @test_da_approx_eq sum(Areduc, region; skipmissing=skipmissing) safe_mapslices(sum, Areduc, region, skipmissing)
+                @test_da_approx_eq prod(Areduc, region; skipmissing=skipmissing) safe_mapslices(prod, Areduc, region, skipmissing)
+                @test_da_approx_eq maximum(Areduc, region; skipmissing=skipmissing) safe_mapslices(maximum, Areduc, region, skipmissing)
+                @test_da_approx_eq minimum(Areduc, region; skipmissing=skipmissing) safe_mapslices(minimum, Areduc, region, skipmissing)
+                @test_da_approx_eq Base.sumabs(Areduc, region; skipmissing=skipmissing) safe_mapslices(sum, abs(Areduc), region, skipmissing)
+                @test_da_approx_eq Base.sumabs2(Areduc, region; skipmissing=skipmissing) safe_mapslices(sum, abs2(Areduc), region, skipmissing)
+                @test_da_approx_eq mean(Areduc, region; skipmissing=skipmissing) safe_mapslices(mean, Areduc, region, skipmissing)
 
                 if region != 5
-                    @test_da_approx_eq var(Areduc, region; skipnull=skipnull) safe_mapslices(var, Areduc, region, skipnull)
-                    @test_da_approx_eq var(Areduc, region; mean=0, skipnull=skipnull) safe_mapslices(myvarzm, Areduc, region, skipnull)
+                    @test_da_approx_eq var(Areduc, region; skipmissing=skipmissing) safe_mapslices(var, Areduc, region, skipmissing)
+                    @test_da_approx_eq var(Areduc, region; mean=0, skipmissing=skipmissing) safe_mapslices(myvarzm, Areduc, region, skipmissing)
                     for r in outputs
-                        @test_da_approx_eq var(Areduc, region; mean=fill!(r, 1), skipnull=skipnull) safe_mapslices(myvar1m, Areduc, region, skipnull)
+                        @test_da_approx_eq var(Areduc, region; mean=fill!(r, 1), skipmissing=skipmissing) safe_mapslices(myvar1m, Areduc, region, skipmissing)
                     end
                 end
             end
         end
     end
 
-    # Test null-skipping behavior for maximum
-    a = @data([null null; 3 4])
-    @test isequal(maximum(a, 1; skipnull=true), [3 4])
-    @test isequal(maximum!(zeros(1, 2), a; skipnull=true), [3 4])
+    # Test missing-skipping behavior for maximum
+    a = @data([missing missing; 3 4])
+    @test isequal(maximum(a, 1; skipmissing=true), [3 4])
+    @test isequal(maximum!(zeros(1, 2), a; skipmissing=true), [3 4])
 
-    # Maximum should give an null in the output if all values along dimension are null
-    @test isequal(maximum(a, 2; skipnull=true), @data([null 4])')
+    # Maximum should give an missing in the output if all values along dimension are missing
+    @test isequal(maximum(a, 2; skipmissing=true), @data([missing 4])')
     # Maximum should refuse to reduce to a non-DataArray
-    @test_throws NullException maximum!(zeros(2, 1), a; skipnull=true)
+    @test_throws MissingException maximum!(zeros(2, 1), a; skipmissing=true)
 end

@@ -4,7 +4,7 @@ module DataArrays
     using Base: promote_op
     using Base.Cartesian, Reexport
     @reexport using StatsBase
-    @reexport using Nulls
+    @reexport using Missings
     using SpecialFunctions
 
     const DEFAULT_POOLED_REF_TYPE = UInt32
@@ -29,7 +29,7 @@ module DataArrays
            FastPerm,
            getpoolidx,
            gl,
-           padnull,
+           padmissing,
            pdata,
            PooledDataArray,
            PooledDataMatrix,
