@@ -5,7 +5,7 @@ _broadcast_shape(x...) = Base.to_shape(Base.Broadcast.broadcast_indices(x...))
 
 # Get ref for value for a PooledDataArray, adding to the pool if
 # necessary
-_unsafe_pdaref!(Bpool, Brefdict::Dict, val::Null) = 0
+_unsafe_pdaref!(Bpool, Brefdict::Dict, val::Missing) = 0
 function _unsafe_pdaref!(Bpool, Brefdict::Dict, val)
     @get! Brefdict val begin
         push!(Bpool, val)
@@ -13,16 +13,16 @@ function _unsafe_pdaref!(Bpool, Brefdict::Dict, val)
     end
 end
 
-# Generate a branch for each possible combination of null/not null. This
+# Generate a branch for each possible combination of missing/not missing. This
 # gives good performance at the cost of 2^narrays branches.
 function gen_na_conds(f, nd, arrtype, outtype,
-    daidx=find(t -> t <: DataArray || t <: PooledDataArray, arrtype), pos=1, isnull=())
+    daidx=find(t -> t <: DataArray || t <: PooledDataArray, arrtype), pos=1, ismissing=())
 
     if pos > length(daidx)
         args = Any[Symbol("v_$(k)") for k = 1:length(arrtype)]
         for i = 1:length(daidx)
-            if isnull[i]
-                args[daidx[i]] = null
+            if ismissing[i]
+                args[daidx[i]] = missing
             end
         end
 
@@ -39,15 +39,15 @@ function gen_na_conds(f, nd, arrtype, outtype,
     else
         k = daidx[pos]
         quote
-            if $(Symbol("isnull_$(k)"))
-                $(gen_na_conds(f, nd, arrtype, outtype, daidx, pos+1, tuple(isnull..., true)))
+            if $(Symbol("ismissing_$(k)"))
+                $(gen_na_conds(f, nd, arrtype, outtype, daidx, pos+1, tuple(ismissing..., true)))
             else
                 $(if arrtype[k] <: DataArray
                     :(@inbounds $(Symbol("v_$(k)")) = $(Symbol("data_$(k)"))[$(Symbol("state_$(k)_0"))])
                 else
                     :(@inbounds $(Symbol("v_$(k)")) = $(Symbol("pool_$(k)"))[$(Symbol("r_$(k)"))])
                 end)
-                $(gen_na_conds(f, nd, arrtype, outtype, daidx, pos+1, tuple(isnull..., false)))
+                $(gen_na_conds(f, nd, arrtype, outtype, daidx, pos+1, tuple(ismissing..., false)))
             end
         end
     end
@@ -128,13 +128,13 @@ Base.map!(f::F, B::Union{DataArray, PooledDataArray}, A0, As...) where {F} =
 
             # body
             begin
-                # Advance iterators for DataArray and determine null status
+                # Advance iterators for DataArray and determine missing status
                 $(Expr(:block, [
                     As[k] <: DataArray ? quote
-                        @inbounds $(Symbol("isnull_$(k)")) = Base.unsafe_bitgetindex($(Symbol("na_$(k)")), $(Symbol("state_$(k)_0")))
+                        @inbounds $(Symbol("ismissing_$(k)")) = Base.unsafe_bitgetindex($(Symbol("na_$(k)")), $(Symbol("state_$(k)_0")))
                     end : As[k] <: PooledDataArray ? quote
                         @inbounds $(Symbol("r_$(k)")) = @nref $nd $(Symbol("refs_$(k)")) d->$(Symbol("j_$(k)_d"))
-                        $(Symbol("isnull_$(k)")) = $(Symbol("r_$(k)")) == 0
+                        $(Symbol("ismissing_$(k)")) = $(Symbol("r_$(k)")) == 0
                     end : nothing
                 for k = 1:N]...))
 
@@ -190,12 +190,12 @@ Base.Broadcast._containertype(::Type{T}) where T<:PooledDataArray     = PooledDa
 Base.Broadcast.broadcast_indices(::Type{T}, A) where T<:AbstractDataArray = indices(A)
 
 @inline function broadcast_t(f, ::Type{T}, shape, A, Bs...) where {T}
-    dest = Base.Broadcast.containertype(A, Bs...)(Nulls.T(T), Base.index_lengths(shape...))
+    dest = Base.Broadcast.containertype(A, Bs...)(Missings.T(T), Base.index_lengths(shape...))
     return broadcast!(f, dest, A, Bs...)
 end
 
-# This is mainly to handle isnull.(x) since isnull is probably the only
-# function that can guarantee that nulls will never propagate
+# This is mainly to handle ismissing.(x) since ismissing is probably the only
+# function that can guarantee that missings will never propagate
 @inline function broadcast_t(f, ::Type{Bool}, shape, A, Bs...)
     dest = similar(BitArray, shape)
     return broadcast!(f, dest, A, Bs...)
@@ -203,7 +203,7 @@ end
 
 # This one is almost identical to the version in Base and can hopefully be
 # removed at some point. The main issue in Base is that it tests for
-# isleaftype(T) which is false for Union{T,Null}. If the test in Base
+# isleaftype(T) which is false for Union{T,Missing}. If the test in Base
 # can be modified to cover simple unions of leaftypes then this method
 # can probably be deleted and the two _t methods adjusted to match the Base
 # invokation from Base.Broadcast.broadcast_c
@@ -214,5 +214,5 @@ end
 end
 
 # This one is much faster than normal broadcasting but the method won't get called
-# in fusing operations like (!).(isnull.(x))
-Base.broadcast(::typeof(isnull), da::DataArray) = copy(da.na)
+# in fusing operations like (!).(ismissing.(x))
+Base.broadcast(::typeof(ismissing), da::DataArray) = copy(da.na)

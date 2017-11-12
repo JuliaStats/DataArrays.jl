@@ -1,5 +1,5 @@
 @testset "Sort" begin
-    dv1 = @data([9, 1, 8, null, 3, 3, 7, null])
+    dv1 = @data([9, 1, 8, missing, 3, 3, 7, missing])
     dv2 = 1.0 * dv1
     dv3 = DataArray(collect(1:8))
     pdv1 = convert(PooledDataArray, dv1)
@@ -17,11 +17,11 @@
         ra = randn(n-nna)
         a[.!na] = ra
         for da in (DataArray(a, na), PooledDataArray(a, na), (pda = PooledDataArray(a, na); setlevels!(pda, shuffle!(pda.pool))))
-            @test isequal(sort(da), [DataArray(sort!(collect(Nulls.skip(da)))); DataArray(T, nna)])
-            @test isequal(sort(da; lt=(x,y)->isless(x,y)), [DataArray(sort!(collect(Nulls.skip(da)))); DataArray(T, nna)])
-            @test isequal(da[sortperm(da)], [DataArray(sort!(collect(Nulls.skip(da)))); DataArray(T, nna)])
-            @test isequal(sort(da, rev=true), [DataArray(T, nna); DataArray(sort!(collect(Nulls.skip(da)), rev=true))])
-            @test isequal(da[sortperm(da, rev=true)], [DataArray(T, nna); DataArray(sort!(collect(Nulls.skip(da)), rev=true))])
+            @test isequal(sort(da), [DataArray(sort!(collect(Missings.skip(da)))); DataArray(T, nna)])
+            @test isequal(sort(da; lt=(x,y)->isless(x,y)), [DataArray(sort!(collect(Missings.skip(da)))); DataArray(T, nna)])
+            @test isequal(da[sortperm(da)], [DataArray(sort!(collect(Missings.skip(da)))); DataArray(T, nna)])
+            @test isequal(sort(da, rev=true), [DataArray(T, nna); DataArray(sort!(collect(Missings.skip(da)), rev=true))])
+            @test isequal(da[sortperm(da, rev=true)], [DataArray(T, nna); DataArray(sort!(collect(Missings.skip(da)), rev=true))])
         end
     end
 end

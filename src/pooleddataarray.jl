@@ -4,7 +4,7 @@
 ##
 ## An AbstractDataArray with efficient storage when values are repeated. A
 ## PDA wraps an array of unsigned integers, which are used to index into a
-## compressed pool of values. nulls are 0's in the refs array.  The unsigned
+## compressed pool of values. missings are 0's in the refs array.  The unsigned
 ## integer type used for the refs array defaults to UInt32.  The `compact`
 ## function converts to a smallest integer size that will index the entire pool.
 ##
@@ -53,15 +53,15 @@ julia> p = PooledDataArray(d)
     PooledDataArray(T::Type, [R::Type=$DEFAULT_POOLED_REF_TYPE], [dims...])
 
 Construct a `PooledDataArray` with element type `T`, reference storage type `R`, and dimensions
-`dims`. If the dimensions are specified and nonzero, the array is filled with `null` values.
+`dims`. If the dimensions are specified and nonzero, the array is filled with `missing` values.
 
 # Examples
 
 ```jldoctest
 julia> PooledDataArray(Int, 2, 2)
 2×2 DataArrays.PooledDataArray{Int64,UInt32,2}:
- null  null
- null  null
+ missing  missing
+ missing  missing
 ```
 """
 mutable struct PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
@@ -91,7 +91,7 @@ const PooledDataMatrix{T,R} = PooledDataArray{T,R,2}
 #
 # Algorithm:
 # * Start with:
-#   * A null pool
+#   * A missing pool
 #   * A pre-allocated refs
 #   * A hash from T to Int
 # * Iterate over d
@@ -109,9 +109,9 @@ end
 PooledDataArray(d::PooledDataArray) = d
 
 # Constructor from array, w/ pool, missingness, and ref type
-function PooledDataArray(d::AbstractArray{<:Union{T,Null}, N},
+function PooledDataArray(d::AbstractArray{<:Union{T,Missing}, N},
                          pool::Vector{T},
-                         m::AbstractArray{<:Union{Bool,Null}, N},
+                         m::AbstractArray{<:Union{Bool,Missing}, N},
                          r::Type{R} = DEFAULT_POOLED_REF_TYPE) where {T,R<:Integer,N}
     if length(pool) > typemax(R)
         throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))"))
@@ -147,7 +147,7 @@ function PooledDataArray(d::AbstractArray{T, N},
     PooledDataArray(d, pool, m, r)
 end
 
-# Construct an all-null PooledDataVector of a specific type
+# Construct an all-missing PooledDataVector of a specific type
 PooledDataArray(t::Type, dims::Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims))
 PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array{t}(dims), trues(dims))
 PooledDataArray(t::Type, r::Type{R}, dims::Tuple{Vararg{Int}}) where {R<:Integer} = PooledDataArray(Array{t}(dims), trues(dims), r)
@@ -219,7 +219,7 @@ end
 
 ##############################################################################
 ##
-## Predicates, including the new isnull()
+## Predicates, including the new ismissing()
 ##
 ##############################################################################
 
@@ -231,17 +231,17 @@ function Base.isfinite(pda::PooledDataArray)
     PooledDataArray(RefArray(copy(pda.refs)), isfinite(pda.pool))
 end
 
-Base.broadcast(::typeof(isnull), pda::PooledDataArray) = pda.refs .== 0
-Base.isnull(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
+Base.broadcast(::typeof(ismissing), pda::PooledDataArray) = pda.refs .== 0
+Missings.ismissing(pda::PooledDataArray, i::Real) = pda.refs[i] == 0 # -> Bool
 
-function Base.any(::typeof(isnull), pda::PooledDataArray)
+function Base.any(::typeof(ismissing), pda::PooledDataArray)
     for ref in pda.refs
         ref == 0 && return true
     end
     return false
 end
 
-function Base.all(::typeof(isnull), pda::PooledDataArray)
+function Base.all(::typeof(ismissing), pda::PooledDataArray)
     for ref in pda.refs
         ref == 0 || return false
     end
@@ -318,11 +318,11 @@ function Base.unique(pda::PooledDataArray{T}) where T
     sizehint!(unique_values, nlevels)
     seen = Set{eltype(pda.refs)}()
 
-    firstnull = 0
+    firstmissing = 0
     for i in 1:n
-        if isnull(pda, i)
-            if firstnull == 0
-                firstnull = length(unique_values) + 1
+        if ismissing(pda, i)
+            if firstmissing == 0
+                firstmissing = length(unique_values) + 1
             end
         elseif !in(pda.refs[i], seen)
             push!(seen, pda.refs[i])
@@ -331,25 +331,25 @@ function Base.unique(pda::PooledDataArray{T}) where T
             continue
         end
 
-        if firstnull > 0 && length(unique_values) == nlevels
+        if firstmissing > 0 && length(unique_values) == nlevels
             break
         end
     end
 
-    if firstnull > 0
+    if firstmissing > 0
         n = length(unique_values)
         res = DataArray(Vector{T}(n + 1))
         i = 0
         for val in unique_values
             i += 1
-            if i == firstnull
+            if i == firstmissing
                 res.na[i] = true
                 i += 1
             end
             res.data[i] = val
         end
 
-        if firstnull == n + 1
+        if firstmissing == n + 1
             res.na[n + 1] = true
         end
 
@@ -359,7 +359,7 @@ function Base.unique(pda::PooledDataArray{T}) where T
     end
 end
 
-Nulls.levels(pda::PooledDataArray{T}) where {T} = copy(pda.pool)
+Missings.levels(pda::PooledDataArray{T}) where {T} = copy(pda.pool)
 
 function PooledDataArray(x::PooledDataArray{S,R,N},
                          newpool::Vector{S}) where {S,R,N}
@@ -375,7 +375,7 @@ function PooledDataArray(x::PooledDataArray{S,R,N},
 end
 
 myunique(x::AbstractVector) = unique(x)
-myunique(x::AbstractDataVector) = unique(Nulls.skip(x))
+myunique(x::AbstractDataVector) = unique(Missings.skip(x))
 
 """
     setlevels(x::PooledDataArray, newpool::Union{AbstractVector, Dict})
@@ -427,7 +427,7 @@ function setlevels(x::PooledDataArray{T,R}, newpool::AbstractVector) where {T,R}
     pool = myunique(newpool)
     refs = zeros(R, length(x))
     tidx::Array{R} = indexin(newpool, pool)
-    tidx[isnull.(newpool)] = 0
+    tidx[ismissing.(newpool)] = 0
     for i in 1:length(refs)
         if x.refs[i] != 0
             refs[i] = tidx[x.refs[i]]
@@ -470,13 +470,13 @@ julia> p # has been modified
 ```
 """
 function setlevels!(x::PooledDataArray{T,R}, newpool::AbstractVector) where {T,R}
-    if newpool == myunique(newpool) # no nulls or duplicates
+    if newpool == myunique(newpool) # no missings or duplicates
         x.pool = newpool
         return x
     else
         x.pool = myunique(newpool)
         tidx::Array{R} = indexin(newpool, x.pool)
-        tidx[isnull.(newpool)] = 0
+        tidx[ismissing.(newpool)] = 0
         for i in 1:length(x.refs)
             if x.refs[i] != 0
                 x.refs[i] = tidx[x.refs[i]]
@@ -488,7 +488,7 @@ end
 
 function setlevels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
-    # An null in `v` is put in the pool; that will cause it to become null
+    # An missing in `v` is put in the pool; that will cause it to become missing
     for (k,v) in d
         idx = findin(newpool, [k])
         if length(idx) == 1
@@ -508,9 +508,9 @@ function setlevels!(x::PooledDataArray{T,R}, d::Dict{T,T}) where {T,R}
     x
 end
 
-function setlevels!(x::PooledDataArray{T,R}, d::Dict{T,Any}) where {T,R} # this version handles nulls in d's values
+function setlevels!(x::PooledDataArray{T,R}, d::Dict{T,Any}) where {T,R} # this version handles missings in d's values
     newpool = copy(DataArray(x.pool))
-    # An null in `v` is put in the pool; that will cause it to become null
+    # An missing in `v` is put in the pool; that will cause it to become missing
     for (k,v) in d
         idx = findin(newpool, [k])
         if length(idx) == 1
@@ -554,7 +554,7 @@ end
 
 
 function Base.similar(pda::PooledDataArray{T,R}, S::Type, dims::Dims) where {T,R}
-    PooledDataArray(RefArray(zeros(R, dims)), Nulls.T(S)[])
+    PooledDataArray(RefArray(zeros(R, dims)), Missings.T(S)[])
 end
 
 ##############################################################################
@@ -595,7 +595,7 @@ function getpoolidx(pda::PooledDataArray{T,R}, val::Any) where {T,R}
     return pool_idx
 end
 
-getpoolidx(pda::PooledDataArray{T,R}, val::Null) where {T,R} = zero(R)
+getpoolidx(pda::PooledDataArray{T,R}, val::Missing) where {T,R} = zero(R)
 
 ##############################################################################
 ##
@@ -627,13 +627,13 @@ end
 
 Replace all occurrences of `from` in `x` with `to`, modifying `x` in place.
 """
-function replace!(x::PooledDataArray{Null}, fromval::Null, toval::Null)
-    null # no-op to deal with warning
+function replace!(x::PooledDataArray{Missing}, fromval::Missing, toval::Missing)
+    missing # no-op to deal with warning
 end
-function replace!(x::PooledDataArray, fromval::Null, toval::Null)
-    null # no-op to deal with warning
+function replace!(x::PooledDataArray, fromval::Missing, toval::Missing)
+    missing # no-op to deal with warning
 end
-function replace!(x::PooledDataArray{S}, fromval::T, toval::Null) where {S, T}
+function replace!(x::PooledDataArray{S}, fromval::T, toval::Missing) where {S, T}
     fromidx = findfirst(x.pool, fromval)
     if fromidx == 0
         throw(ErrorException("can't replace a value not in the pool in a PooledDataVector!"))
@@ -641,9 +641,9 @@ function replace!(x::PooledDataArray{S}, fromval::T, toval::Null) where {S, T}
 
     x.refs[x.refs .== fromidx] = 0
 
-    return null
+    return missing
 end
-function replace!(x::PooledDataArray{S}, fromval::Null, toval::T) where {S, T}
+function replace!(x::PooledDataArray{S}, fromval::Missing, toval::T) where {S, T}
     toidx = findfirst(x.pool, toval)
     # if toval is in the pool, just do the assignment
     if toidx != 0
@@ -712,7 +712,7 @@ Perm(o::O, v::PooledDataVector) where {O<:Base.Sort.Ordering} = FastPerm(o, v)
 
 ##############################################################################
 ##
-## PooledDataVecs: EXPLAnullTION SHOULD GO HERE
+## PooledDataVecs: EXPLAmissingTION SHOULD GO HERE
 ##
 ##############################################################################
 
@@ -771,12 +771,12 @@ function PooledDataVecs(v1::AbstractArray,
 
     # loop through once to fill the poolref dict
     for i = 1:length(v1)
-        if !isnull(v1[i])
+        if !ismissing(v1[i])
             poolref[v1[i]] = 0
         end
     end
     for i = 1:length(v2)
-        if !isnull(v2[i])
+        if !ismissing(v2[i])
             poolref[v2[i]] = 0
         end
     end
@@ -792,14 +792,14 @@ function PooledDataVecs(v1::AbstractArray,
     # fill in newrefs
     zeroval = zero(DEFAULT_POOLED_REF_TYPE)
     for i = 1:length(v1)
-        if isnull(v1[i])
+        if ismissing(v1[i])
             refs1[i] = zeroval
         else
             refs1[i] = poolref[v1[i]]
         end
     end
     for i = 1:length(v2)
-        if isnull(v2[i])
+        if ismissing(v2[i])
             refs2[i] = zeroval
         else
             refs2[i] = poolref[v2[i]]
@@ -869,7 +869,7 @@ function Base.convert{S, T, R, N}(
     res = Array{S}(size(pda))
     for i in 1:length(pda)
         if pda.refs[i] == zero(R)
-            throw(NullException())
+            throw(MissingException("cannot convert PooledDataArray with missing values to $(typeof(res))"))
         else
             res[i] = pda.pool[pda.refs[i]]
         end
@@ -918,7 +918,7 @@ function Base.convert{T, R, N}(::Type{Array}, pda::PooledDataArray{T, R, N}, rep
     return convert(Array{T, N}, pda, replacement)
 end
 
-function Base.collect(itr::EachDropNull{<:PooledDataVector{T}}) where T
+function Base.collect(itr::EachDropMissing{<:PooledDataVector{T}}) where T
     pdv = itr.da
     n = length(pdv)
     res = Array{T}(n)

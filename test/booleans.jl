@@ -1,29 +1,29 @@
 @testset "Booleans" begin
-    @test null | true === true
-    @test isnull(null | false)
-    @test isnull(null | null)
-    @test true | null === true
-    @test isnull(false | null)
+    @test missing | true === true
+    @test ismissing(missing | false)
+    @test ismissing(missing | missing)
+    @test true | missing === true
+    @test ismissing(false | missing)
 
-    @test isnull(null & true)
-    @test null & false === false
-    @test isnull(null & null)
-    @test isnull(true & null)
-    @test false & null === false
+    @test ismissing(missing & true)
+    @test missing & false === false
+    @test ismissing(missing & missing)
+    @test ismissing(true & missing)
+    @test false & missing === false
 
-    @test isnull(null ⊻ true)
-    @test isnull(null ⊻ false)
-    @test isnull(null ⊻ null)
-    @test isnull(true ⊻ null)
-    @test isnull(false ⊻ null)
+    @test ismissing(missing ⊻ true)
+    @test ismissing(missing ⊻ false)
+    @test ismissing(missing ⊻ missing)
+    @test ismissing(true ⊻ missing)
+    @test ismissing(false ⊻ missing)
 
-    @test any((@data [1, 2, null]) .== 1) === true
-    @test any((@data [null, 1, 2]) .== 1) === true
-    @test isnull(any((@data [1, 2, null]) .== 3))
+    @test any((@data [1, 2, missing]) .== 1) === true
+    @test any((@data [missing, 1, 2]) .== 1) === true
+    @test ismissing(any((@data [1, 2, missing]) .== 3))
     @test any((@data [1, 2, 3] ).== 4) === false
 
-    @test isnull(all((@data [1, 1, null]) .== 1))
-    @test isnull(all((@data [null, 1, 1]) .== 1))
+    @test ismissing(all((@data [1, 1, missing]) .== 1))
+    @test ismissing(all((@data [missing, 1, 1]) .== 1))
     @test all((@data [1, 1, 1]) .== 1) === true
     @test all((@data [1, 2, 1]) .== 1) === false
 end

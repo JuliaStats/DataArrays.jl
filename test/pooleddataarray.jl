@@ -1,16 +1,16 @@
 @testset "PDA" begin
-    p = @pdata [9, 9, 8, null, 1, 1]
+    p = @pdata [9, 9, 8, missing, 1, 1]
     pcopy = copy(p)
     @test levels(p) == [1, 8, 9]
     @test levels(setlevels(p, ["a", "b", "c"])) == ["a", "b", "c"]
-    @test collect(Nulls.skip(setlevels(p, (@data ["a", "b", null])))) == ["b", "a", "a"]
-    @test collect(Nulls.skip(setlevels(p, (@data ["a", "b", "a"])))) == ["a", "a", "b", "a", "a"]
+    @test collect(Missings.skip(setlevels(p, (@data ["a", "b", missing])))) == ["b", "a", "a"]
+    @test collect(Missings.skip(setlevels(p, (@data ["a", "b", "a"])))) == ["a", "a", "b", "a", "a"]
     @test levels(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "b"]
     @test levels(setlevels(p, Dict([(1, 111)]))) == [111, 8, 9]
-    @test levels(setlevels(p, Dict([(1, 111), (8, null)]))) == [111, 9]
+    @test levels(setlevels(p, Dict([(1, 111), (8, missing)]))) == [111, 9]
     @test levels(PooledDataArray(p, [9, 8, 1])) == [9, 8, 1]
     @test levels(PooledDataArray(p, [9, 8])) == [9, 8]
-    @test collect(Nulls.skip(PooledDataArray(p, [9, 8]))) == [9, 9, 8]
+    @test collect(Missings.skip(PooledDataArray(p, [9, 8]))) == [9, 9, 8]
     @test levels(PooledDataArray(p, levels(p)[[3,2,1]])) == [9,8,1]
     v = collect(1:6)
     @test isequal(p, reorder(p))
@@ -19,27 +19,27 @@
 
     @test levels(setlevels!(copy(p), [10,80,90])) == [10, 80, 90]
     @test levels(setlevels!(copy(p), [1,8,1])) == [1, 8]
-    @test levels(setlevels!(copy(p), (@data [1, 8, null]))) == [1, 8]
+    @test levels(setlevels!(copy(p), (@data [1, 8, missing]))) == [1, 8]
     @test levels(setlevels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
     @test levels(setlevels!(copy(p), Dict([(1, 111)]))) == [111, 8, 9]
-    @test levels(setlevels!(copy(p), Dict([(1, 111), (8, null)]))) == [111, 9]
+    @test levels(setlevels!(copy(p), Dict([(1, 111), (8, missing)]))) == [111, 9]
     # issue #201
     @test levels(setlevels!(@pdata([1.0, 2.0]), [3,4])) == [3.0, 4.0]
 
-    y = @pdata [1, null, -2, 1, null, 4, null]
-    @test isequal(unique(y), @pdata [1, null, -2, 4])
-    @test isequal(unique(reverse(y)), @data [null, 4, 1, -2])
-    @test isequal(unique(Nulls.skip(y)), @data [1, -2, 4])
-    @test isequal(unique(reverse(collect(Nulls.skip(y)))), @data [4, 1, -2])
+    y = @pdata [1, missing, -2, 1, missing, 4, missing]
+    @test isequal(unique(y), @pdata [1, missing, -2, 4])
+    @test isequal(unique(reverse(y)), @data [missing, 4, 1, -2])
+    @test isequal(unique(Missings.skip(y)), @data [1, -2, 4])
+    @test isequal(unique(reverse(collect(Missings.skip(y)))), @data [4, 1, -2])
 
-    z = @pdata ["frank", null, "gertrude", "frank", null, "herbert", null]
-    @test isequal(unique(z), @pdata ["frank", null, "gertrude", "herbert"])
-    @test isequal(unique(reverse(z)), @pdata [null, "herbert", "frank", "gertrude"])
-    @test isequal(unique(Nulls.skip(z)), @pdata ["frank", "gertrude", "herbert"])
-    @test isequal(unique(reverse(collect(Nulls.skip(z)))), @pdata ["herbert", "frank", "gertrude"])
+    z = @pdata ["frank", missing, "gertrude", "frank", missing, "herbert", missing]
+    @test isequal(unique(z), @pdata ["frank", missing, "gertrude", "herbert"])
+    @test isequal(unique(reverse(z)), @pdata [missing, "herbert", "frank", "gertrude"])
+    @test isequal(unique(Missings.skip(z)), @pdata ["frank", "gertrude", "herbert"])
+    @test isequal(unique(reverse(collect(Missings.skip(z)))), @pdata ["herbert", "frank", "gertrude"])
 
-    # check case where only null occurs in final position
-    @test isequal(unique(@pdata [1, 2, 1, null]), @pdata [1, 2, null])
+    # check case where only missing occurs in final position
+    @test isequal(unique(@pdata [1, 2, 1, missing]), @pdata [1, 2, missing])
 
     pp = PooledDataArray(Any[])
     @test length(pp) == 0
@@ -61,7 +61,7 @@
     end
 
     pcopy = copy(p)
-    @test levels(append!(pcopy, @pdata [4, null, 6, 5])) == [1, 8, 9, 4, 5, 6]
+    @test levels(append!(pcopy, @pdata [4, missing, 6, 5])) == [1, 8, 9, 4, 5, 6]
 
     x = PooledDataArray([9, 9, 8])
     y = PooledDataArray([1, 9, 3, 2, 2])
@@ -102,9 +102,9 @@
     @test typeof(da) == DataArray{Float32,2}
 
     # permute
-    pda = @pdata([null, "A", "B", "C", "A", "B"])
-    @test isequal(Base.permute!!(copy(pda), [2, 5, 3, 6, 4, 1]), @pdata(["A", "A", "B", "B", "C", null]))
-    @test isequal(Base.ipermute!!(copy(pda), [6, 1, 3, 5, 2, 4]), @pdata(["A", "A", "B", "B", "C", null]))
+    pda = @pdata([missing, "A", "B", "C", "A", "B"])
+    @test isequal(Base.permute!!(copy(pda), [2, 5, 3, 6, 4, 1]), @pdata(["A", "A", "B", "B", "C", missing]))
+    @test isequal(Base.ipermute!!(copy(pda), [6, 1, 3, 5, 2, 4]), @pdata(["A", "A", "B", "B", "C", missing]))
 
     a1 = 1:200
     a2 = 100:300
@@ -135,7 +135,7 @@
     masks = [[1], [2], [3], [1, 3]]
     for mask in masks
         y = PooledDataArray(x)
-        y[mask] = null
+        y[mask] = missing
         @test isequal(sort(unique(y)), sort(DataArray(unique(y))))
     end
     z = PooledDataArray([1, 2], [1, 2, 3])

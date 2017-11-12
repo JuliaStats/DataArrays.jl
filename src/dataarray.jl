@@ -5,48 +5,48 @@
 
 Construct a `DataArray`, an `N`-dimensional array with element type `T` that allows missing
 values. The resulting array uses the data in `d` with `m` as a bitmask to signify missingness.
-That is, for each index `i` in `d`, if `m[i]` is `true`, the array contains `null` at index `i`,
+That is, for each index `i` in `d`, if `m[i]` is `true`, the array contains `missing` at index `i`,
 otherwise it contains `d[i]`.
 
     DataArray(T::Type, dims...)
 
 Construct a `DataArray` with element type `T` and dimensions specified by `dims`. All elements
-default to `null`.
+default to `missing`.
 
 # Examples
 
 ```jldoctest
 julia> DataArray([1, 2, 3], [true, false, true])
 3-element DataArrays.DataArray{Int64,1}:
-  null
+  missing
  2
-  null
+  missing
 
 julia> DataArray(Float64, 3, 3)
 3×3 DataArrays.DataArray{Float64,2}:
- null  null  null
- null  null  null
- null  null  null
+ missing  missing  missing
+ missing  missing  missing
+ missing  missing  missing
 ```
 """
 mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     data::Array{T, N}
     na::BitArray{N}
 
-    function DataArray{T,N}(d::Array{<:Union{T, Null}, N}, m::BitArray{N}) where {T, N}
+    function DataArray{T,N}(d::Array{<:Union{T, Missing}, N}, m::BitArray{N}) where {T, N}
         # Ensure data values and missingness metadata match
         if size(d) != size(m)
             msg = "Data and missingness arrays must be the same size"
             throw(ArgumentError(msg))
         end
-        # if input array can contain null values, we need to mark corresponding entries as missing
-        if eltype(d) >: Null
+        # if input array can contain missing values, we need to mark corresponding entries as missing
+        if eltype(d) >: Missing
             # If the original eltype is wider than the target eltype T, conversion may fail
-            # in the presence of nulls: we need to allocate a copy, leaving entries
-            # corresponding to nulls uninitialized
+            # in the presence of missings: we need to allocate a copy, leaving entries
+            # corresponding to missings uninitialized
             if eltype(d) <: T
                 @inbounds for i in eachindex(d)
-                    if isassigned(d, i) && isnull(d, i)
+                    if isassigned(d, i) && ismissing(d, i)
                         m[i] = true
                     end
                 end
@@ -54,7 +54,7 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
                 d2 = similar(d, T)
                 @inbounds for i in eachindex(d)
                     isassigned(d, i) || continue
-                    if isnull(d, i)
+                    if ismissing(d, i)
                         m[i] = true
                     else
                         d2[i] = d[i]
@@ -62,7 +62,7 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
                 end
                 return new(d2, m)
             end
-        elseif eltype(d) <: Null
+        elseif eltype(d) <: Missing
             m = trues(m)
         end
         new(d, m)
@@ -71,7 +71,7 @@ end
 
 function DataArray(d::Array{T, N},
                    m::BitArray{N} = falses(size(d))) where {T, N} # -> DataArray{T}
-    return DataArray{Nulls.T(T), N}(d, m)
+    return DataArray{Missings.T(T), N}(d, m)
 end
 
 function DataArray(d::Array, m::AbstractArray{Bool}) # -> DataArray{T}
@@ -79,11 +79,11 @@ function DataArray(d::Array, m::AbstractArray{Bool}) # -> DataArray{T}
 end
 
 function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
-    return DataArray(Array{Nulls.T(T)}(dims...), trues(dims...))
+    return DataArray(Array{Missings.T(T)}(dims...), trues(dims...))
 end
 
 function DataArray(T::Type, dims::NTuple{N, Int}) where N # -> DataArray{T}
-    return DataArray(Array{Nulls.T(T)}(dims...), trues(dims...))
+    return DataArray(Array{Missings.T(T)}(dims...), trues(dims...))
 end
 
 """
@@ -162,7 +162,7 @@ function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Inte
     dest
 end
 
-Base.fill!(A::DataArray, ::Null) = (fill!(A.na, true); A)
+Base.fill!(A::DataArray, ::Missing) = (fill!(A.na, true); A)
 Base.fill!(A::DataArray, v) = (fill!(A.data, v); fill!(A.na, false); A)
 
 function Base.deepcopy(d::DataArray) # -> DataArray{T}
@@ -178,7 +178,7 @@ function Base.resize!(da::DataArray{T,1}, n::Int) where T
 end
 
 function Base.similar(da::DataArray, T::Type, dims::Dims) #-> DataArray{T}
-    return DataArray(Array{Nulls.T(T)}(dims), trues(dims))
+    return DataArray(Array{Missings.T(T)}(dims), trues(dims))
 end
 
 Base.size(d::DataArray) = size(d.data) # -> (Int...)
@@ -213,15 +213,15 @@ function Base.convert{S, T, N}(::Type{Array{S}}, da::DataArray{T, N})
 end
 
 function Base.convert{T}(::Type{Vector}, dv::DataVector{T})
-    return convert(Array{Union{T, Null}, 1}, dv)
+    return convert(Array{Union{T, Missing}, 1}, dv)
 end
 
 function Base.convert{T}(::Type{Matrix}, dm::DataMatrix{T})
-    return convert(Array{Union{T, Null}, 2}, dm)
+    return convert(Array{Union{T, Missing}, 2}, dm)
 end
 
 function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N})
-    return convert(Array{Union{T, Null}, N}, da)
+    return convert(Array{Union{T, Missing}, N}, da)
 end
 
 function Base.convert{S, T, N}(
@@ -254,26 +254,26 @@ function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any
 end
 
 
-struct EachFailNull{T<:DataArray}
+struct EachFailMissing{T<:DataArray}
     da::T
 end
-Nulls.fail(da::DataArray) = EachFailNull(da)
-Base.length(itr::EachFailNull) = length(itr.da)
-Base.start(itr::EachFailNull) = 1
-Base.done(itr::EachFailNull, ind::Integer) = ind > length(itr)
-Base.eltype(itr::EachFailNull) = Nulls.T(eltype(itr.da))
-function Base.next(itr::EachFailNull, ind::Integer)
+Missings.fail(da::DataArray) = EachFailMissing(da)
+Base.length(itr::EachFailMissing) = length(itr.da)
+Base.start(itr::EachFailMissing) = 1
+Base.done(itr::EachFailMissing, ind::Integer) = ind > length(itr)
+Base.eltype(itr::EachFailMissing) = Missings.T(eltype(itr.da))
+function Base.next(itr::EachFailMissing, ind::Integer)
     if itr.da.na[ind]
-        throw(NullException())
+        throw(MissingException("missing value encountered in Missings.fail"))
     else
         (itr.da.data[ind], ind + 1)
     end
 end
 
-struct EachDropNull{T<:DataArray}
+struct EachDropMissing{T<:DataArray}
     da::T
 end
-Nulls.skip(da::DataArray) = EachDropNull(da)
+Missings.skip(da::DataArray) = EachDropMissing(da)
 function _next_nonna_ind(da::DataArray, ind::Int)
     ind += 1
     @inbounds while ind <= length(da) && da.na[ind]
@@ -281,36 +281,36 @@ function _next_nonna_ind(da::DataArray, ind::Int)
     end
     ind
 end
-Base.length(itr::EachDropNull) = length(itr.da) - sum(itr.da.na)
-Base.start(itr::EachDropNull) = _next_nonna_ind(itr.da, 0)
-Base.done(itr::EachDropNull, ind::Int) = ind > length(itr.da)
-Base.eltype(itr::EachDropNull) = Nulls.T(eltype(itr.da))
-function Base.next(itr::EachDropNull, ind::Int)
+Base.length(itr::EachDropMissing) = length(itr.da) - sum(itr.da.na)
+Base.start(itr::EachDropMissing) = _next_nonna_ind(itr.da, 0)
+Base.done(itr::EachDropMissing, ind::Int) = ind > length(itr.da)
+Base.eltype(itr::EachDropMissing) = Missings.T(eltype(itr.da))
+function Base.next(itr::EachDropMissing, ind::Int)
     (itr.da.data[ind], _next_nonna_ind(itr.da, ind))
 end
 
-struct EachReplaceNull{S<:DataArray, T}
+struct EachReplaceMissing{S<:DataArray, T}
     da::S
     replacement::T
 end
-Nulls.replace(da::DataArray, replacement::Any) =
-    EachReplaceNull(da, replacement)
-Base.length(itr::EachReplaceNull) = length(itr.da)
-Base.start(itr::EachReplaceNull) = 1
-Base.done(itr::EachReplaceNull, ind::Integer) = ind > length(itr)
-Base.eltype(itr::EachReplaceNull) = Nulls.T(eltype(itr.da))
-function Base.next(itr::EachReplaceNull, ind::Integer)
+Missings.replace(da::DataArray, replacement::Any) =
+    EachReplaceMissing(da, replacement)
+Base.length(itr::EachReplaceMissing) = length(itr.da)
+Base.start(itr::EachReplaceMissing) = 1
+Base.done(itr::EachReplaceMissing, ind::Integer) = ind > length(itr)
+Base.eltype(itr::EachReplaceMissing) = Missings.T(eltype(itr.da))
+function Base.next(itr::EachReplaceMissing, ind::Integer)
     item = itr.da.na[ind] ? itr.replacement : itr.da.data[ind]
     (item, ind + 1)
 end
 
-Base.collect(itr::EachDropNull{<:DataVector}) = itr.da.data[.!itr.da.na] # -> Vector
-Base.collect(itr::EachFailNull{<:DataVector}) = copy(itr.da.data) # -> Vector
+Base.collect(itr::EachDropMissing{<:DataVector}) = itr.da.data[.!itr.da.na] # -> Vector
+Base.collect(itr::EachFailMissing{<:DataVector}) = copy(itr.da.data) # -> Vector
 
-Base.any(::typeof(isnull), da::DataArray) = any(da.na) # -> Bool
-Base.all(::typeof(isnull), da::DataArray) = all(da.na) # -> Bool
+Base.any(::typeof(ismissing), da::DataArray) = any(da.na) # -> Bool
+Base.all(::typeof(ismissing), da::DataArray) = all(da.na) # -> Bool
 
-Base.isnull(da::DataArray, I::Real, Is::Real...) = getindex(da.na, I, Is...)
+Missings.ismissing(da::DataArray, I::Real, Is::Real...) = getindex(da.na, I, Is...)
 
 function Base.isfinite(da::DataArray) # -> DataArray{Bool}
     n = length(da)
@@ -335,14 +335,14 @@ function Base.convert{S, T, N}(::Type{DataArray{S, N}},
                                a::AbstractArray{T, N}) # -> DataArray{S, N}
     return DataArray(convert(Array{S, N}, a), falses(size(a)))
 end
-function Base.convert{S, T>:Null, N}(::Type{DataArray{S, N}},
+function Base.convert{S, T>:Missing, N}(::Type{DataArray{S, N}},
                                      a::AbstractArray{T, N}) # -> DataArray{S, N}
-    return DataArray(convert(Array{Union{S, Null}, N}, a), falses(size(a)))
+    return DataArray(convert(Array{Union{S, Missing}, N}, a), falses(size(a)))
 end
 Base.convert{S, T, N}(::Type{DataArray{S}}, x::AbstractArray{T, N}) =
-    convert(DataArray{Nulls.T(S), N}, x)
+    convert(DataArray{Missings.T(S), N}, x)
 Base.convert{T, N}(::Type{DataArray}, x::AbstractArray{T, N}) =
-    convert(DataArray{Nulls.T(T), N}, x)
+    convert(DataArray{Missings.T(T), N}, x)
 Base.convert{T, N}(::Type{DataArray{T, N}}, x::DataArray{T, N}) = x
 function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N}) # -> DataArray{S, N}
     v = similar(x.data, S)
@@ -368,11 +368,11 @@ julia> data([1, 2, 3])
  2
  3
 
-julia> data(@data [1, 2, null])
+julia> data(@data [1, 2, missing])
 3-element DataArrays.DataArray{Int64,1}:
  1
  2
-  null
+  missing
 ```
 """
 data(a::AbstractArray) = convert(DataArray, a)
@@ -383,9 +383,9 @@ data(a::AbstractArray) = convert(DataArray, a)
 for f in (:(Base.float),)
     @eval begin
         function ($f)(da::DataArray) # -> DataArray
-            if any(isnull, da)
-                err = "Cannot convert DataArray with nulls to desired type"
-                throw(NullException(err))
+            if any(ismissing, da)
+                err = "Cannot convert DataArray with missings to desired type"
+                throw(MissingException(err))
             else
                 ($f)(da.data)
             end
@@ -396,18 +396,18 @@ end
 """
     finduniques(da::DataArray) -> (Vector, Int)
 
-Get the unique values in `da` as well as the index of the first `null` value
+Get the unique values in `da` as well as the index of the first `missing` value
 in `da` if present, or 0 otherwise.
 """
 function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
     out = Vector{T}(0)
     seen = Set{T}()
     n = length(da)
-    firstnull = 0
+    firstmissing = 0
     for i in 1:n
-        if isnull(da, i)
-            if firstnull == 0
-                firstnull = length(out) + 1
+        if ismissing(da, i)
+            if firstmissing == 0
+                firstmissing = length(out) + 1
             else
                 continue
             end
@@ -416,17 +416,17 @@ function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
             push!(out, da.data[i])
         end
     end
-    return out, firstnull
+    return out, firstmissing
 end
 
 function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
-    unique_values, firstnull = finduniques(da)
+    unique_values, firstmissing = finduniques(da)
     n = length(unique_values)
-    if firstnull > 0
+    if firstmissing > 0
         res = DataArray(Vector{T}(n + 1))
         i = 1
         for val in unique_values
-            if i == firstnull
+            if i == firstmissing
                 res.na[i] = true
                 i += 1
             end
@@ -434,7 +434,7 @@ function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
             i += 1
         end
 
-        if firstnull == n + 1
+        if firstmissing == n + 1
             res.na[n + 1] = true
         end
 
@@ -444,7 +444,7 @@ function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
     end
 end
 
-function Nulls.levels(da::DataArray) # -> DataVector{T}
-    unique_values, firstnull = finduniques(da)
+function Missings.levels(da::DataArray) # -> DataVector{T}
+    unique_values, firstmissing = finduniques(da)
     return DataArray(unique_values)
 end

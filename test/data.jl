@@ -1,16 +1,16 @@
-@testset "Data types and nulls" begin
+@testset "Data types and missings" begin
     # TODO: Convert these test_group things to nested testsets
-    #test_group("nulls")
-    @test isnull(3 == null)
-    @test isnull(null == 3)
-    @test isnull(null == null)
+    #test_group("missings")
+    @test ismissing(3 == missing)
+    @test ismissing(missing == 3)
+    @test ismissing(missing == missing)
 
     #test_group("DataVector creation")
-    dvint = @data [1, 2, null, 4]
+    dvint = @data [1, 2, missing, 4]
     dvint2 = DataArray(collect(5:8))
     dvint3 = convert(DataArray, 5:8)
-    dvflt = @data [1.0, 2, null, 4]
-    dvstr = @data ["one", "two", null, "four"]
+    dvflt = @data [1.0, 2, missing, 4]
+    dvstr = @data ["one", "two", missing, "four"]
     # FIXME: triggers a segfault on Julia 0.6.0
     # dvdict = DataArray(Dict, 4) # for issue DataFrames#199
     dvany = convert(DataArray{Any, 1}, dvint)
@@ -23,7 +23,7 @@
     @test_throws ArgumentError DataArray([5:8], falses(2))
 
     #test_group("PooledDataVector creation")
-    pdvstr = @pdata ["one", "one", "two", "two", null, "one", "one"]
+    pdvstr = @pdata ["one", "one", "two", "two", missing, "one", "one"]
     @test isa(pdvstr, PooledDataVector{String})
     @test isequal(PooledDataArray(pdvstr), pdvstr)
 
@@ -41,7 +41,7 @@
     @test string(pdvpp) == "[one, two, two]"
     @test string(PooledDataArray(["one", "two", "four"],
                                    ["one", "two", "three"])) ==
-            "[one, two, null]"
+            "[one, two, missing]"
 
     #test_group("PooledDataVector utf8 support")
     pdvpp = PooledDataArray([String("hello")], [false])
@@ -51,44 +51,44 @@
 
     #test_group("DataVector access")
     @test dvint[1] == 1
-    @test isnull(dvint[3])
-    @test isequal(dvflt[3:4], @data([null, 4.0]))
-    @test isequal(dvint[[true, false, true, false]], @data([1, null]))
+    @test ismissing(dvint[3])
+    @test isequal(dvflt[3:4], @data([missing, 4.0]))
+    @test isequal(dvint[[true, false, true, false]], @data([1, missing]))
     @test isequal(dvstr[[1, 2, 1, 4]], @data(["one", "two", "one", "four"]))
     # Indexing produces #undef?
-    # @test isequal(dvstr[[1, 2, 1, 3]], DataVector["one", "two", "one", null])
+    # @test isequal(dvstr[[1, 2, 1, 3]], DataVector["one", "two", "one", missing])
 
     #test_group("PooledDataVector access")
     @test pdvstr[1] == "one"
-    @test isnull(pdvstr[5])
+    @test ismissing(pdvstr[5])
     @test isequal(pdvstr[1:3], @data(["one", "one", "two"]))
     @test isequal(pdvstr[[true, false, true, false, true, false, true]],
-                    @pdata(["one", "two", null, "one"]))
+                    @pdata(["one", "two", missing, "one"]))
     @test isequal(pdvstr[[1, 3, 1, 2]], @data(["one", "two", "one", "one"]))
 
     #test_group("DataVector methods")
     @test size(dvint) == (4,)
     @test length(dvint) == 4
-    @test sum(isnull.(dvint)) == 1
-    @test eltype(dvint) == Union{Int,Null}
+    @test sum(ismissing.(dvint)) == 1
+    @test eltype(dvint) == Union{Int,Missing}
 
     #test_group("PooledDataVector methods")
     @test size(pdvstr) == (7,)
     @test length(pdvstr) == 7
-    @test sum(isnull.(pdvstr)) == 1
-    @test eltype(pdvstr) == Union{String,Null}
+    @test sum(ismissing.(pdvstr)) == 1
+    @test eltype(pdvstr) == Union{String,Missing}
 
     #test_group("DataVector operations")
     @test isequal(dvint .+ 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
-    @test isequal(dvint .* 2, @data([2, 4, null, 8]))
-    @test isequal(dvint .== 2, @data([false, true, null, false]))
-    @test isequal(dvint .> 1, @data([false, true, null, true]))
+    @test isequal(dvint .* 2, @data([2, 4, missing, 8]))
+    @test isequal(dvint .== 2, @data([false, true, missing, false]))
+    @test isequal(dvint .> 1, @data([false, true, missing, true]))
 
     #test_group("PooledDataVector operations")
-    # @test isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, null, false, false])
+    # @test isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, missing, false, false])
 
     #test_group("DataVector to something else")
-    @test collect(Nulls.skip(dvint)) == [1, 2, 4]
+    @test collect(Missings.skip(dvint)) == [1, 2, 4]
     @test all(convert(Vector, dvint, 0) .== [1, 2, 0, 4])
     @test all(convert(Vector, dvany, 0) .== [1, 2, 0, 4])
     utf8three = convert(String, "three")
@@ -99,31 +99,31 @@
     @test all([i + 1 for i in dvint2] .== [6:9;])
     #@test all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
     # Julia 0.6 and 0.7 differ in ordering of Unions
-    @test repr(dvint) in ("Union{$Int, Nulls.Null}[1, 2, null, 4]",
-                          "Union{Nulls.Null, $Int}[1, 2, null, 4]")
+    @test repr(dvint) in ("Union{$Int, Missings.Missing}[1, 2, missing, 4]",
+                          "Union{Missings.Missing, $Int}[1, 2, missing, 4]")
 
     #test_group("PooledDataVector to something else")
-    @test collect(Nulls.skip(pdvstr)) == ["one", "one", "two", "two", "one", "one"]
+    @test collect(Missings.skip(pdvstr)) == ["one", "one", "two", "two", "one", "one"]
     @test all(convert(Vector, pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
     #@test all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
     @test string(pdvstr[1:3]) == "[one, one, two]"
 
     #test_group("DataVector Filter and Replace")
-    @test collect(Nulls.skip(dvint)) == [1, 2, 4]
+    @test collect(Missings.skip(dvint)) == [1, 2, 4]
     @test isequal(convert(Vector, dvint, 7), [1, 2, 7, 4])
-    @test sum(Nulls.skip(dvint)) == 7
+    @test sum(Missings.skip(dvint)) == 7
     @test sum(convert(Vector, dvint, 7)) == 14
 
     #test_group("PooledDataVector Filter and Replace")
-    @test reduce(string, "", Nulls.skip(pdvstr)) == "oneonetwotwooneone"
+    @test reduce(string, "", Missings.skip(pdvstr)) == "oneonetwotwooneone"
     @test reduce(string, "", convert(Vector, pdvstr, "!")) == "oneonetwotwo!oneone"
 
     #test_group("DataVector assignment")
-    assigntest = @data [1, 2, null, 4]
+    assigntest = @data [1, 2, missing, 4]
     assigntest[1] = 8
-    @test isequal(assigntest, (@data [8, 2, null, 4]))
+    @test isequal(assigntest, (@data [8, 2, missing, 4]))
     assigntest[1:2] = 9
-    @test isequal(assigntest, (@data [9, 9, null, 4]))
+    @test isequal(assigntest, (@data [9, 9, missing, 4]))
     assigntest[[1,3]] = 10
     @test isequal(assigntest, (@data [10, 9, 10, 4]))
     assigntest[[true, false, true, true]] = 11
@@ -134,15 +134,15 @@
     @test isequal(assigntest, (@data [14, 13, 11, 15]))
     assigntest[[true, false, true, false]] = [16, 17]
     @test isequal(assigntest, (@data [16, 13, 17, 15]))
-    assigntest[1] = null
-    @test isequal(assigntest, (@data [null, 13, 17, 15]))
-    assigntest[[1, 2]] = null
-    @test isequal(assigntest, (@data [null, null, 17, 15]))
-    assigntest[[true, false, true, false]] = null
-    @test isequal(assigntest, (@data [null, null, null, 15]))
+    assigntest[1] = missing
+    @test isequal(assigntest, (@data [missing, 13, 17, 15]))
+    assigntest[[1, 2]] = missing
+    @test isequal(assigntest, (@data [missing, missing, 17, 15]))
+    assigntest[[true, false, true, false]] = missing
+    @test isequal(assigntest, (@data [missing, missing, missing, 15]))
     assigntest[1] = 1
-    assigntest[2:4] = null
-    @test isequal(assigntest, (@data [1, null, null, null]))
+    assigntest[2:4] = missing
+    @test isequal(assigntest, (@data [1, missing, missing, missing]))
 
     #test_group("PooledDataVector assignment")
     ret = (pdvstr[2] = "three")
@@ -166,17 +166,17 @@
     @test ret == ["four", "five"]
     @test isequal(pdvstr2[1:2], (@data ["one", "four"]))
     pdvstr2 = @pdata ["one", "one", "two", "two", "three"]
-    @test isnull(begin pdvstr2[1] = null end)
-    @test all(isnull(begin pdvstr2[[1, 2]] = null end))
-    @test all(isnull(begin pdvstr2[[false, false, true, false, false]] = null end))
-    @test all(isnull(begin pdvstr2[4:5] = null end))
-    @test all(isnull.(pdvstr2))
+    @test ismissing(begin pdvstr2[1] = missing end)
+    @test all(ismissing(begin pdvstr2[[1, 2]] = missing end))
+    @test all(ismissing(begin pdvstr2[[false, false, true, false, false]] = missing end))
+    @test all(ismissing(begin pdvstr2[4:5] = missing end))
+    @test all(ismissing.(pdvstr2))
 
     #test_group("PooledDataVector replace!")
     pdvstr2 = @pdata ["one", "one", "two", "two", "three"]
     @test replace!(pdvstr2, "two", "four") == "four"
     @test replace!(pdvstr2, "three", "four") == "four"
-    @test isnull.(replace!(pdvstr2, "one", null))
-    @test replace!(pdvstr2, null, "five") == "five"
+    @test ismissing.(replace!(pdvstr2, "one", missing))
+    @test replace!(pdvstr2, missing, "five") == "five"
     @test isequal(pdvstr2, (@data ["five", "five", "four", "four", "four"]))
 end
