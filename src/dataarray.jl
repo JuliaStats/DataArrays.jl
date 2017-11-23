@@ -273,7 +273,7 @@ end
 struct EachDropMissing{T<:DataArray}
     da::T
 end
-Missings.skip(da::DataArray) = EachDropMissing(da)
+Missings.skipmissing(da::DataArray) = EachDropMissing(da)
 function _next_nonna_ind(da::DataArray, ind::Int)
     ind += 1
     @inbounds while ind <= length(da) && da.na[ind]

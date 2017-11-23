@@ -375,7 +375,7 @@ function PooledDataArray(x::PooledDataArray{S,R,N},
 end
 
 myunique(x::AbstractVector) = unique(x)
-myunique(x::AbstractDataVector) = unique(Missings.skip(x))
+myunique(x::AbstractDataVector) = unique(skipmissing(x))
 
 """
     setlevels(x::PooledDataArray, newpool::Union{AbstractVector, Dict})

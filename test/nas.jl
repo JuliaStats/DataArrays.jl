@@ -53,7 +53,7 @@
     dv = DataArray(collect(1:6), fill(false, 6))
     a = dv[.!ismissing.(dv)]
     @test collect(Missings.fail(dv)) == a
-    @test collect(Missings.skip(dv)) == a
+    @test collect(skipmissing(dv)) == a
     @test collect(Missings.replace(dv, 4)) == a
 
     dv[[1, 2, end]] = missing
@@ -69,7 +69,7 @@
 
     a = dv[.!ismissing.(dv)]
     @test_throws MissingException for v in Missings.fail(dv); end
-    @test collect(Missings.skip(dv)) == a
+    @test collect(skipmissing(dv)) == a
     @test collect(Missings.replace(dv, 4)) == [4, 4, a..., 4]
 
 end

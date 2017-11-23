@@ -3,14 +3,14 @@
     pcopy = copy(p)
     @test levels(p) == [1, 8, 9]
     @test levels(setlevels(p, ["a", "b", "c"])) == ["a", "b", "c"]
-    @test collect(Missings.skip(setlevels(p, (@data ["a", "b", missing])))) == ["b", "a", "a"]
-    @test collect(Missings.skip(setlevels(p, (@data ["a", "b", "a"])))) == ["a", "a", "b", "a", "a"]
+    @test collect(skipmissing(setlevels(p, (@data ["a", "b", missing])))) == ["b", "a", "a"]
+    @test collect(skipmissing(setlevels(p, (@data ["a", "b", "a"])))) == ["a", "a", "b", "a", "a"]
     @test levels(setlevels(p, (@data ["a", "b", "a"]))) == ["a", "b"]
     @test levels(setlevels(p, Dict([(1, 111)]))) == [111, 8, 9]
     @test levels(setlevels(p, Dict([(1, 111), (8, missing)]))) == [111, 9]
     @test levels(PooledDataArray(p, [9, 8, 1])) == [9, 8, 1]
     @test levels(PooledDataArray(p, [9, 8])) == [9, 8]
-    @test collect(Missings.skip(PooledDataArray(p, [9, 8]))) == [9, 9, 8]
+    @test collect(skipmissing(PooledDataArray(p, [9, 8]))) == [9, 9, 8]
     @test levels(PooledDataArray(p, levels(p)[[3,2,1]])) == [9,8,1]
     v = collect(1:6)
     @test isequal(p, reorder(p))
@@ -29,14 +29,14 @@
     y = @pdata [1, missing, -2, 1, missing, 4, missing]
     @test isequal(unique(y), @pdata [1, missing, -2, 4])
     @test isequal(unique(reverse(y)), @data [missing, 4, 1, -2])
-    @test isequal(unique(Missings.skip(y)), @data [1, -2, 4])
-    @test isequal(unique(reverse(collect(Missings.skip(y)))), @data [4, 1, -2])
+    @test isequal(unique(skipmissing(y)), @data [1, -2, 4])
+    @test isequal(unique(reverse(collect(skipmissing(y)))), @data [4, 1, -2])
 
     z = @pdata ["frank", missing, "gertrude", "frank", missing, "herbert", missing]
     @test isequal(unique(z), @pdata ["frank", missing, "gertrude", "herbert"])
     @test isequal(unique(reverse(z)), @pdata [missing, "herbert", "frank", "gertrude"])
-    @test isequal(unique(Missings.skip(z)), @pdata ["frank", "gertrude", "herbert"])
-    @test isequal(unique(reverse(collect(Missings.skip(z)))), @pdata ["herbert", "frank", "gertrude"])
+    @test isequal(unique(skipmissing(z)), @pdata ["frank", "gertrude", "herbert"])
+    @test isequal(unique(reverse(collect(skipmissing(z)))), @pdata ["herbert", "frank", "gertrude"])
 
     # check case where only missing occurs in final position
     @test isequal(unique(@pdata [1, 2, 1, missing]), @pdata [1, 2, missing])
