@@ -60,20 +60,20 @@ end
         da2 = copy(da)
         da2[1:2:end] = missing
         @test ismissing(sum(da2))
-        @test sum(da2; skipmissing=true) ≈ sum(Missings.skip(da2))
+        @test sum(da2; skipmissing=true) ≈ sum(skipmissing(da2))
 
         da2 = convert(DataArray{BigFloat}, da2)
         @test ismissing(sum(da2))
-        @test sum(da2; skipmissing=true) ≈ sum(Missings.skip(da2))
+        @test sum(da2; skipmissing=true) ≈ sum(skipmissing(da2))
 
         da2 = copy(da)
         da2[2:2:end] = missing
         @test ismissing(sum(da2))
-        @test sum(da2; skipmissing=true) ≈ sum(Missings.skip(da2))
+        @test sum(da2; skipmissing=true) ≈ sum(skipmissing(da2))
 
         da2 = convert(DataArray{BigFloat}, da2)
         @test ismissing(sum(da2))
-        @test sum(da2; skipmissing=true) ≈ sum(Missings.skip(da2))
+        @test sum(da2; skipmissing=true) ≈ sum(skipmissing(da2))
     end
 
     ## other reductions
@@ -96,20 +96,20 @@ end
             da2 = copy(da)
             da2[1:2:end] = missing
             n > 0 && @test ismissing(fn(da2))
-            @same_behavior fn(da2; skipmissing=true) fn(Missings.skip(da2))
+            @same_behavior fn(da2; skipmissing=true) fn(skipmissing(da2))
 
             da2 = convert(DataArray{BigFloat}, da2)
             n > 0 && @test ismissing(fn(da2))
-            @same_behavior fn(da2; skipmissing=true) fn(Missings.skip(da2))
+            @same_behavior fn(da2; skipmissing=true) fn(skipmissing(da2))
 
             da2 = copy(da)
             da2[2:2:end] = missing
             n > 1 && @test ismissing(fn(da2))
-            @same_behavior fn(da2; skipmissing=true) fn(Missings.skip(da2))
+            @same_behavior fn(da2; skipmissing=true) fn(skipmissing(da2))
 
             da2 = convert(DataArray{BigFloat}, da2)
             n > 1 && @test ismissing(fn(da2))
-            @same_behavior fn(da2; skipmissing=true) fn(Missings.skip(da2))
+            @same_behavior fn(da2; skipmissing=true) fn(skipmissing(da2))
         end
     end
 
@@ -140,8 +140,8 @@ end
     @same_behavior mean(da1, weights(da2.data); skipmissing=true) mean(da1.data, weights(da2.data))
 
     da1[1:3:end] = missing
-    @same_behavior mean(da1, weights(da2); skipmissing=true) mean(Missings.skip(da1), weights(da2.data[(!).(da1.na)]))
-    @same_behavior mean(da1, weights(da2.data); skipmissing=true) mean(Missings.skip(da1), weights(da2.data[(!).(da1.na)]))
+    @same_behavior mean(da1, weights(da2); skipmissing=true) mean(skipmissing(da1), weights(da2.data[(!).(da1.na)]))
+    @same_behavior mean(da1, weights(da2.data); skipmissing=true) mean(skipmissing(da1), weights(da2.data[(!).(da1.na)]))
 
     da2[1:2:end] = missing
     keep = .!da1.na .& .!da2.na

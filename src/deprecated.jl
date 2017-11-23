@@ -78,10 +78,10 @@ end
 @deprecate_binding NA missing
 @deprecate_binding NAException MissingException
 @deprecate isna ismissing
-@deprecate dropna(x) collect(Missings.skip(x))
+@deprecate dropna(x) collect(skipmissing(x))
 @deprecate padna padmissing
 @deprecate each_failna Missings.fail
-@deprecate each_dropna Missings.skip
+@deprecate each_dropna skipmissing
 @deprecate each_replacena Missings.replace
 @deprecate_binding EachFailNA DataArrays.EachFailMissing
 @deprecate_binding EachDropNA DataArrays.EachDropMissing

@@ -41,8 +41,8 @@ StatsBase.describe(X::DataVector) = StatsBase.describe(STDOUT, X)
 function StatsBase.describe(io::IO, X::AbstractDataVector{T}) where T<:Real
     nacount = sum(ismissing, X)
     pna = 100nacount/length(X)
-    if pna != 100 # describe will fail if Missings.skip returns an empty vector
-        describe(io, collect(Missings.skip(X)))
+    if pna != 100 # describe will fail if skipmissing returns an empty vector
+        describe(io, collect(skipmissing(X)))
     else
         println(io, "Summary Stats:")
         println(io, "Type:           $(T)")
