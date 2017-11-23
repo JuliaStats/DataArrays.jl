@@ -119,9 +119,9 @@ module TestDataArrays
     convert(Vector, DataArray([1, 0, 3], [false, true, false]), -1)
     convert(Vector, DataArray([1, 2, 3], [false, false, false]), -1)
 
-    # Missings.skip(da::DataArray)
-    Missings.skip(DataArray([1, 0, 3], [false, true, false]))
-    Missings.skip(DataArray([1, 2, 3], [false, false, false]))
+    # skipmissing(da::DataArray)
+    skipmissing(DataArray([1, 0, 3], [false, true, false]))
+    skipmissing(DataArray([1, 2, 3], [false, false, false]))
 
     # Iterators
 
