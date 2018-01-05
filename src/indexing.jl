@@ -62,7 +62,7 @@ function combine_pools!(pool, newpool)
     end
 
     # Find pool elements in existing array, or add them
-    poolidx = Vector{Int}(length(newpool))
+    poolidx = Vector{Int}(uninitialized, length(newpool))
     for j = 1:length(newpool)
         poolidx[j] = Base.@get!(seen, newpool[j], (push!(pool, newpool[j]); i += 1))
     end
@@ -86,7 +86,7 @@ elseif isdefined(Base, :checkindex)
         throw(MissingException("missing values are not allowed in indices"))
 else
     Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataVector{Bool}) = length(I) == sz
-    function Base.checkbounds{T<:Real}(::Type{Bool}, sz::Int, I::AbstractDataArray{T})
+    function Base.checkbounds(::Type{Bool}, sz::Int, I::AbstractDataArray{T}) where {T<:Real}
         any(ismissing, I) && throw(MissingException("missing values are not allowed in indices"))
         extr = daextract(I)
         b = true

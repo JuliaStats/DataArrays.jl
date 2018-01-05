@@ -69,6 +69,13 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
     end
 end
 
+DataArray{T}(d::Array{S, N}) where {T, S, N} = DataArray{T, N}(d) # -> DataArray{T}
+
+function DataArray{T, N}(d::Array,
+                         m::BitArray{N} = falses(size(d))) where {T, N}  # -> DataArray{T}
+    convert(DataArray{Missings.T(T), N}, DataArray(d, m))
+end
+
 function DataArray(d::Array{T, N},
                    m::BitArray{N} = falses(size(d))) where {T, N} # -> DataArray{T}
     return DataArray{Missings.T(T), N}(d, m)
@@ -79,7 +86,7 @@ function DataArray(d::Array, m::AbstractArray{Bool}) # -> DataArray{T}
 end
 
 function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
-    return DataArray(Array{Missings.T(T)}(dims...), trues(dims...))
+    return DataArray(Array{Missings.T(T)}(uninitialized, dims...), trues(dims...))
 end
 
 function DataArray(T::Type, dims::NTuple{N, Int}) where N # -> DataArray{T}
@@ -178,7 +185,7 @@ function Base.resize!(da::DataArray{T,1}, n::Int) where T
 end
 
 function Base.similar(da::DataArray, T::Type, dims::Dims) #-> DataArray{T}
-    return DataArray(Array{Missings.T(T)}(dims), trues(dims))
+    return DataArray(Array{Missings.T(T)}(uninitialized, dims), trues(dims))
 end
 
 Base.size(d::DataArray) = size(d.data) # -> (Int...)
@@ -203,34 +210,35 @@ function Base.find(da::DataArray{Bool}) # -> Array{Int}
     return res
 end
 
-function Base.convert{S, T, N}(::Type{Array{S, N}},
-                               x::DataArray{T, N}) # -> Array{S, N}
+function Base.convert(::Type{Array{S, N}},
+                      x::DataArray{T, N}) where {S, T, N} # -> Array{S, N}
     return S[v for v in x]
 end
 
-function Base.convert{S, T, N}(::Type{Array{S}}, da::DataArray{T, N})
+function Base.convert(::Type{Array{S}}, da::DataArray{T, N}) where {S, T, N}
     return convert(Array{S, N}, da)
 end
 
-function Base.convert{T}(::Type{Vector}, dv::DataVector{T})
+function Base.convert(::Type{Vector}, dv::DataVector{T}) where T
     return convert(Array{Union{T, Missing}, 1}, dv)
 end
 
-function Base.convert{T}(::Type{Matrix}, dm::DataMatrix{T})
+function Base.convert(::Type{Matrix}, dm::DataMatrix{T}) where T
     return convert(Array{Union{T, Missing}, 2}, dm)
 end
 
-function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N})
+function Base.convert(::Type{Array}, da::DataArray{T, N}) where {T, N}
     return convert(Array{Union{T, Missing}, N}, da)
 end
 
-function Base.convert{S, T, N}(
+function Base.convert(
     ::Type{Array{S, N}},
     da::DataArray{T, N},
     replacement::Any
-) # -> Array{S, N}
+) where {S, T, N} # -> Array{S, N}
+
     replacementS = convert(S, replacement)
-    res = Array{S}(size(da))
+    res = Array{S}(uninitialized, size(da))
     for i in 1:length(da)
         if da.na[i]
             res[i] = replacementS
@@ -241,15 +249,15 @@ function Base.convert{S, T, N}(
     return res
 end
 
-function Base.convert{T}(::Type{Vector}, dv::DataVector{T}, replacement::Any)
+function Base.convert(::Type{Vector}, dv::DataVector{T}, replacement::Any) where T
     return convert(Array{T, 1}, dv, replacement)
 end
 
-function Base.convert{T}(::Type{Matrix}, dm::DataMatrix{T}, replacement::Any)
+function Base.convert(::Type{Matrix}, dm::DataMatrix{T}, replacement::Any) where T
     return convert(Array{T, 2}, dm, replacement)
 end
 
-function Base.convert{T, N}(::Type{Array}, da::DataArray{T, N}, replacement::Any)
+function Base.convert(::Type{Array}, da::DataArray{T, N}, replacement::Any) where {T, N}
     return convert(Array{T, N}, da, replacement)
 end
 
@@ -331,20 +339,28 @@ end
 #                    ::Type{T}) = promote_rule(S, T)
 # promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
 
-function Base.convert{S, T, N}(::Type{DataArray{S, N}},
-                               a::AbstractArray{T, N}) # -> DataArray{S, N}
-    return DataArray(convert(Array{S, N}, a), falses(size(a)))
+function Base.convert(::Type{DataArray{S, N}},
+                      a::AbstractArray{T, N}) where {S, T, N} # -> DataArray{S, N}
+    return DataArray{S, N}(convert(Array, a), falses(size(a)))
 end
-function Base.convert{S, T>:Missing, N}(::Type{DataArray{S, N}},
-                                     a::AbstractArray{T, N}) # -> DataArray{S, N}
+
+function Base.convert(::Type{DataArray{S, N}},
+                      a::AbstractArray{T, N}) where {S, T>:Missing, N} # -> DataArray{S, N}
     return DataArray(convert(Array{Union{S, Missing}, N}, a), falses(size(a)))
 end
-Base.convert{S, T, N}(::Type{DataArray{S}}, x::AbstractArray{T, N}) =
+
+function Base.convert(::Type{DataArray{S}}, x::AbstractArray{T, N}) where {S, T, N}
     convert(DataArray{Missings.T(S), N}, x)
-Base.convert{T, N}(::Type{DataArray}, x::AbstractArray{T, N}) =
+end
+
+function Base.convert(::Type{DataArray}, x::AbstractArray{T, N}) where {T, N}
     convert(DataArray{Missings.T(T), N}, x)
-Base.convert{T, N}(::Type{DataArray{T, N}}, x::DataArray{T, N}) = x
-function Base.convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N}) # -> DataArray{S, N}
+end
+
+Base.convert(::Type{DataArray{T, N}}, x::DataArray{T, N}) where {T, N} = x
+
+function Base.convert(::Type{DataArray{S, N}},
+                      x::DataArray{T, N}) where {S, T, N} # -> DataArray{S, N}
     v = similar(x.data, S)
     @inbounds for i = 1:length(x)
         if !x.na[i]
@@ -400,7 +416,7 @@ Get the unique values in `da` as well as the index of the first `missing` value
 in `da` if present, or 0 otherwise.
 """
 function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
-    out = Vector{T}(0)
+    out = Vector{T}(uninitialized, 0)
     seen = Set{T}()
     n = length(da)
     firstmissing = 0
@@ -423,7 +439,7 @@ function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
     unique_values, firstmissing = finduniques(da)
     n = length(unique_values)
     if firstmissing > 0
-        res = DataArray(Vector{T}(n + 1))
+        res = DataArray(Vector{T}(uninitialized, n + 1))
         i = 1
         for val in unique_values
             if i == firstmissing

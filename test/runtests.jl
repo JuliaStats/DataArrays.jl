@@ -2,7 +2,8 @@
 # Correctness Tests
 #
 
-using Base.Test
+using Compat: uninitialized
+using Compat.Test, Compat.Dates, Compat.Printf
 using DataArrays
 
 my_tests = ["abstractarray.jl",

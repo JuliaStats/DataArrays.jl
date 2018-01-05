@@ -5,7 +5,7 @@
     m = [1 2; 3 4]
     dm = DataArray(m, falses(size(m)))
 
-    t = Array{Int}(2, 2, 2)
+    t = Array{Int}(uninitialized, 2, 2, 2)
     t[1:2, 1:2, 1:2] = 1
     dt = DataArray(t, falses(size(t)))
 
