@@ -15,6 +15,10 @@ module DataArrays
 
     import StatsBase: autocor, inverse_rle, rle
 
+    if VERSION >= v"0.7.0-DEV.3165"
+        import Base.replace!
+    end
+
     export @data,
            @pdata,
            AbstractDataArray,

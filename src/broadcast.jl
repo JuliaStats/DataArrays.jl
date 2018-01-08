@@ -57,7 +57,6 @@ end
 #
 # TODO: Fall back on faster implementation for same-sized inputs when
 # it is safe to do so.
-
 Base.map!(f::F, B::Union{DataArray, PooledDataArray}, A0::AbstractArray, As::AbstractArray...) where {F} =
         broadcast!(f, B, A0, As...)
 Base.map!(f::F, B::Union{DataArray, PooledDataArray}, A0, As...) where {F} =

@@ -176,9 +176,9 @@
 
     #test_group("PooledDataVector replace!")
     pdvstr2 = @pdata ["one", "one", "two", "two", "three"]
-    @test DataArrays.replace!(pdvstr2, "two", "four") == "four"
-    @test DataArrays.replace!(pdvstr2, "three", "four") == "four"
-    @test ismissing.(DataArrays.replace!(pdvstr2, "one", missing))
-    @test DataArrays.replace!(pdvstr2, missing, "five") == "five"
+    @test replace!(pdvstr2, "two", "four") == "four"
+    @test replace!(pdvstr2, "three", "four") == "four"
+    @test ismissing.(replace!(pdvstr2, "one", missing))
+    @test replace!(pdvstr2, missing, "five") == "five"
     @test isequal(pdvstr2, (@data ["five", "five", "four", "four", "four"]))
 end
