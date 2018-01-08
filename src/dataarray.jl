@@ -73,7 +73,7 @@ DataArray{T}(d::Array{S, N}) where {T, S, N} = DataArray{T, N}(d) # -> DataArray
 
 function DataArray{T, N}(d::Array,
                          m::BitArray{N} = falses(size(d))) where {T, N}  # -> DataArray{T}
-    convert(DataArray{Missings.T(T), N}, DataArray(d, m))
+    DataArray(convert(Array{Missings.T(T), N}, d), m)
 end
 
 function DataArray(d::Array{T, N},
@@ -341,7 +341,7 @@ end
 
 function Base.convert(::Type{DataArray{S, N}},
                       a::AbstractArray{T, N}) where {S, T, N} # -> DataArray{S, N}
-    return DataArray{S, N}(convert(Array, a), falses(size(a)))
+    return DataArray(convert(Array{S, N}, a), falses(size(a)))
 end
 
 function Base.convert(::Type{DataArray{S, N}},

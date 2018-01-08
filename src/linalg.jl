@@ -6,8 +6,8 @@
 
 # Impute a missing entries using current approximation.
 function impute!(X::Matrix, missing_entries::Vector,
-                 U::Matrix, D::Vector, V::AbstractArray{T, 2},
-                 k::Integer) where T
+                 U::Matrix, D::Vector, V::AbstractMatrix,
+                 k::Integer)
     approximation = U[:, 1:k] * diagm(D[1:k]) * V[1:k, :]
     for indices in missing_entries
         X[indices[1], indices[2]] = approximation[indices[1], indices[2]]

@@ -541,8 +541,8 @@ function Base.permute!!(x::PooledDataArray, p::AbstractVector{T}) where T<:Integ
     x
 end
 
-function Base.ipermute!!(x::PooledDataArray, p::AbstractVector{T}) where T<:Integer
-    Base.ipermute!!(x.refs, p)
+function invpermute!!(x::PooledDataArray, p::AbstractVector{T}) where T<:Integer
+    invpermute!!(x.refs, p)
     x
 end
 
@@ -811,22 +811,22 @@ function PooledDataVecs(v1::AbstractArray,
 end
 
 Base.convert(::Type{PooledDataArray{S,R1,N}},
-                      pda::PooledDataArray{T,R2,N}) where {S,T,R1<:Integer,R2<:Integer,N} =
+             pda::PooledDataArray{T,R2,N}) where {S,T,R1<:Integer,R2<:Integer,N} =
     PooledDataArray(RefArray(convert(Array{R1,N}, pda.refs)), convert(Vector{S}, pda.pool))
 
 Base.convert(::Type{PooledDataArray{S,R,N}},
-                      pda::PooledDataArray{T,R,N}) where {S,T,R<:Integer,N} =
+             pda::PooledDataArray{T,R,N}) where {S,T,R<:Integer,N} =
     PooledDataArray(RefArray(copy(pda.refs)), convert(Vector{S}, pda.pool))
 
 Base.convert(::Type{PooledDataArray{T,R,N}},
              pda::PooledDataArray{T,R,N}) where {T,R<:Integer,N} = pda
 
 Base.convert(::Type{PooledDataArray{S,R1}},
-                      pda::PooledDataArray{T,R2,N}) where {S,T,R1<:Integer,R2<:Integer,N} =
+             pda::PooledDataArray{T,R2,N}) where {S,T,R1<:Integer,R2<:Integer,N} =
     convert(PooledDataArray{S,R1,N}, pda)
 
 Base.convert(::Type{PooledDataArray{S}},
-                      pda::PooledDataArray{T,R,N}) where {S,T,R<:Integer,N} =
+             pda::PooledDataArray{T,R,N}) where {S,T,R<:Integer,N} =
     convert(PooledDataArray{S,R,N}, pda)
 
 Base.convert(::Type{PooledDataArray}, pda::PooledDataArray{T,R,N}) where {T,R<:Integer,N} = pda
