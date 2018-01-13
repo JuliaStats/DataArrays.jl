@@ -1,6 +1,6 @@
 ## Utility function
 
-using Base.check_reducedims
+using Base: check_reducedims
 
 # Determine if there are any true values in a BitArray in a given
 # range. We use this for reductions with skipmissing=false along the first
@@ -128,7 +128,7 @@ end
             @nextract $N sizeR d->size(R,d)
 
             # If reducing to a non-DataArray, throw an error at the start on missing
-            any(ismissing, A) && throw(MissingException("array contains missing values: pass skipmissing=true to skip them"))            
+            any(ismissing, A) && throw(MissingException("array contains missing values: pass skipmissing=true to skip them"))
             @nloops $N i data d->(j_d = sizeR_d==1 ? 1 : i_d) begin
                 @inbounds x = (@nref $N data i)
                 v = f(x)
@@ -149,7 +149,7 @@ _getdata(A::DataArray) = A.data
 # mapreduce across a dimension. If specified, C contains the number of
 # non-missing values reduced into each element of R.
 @generated function _mapreducedim_skipmissing_impl!(f, op, R::AbstractArray,
-                                                        C::Union{Array{Int}, Void},
+                                                        C::Union{Array{Int}, Nothing},
                                                         A::DataArray{T,N} where {T}) where {N}
     quote
 
@@ -226,7 +226,7 @@ end
 
 for op in (+, *, &, |, min, max)
     @eval begin
-        function Base.initarray!{T}(a::DataArray{T}, op::typeof($op), init::Bool)
+        function Base.initarray!(a::DataArray{T}, op::typeof($op), init::Bool) where T
             if init
                 Base.initarray!(a.data, op, true)
                 Base.fill!(a.na, false)
@@ -413,7 +413,7 @@ end
 # A version of _mapreducedim_skipmissing! that accepts an array S of the same size
 # as R, the elements of which are passed as a second argument to f.
 @generated function _mapreducedim_skipmissing_2arg!(f, op, R::AbstractArray,
-                                                        C::Union{Array{Int}, Void},
+                                                        C::Union{Array{Int}, Nothing},
                                                         A::DataArray{T,N} where {T}, S::AbstractArray) where {N}
     quote
         data = A.data
@@ -440,7 +440,7 @@ end
             ibase = 0
             for i = 1:nslices
                 @inbounds v = new_data[i]
-                !isa(C, Void) && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
+                !isa(C, Nothing) && (C[i] = lsiz - _count(na, ibase+1, ibase+lsiz))
 
                 # If S[i] is missing, skip this iteration
                 @inbounds sna = unsafe_ismissing(S, Sextr, i)
@@ -463,13 +463,13 @@ end
             @nexprs 1 d->(state_0 = state_{$N} = 1)
             @nexprs $N d->(skip_d = sizeR_d == 1)
             k = 1
-            !isa(C, Void) && fill!(C, div(length(A), length(R)))
+            !isa(C, Nothing) && fill!(C, div(length(A), length(R)))
             @nloops($N, i, A,
                 d->(state_{d-1} = state_d),
                 d->(skip_d || (state_d = state_0)), begin
                     @inbounds xna = Base.unsafe_bitgetindex(na_chunks, k) | unsafe_ismissing(S, Sextr, state_0)
                     if xna
-                        !isa(C, Void) && @inbounds C[state_0] -= 1
+                        !isa(C, Nothing) && @inbounds C[state_0] -= 1
                     else
                         @inbounds s = unsafe_getindex_notmissing(S, Sextr, state_0)
                         @inbounds x = data[k]

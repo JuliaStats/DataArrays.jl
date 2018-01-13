@@ -113,7 +113,7 @@ end
         for da in (da, convert(DataArray{Number}, da))
             let da = copy(da), dat = copy(dat)
                 # No missing
-                @test isequal(da.', dat)
+                @test isequal(transpose(da), dat)
                 @test isequal(da', conj(dat))
 
                 # With missing
@@ -125,7 +125,7 @@ end
 
                 # Make sure that missings are undefined in the non-bits array
                 da = conj(conj(da))
-                @test isequal(da.', dat)
+                @test isequal(transpose(da), dat)
                 @test isequal(da', conj(dat))
             end
         end
@@ -204,7 +204,7 @@ end
     # Binary operations on pairs of DataVector's
     dv = convert(DataArray, ones(5))
     # Dates are an example of type for which - and .- return a different type from its inputs
-    dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
+    dvd = @data([Date("2000-01-01"), Date("2010-01-01"), Date("2010-01-05")])
     dv[1] = dvd[1] = missing
     @test_da_pda dv begin
         for f in [+, -, *, ^]
@@ -269,13 +269,13 @@ end
 
     dv = @data([911, 269, 835.0, 448, 772])
     # Dates are an example of type for which operations return a different type from their inputs
-    dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
+    dvd = @data([Date("2000-01-01"), Date("2010-01-01"), Date("2010-01-05")])
     for f in pairwise_vector_operators
         @test isequal(f(dv), f(dv.data))
         @test isequal(f(dvd), f(dvd.data))
     end
     dv = @data([missing, 269, 835.0, 448, 772])
-    dvd = @data([missing, Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05")])
+    dvd = @data([missing, Date("2000-01-01"), Date("2010-01-01"), Date("2010-01-05")])
     for f in pairwise_vector_operators
         v = f(dv)
         @test ismissing(v[1])
@@ -286,7 +286,7 @@ end
         @test isequal(d[2:3], f(dvd.data)[2:3])
     end
     dv = @data([911, missing, 835.0, 448, 772])
-    dvd = @data([Base.Date("2000-01-01"), missing, Base.Date("2010-01-01"), Base.Date("2010-01-05")])
+    dvd = @data([Date("2000-01-01"), missing, Date("2010-01-01"), Date("2010-01-05")])
     for f in pairwise_vector_operators
         v = f(dv)
         @test ismissing(v[1])
@@ -299,7 +299,7 @@ end
         @test isequal(d[3:3], f(dvd.data)[3:3])
     end
     dv = @data([911, 269, 835.0, 448, missing])
-    dvd = @data([Base.Date("2000-01-01"), Base.Date("2010-01-01"), Base.Date("2010-01-05"), missing])
+    dvd = @data([Date("2000-01-01"), Date("2010-01-01"), Date("2010-01-05"), missing])
     for f in pairwise_vector_operators
         v = f(dv)
         @test ismissing(v[4])

@@ -207,7 +207,7 @@ end
 # can be modified to cover simple unions of leaftypes then this method
 # can probably be deleted and the two _t methods adjusted to match the Base
 # invokation from Base.Broadcast.broadcast_c
-@inline function Base.Broadcast.broadcast_c{S<:AbstractDataArray}(f, ::Type{S}, A, Bs...)
+@inline function Base.Broadcast.broadcast_c(f, ::Type{S}, A, Bs...) where {S<:AbstractDataArray}
     T     = Base.Broadcast._broadcast_eltype(f, A, Bs...)
     shape = Base.Broadcast.broadcast_indices(A, Bs...)
     return broadcast_t(f, T, shape, A, Bs...)

@@ -32,6 +32,14 @@ function swapargs(ast::Expr, fname::Union{Expr, Symbol})
 
         ast.args[2], ast.args[3] = ast.args[3], ast.args[2]
         1
+    elseif ast.head == :where &&
+       (ast.args[1] == fname ||
+        (isa(ast.args[1], Expr) && ast.args[1].head == :where &&
+         ast.args[1].args[1] == fname)) &&
+       length(ast.args) == 3
+
+        ast.args[1].args[2], ast.args[1].args[3] = ast.args[1].args[3], ast.args[1].args[2]
+        1
     else
         n = 0
         for arg in ast.args
@@ -50,13 +58,14 @@ end
 # 2-argument calls to a function of the same name are swapped
 macro swappable(func, syms...)
     if (func.head != :function && func.head != :(=)) ||
-       func.args[1].head != :call || length(func.args[1].args) != 3
+       ((func.args[1].head != :where || length(func.args[1].args[1].args) != 3) &&
+        (func.args[1].head != :call || length(func.args[1].args) != 3))
         throw(ArgumentError("@swappable may only be applied to functions of two arguments"))
     end
 
     func2 = deepcopy(func)
     fname = func2.args[1].args[1]
-    if isa(fname, Expr) && fname.head == :curly
+    if isa(fname, Expr) && fname.head in (:curly, :where)
         fname = fname.args[1]
     end
 
@@ -76,7 +85,7 @@ end
 # AbstractDataArray
 macro dataarray_unary(f, intype, outtype, N...)
     esc(quote
-        function $(f){T<:$(intype)}(d::$(isempty(N) ? :(DataArray{T}) : :(DataArray{T,$(N[1])})))
+        function $(f)(d::$(isempty(N) ? :(DataArray{T}) : :(DataArray{T,$(N[1])}))) where {T<:$(intype)}
             data = d.data
             res = similar(data, $(outtype))
             @bitenumerate d.na i na begin
@@ -86,7 +95,7 @@ macro dataarray_unary(f, intype, outtype, N...)
             end
             DataArray(res, copy(d.na))
         end
-        function $(f){T<:$(intype)}(adv::$(isempty(N) ? :(AbstractDataArray{T}) : :(AbstractDataArray{T,$(N[1])})))
+        function $(f)(adv::$(isempty(N) ? :(AbstractDataArray{T}) : :(AbstractDataArray{T,$(N[1])}))) where {T<:$(intype)}
             res = similar(adv, $(outtype))
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i])
@@ -158,7 +167,7 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
                     data1 = $(atype == :DataArray || atype == :(DataArray{Bool}) ? :(a.data) : :a)
                     data2 = $(btype == :DataArray || btype == :(DataArray{Bool}) ? :(b.data) : :b)
                     res = Array{promote_op($vectorfunc, eltype(a), eltype(b))}(
-                        promote_shape(size(a), size(b)))
+                        uninitialized, promote_shape(size(a), size(b)))
                     resna = $narule
                     @bitenumerate resna i na begin
                         if !na
@@ -168,8 +177,8 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
                     DataArray(res, resna)
                 end
             end
-            for (atype, btype, narule) in ((:(DataArray), :(Range), :(copy(a.na))),
-                                           (:(Range), :(DataArray), :(copy(b.na))),
+            for (atype, btype, narule) in ((:(DataArray), :(AbstractRange), :(copy(a.na))),
+                                           (:(AbstractRange), :(DataArray), :(copy(b.na))),
                                            (:DataArray, :DataArray, :(a.na .| b.na)),
                                            (:DataArray, :AbstractArray, :(copy(a.na))),
                                            (:AbstractArray, :DataArray, :(copy(b.na))))
@@ -188,8 +197,8 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
                     res
                 end
             end
-            for (asim, atype, btype) in ((true, :AbstractDataArray, :Range),
-                                         (false, :Range, :AbstractDataArray),
+            for (asim, atype, btype) in ((true, :AbstractDataArray, :AbstractRange),
+                                         (false, :AbstractRange, :AbstractDataArray),
                                          (true, :DataArray, :AbstractDataArray),
                                          (false, :AbstractDataArray, :DataArray),
                                          (true, :AbstractDataArray, :AbstractDataArray),
@@ -208,14 +217,14 @@ end
 # Treat ctranspose and * in a special way
 for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
     @eval begin
-        function $(f){T}(d::DataMatrix{T})
+        function $(f)(d::DataMatrix{T}) where T
             # (c)transpose in Base uses a cache-friendly algorithm for
             # numeric arrays, which is faster than our naive algorithm,
             # but chokes on undefined values in the data array.
             # Fortunately, undefined values can only be present in
             # arrays of non-bits types.
             if isbits(T)
-                DataArray($(f)(d.data), d.na.')
+                DataArray($(f)(d.data), transpose(d.na))
             else
                 data = d.data
                 sz = (size(data, 1), size(data, 2))
@@ -226,7 +235,7 @@ for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
                         @inbounds res[inew, jnew] = $(elf)(data[i])
                     end
                 end
-                DataArray(res, d.na.')
+                DataArray(res, transpose(d.na))
             end
         end
     end
@@ -324,7 +333,7 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
         @dataarray_unary $(f) Real T 2
         @dataarray_unary $(f) Real T
 
-        function $(f){T<:Real}(d::DataArray{T}, args::Integer...)
+        function $(f)(d::DataArray{T}, args::Integer...) where {T<:Real}
             data = similar(d.data)
             @bitenumerate d.na i na begin
                 if !na
@@ -333,7 +342,7 @@ for f in (:(Base.round), :(Base.ceil), :(Base.floor), :(Base.trunc))
             end
             DataArray(data, copy(d.na))
         end
-        function $(f){T<:Real}(adv::AbstractDataArray{T}, args::Integer...)
+        function $(f)(adv::AbstractDataArray{T}, args::Integer...) where {T<:Real}
             res = similar(adv)
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i], args...)
@@ -480,7 +489,7 @@ end # if isdefined(Base, :UniformScaling)
 for f in (:(*), :(Base.div), :(Base.mod), :(Base.fld), :(Base.rem))
     @eval begin
         # Array with missing
-        @swappable $(f){T,N}(::Missing, b::AbstractArray{T,N}) =
+        @swappable $(f)(::Missing, b::AbstractArray{T,N}) where {T, N} =
             DataArray(Array{T,N}(size(b)), trues(size(b)))
 
         # DataArray with scalar
@@ -490,7 +499,7 @@ end
 
 for f in (:(+), :(-))
     # Array with missing
-    @eval @swappable $(f){T,N}(::Missing, b::AbstractArray{T,N}) =
+    @eval @swappable $(f)(::Missing, b::AbstractArray{T,N}) where {T, N} =
         DataArray(Array{T,N}(size(b)), trues(size(b)))
 end
 
@@ -676,7 +685,7 @@ function rle(v::AbstractDataVector{T}) where T
     current_length = 1
     values = DataArray(T, n)
     total_values = 1
-    lengths = Vector{Int16}(n)
+    lengths = Vector{Int16}(uninitialized, n)
     total_lengths = 1
     for i in 2:n
         if ismissing(v[i]) || ismissing(current_value)

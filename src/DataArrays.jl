@@ -6,12 +6,18 @@ module DataArrays
     @reexport using StatsBase
     @reexport using Missings
     using SpecialFunctions
+    using Compat: AbstractRange, Nothing, Cvoid, uninitialized, invpermute!
+    using Compat.Printf, Compat.Dates
 
     const DEFAULT_POOLED_REF_TYPE = UInt32
 
     import Base: ==, !=, >, <, >=, <=, +, -, *, !, &, |, ⊻, ^, /
 
     import StatsBase: autocor, inverse_rle, rle
+
+    if VERSION >= v"0.7.0-DEV.3165"
+        import Base.replace!
+    end
 
     export @data,
            @pdata,

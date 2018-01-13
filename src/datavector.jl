@@ -24,7 +24,7 @@ function Base.pop!(dv::DataVector)
 end
 
 function Base.unshift!(dv::DataVector{T}, v::Missing) where T
-    ccall(:jl_array_grow_beg, Void, (Any, UInt), dv.data, 1)
+    ccall(:jl_array_grow_beg, Cvoid, (Any, UInt), dv.data, 1)
     unshift!(dv.na, true)
     return v
 end

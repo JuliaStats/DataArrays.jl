@@ -100,7 +100,9 @@
     #@test all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
     # Julia 0.6 and 0.7 differ in ordering of Unions
     @test repr(dvint) in ("Union{$Int, Missings.Missing}[1, 2, missing, 4]",
-                          "Union{Missings.Missing, $Int}[1, 2, missing, 4]")
+                          "Union{Missings.Missing, $Int}[1, 2, missing, 4]",
+                          "Union{$Int, Missing}[1, 2, missing, 4]",
+                          "Union{Missing, $Int}[1, 2, missing, 4]")
 
     #test_group("PooledDataVector to something else")
     @test collect(skipmissing(pdvstr)) == ["one", "one", "two", "two", "one", "one"]
