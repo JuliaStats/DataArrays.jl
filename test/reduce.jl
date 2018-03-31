@@ -87,7 +87,7 @@ end
 
     for fn in (prod, minimum, maximum, mean,
                var, _varuc, _varzm, _varzmuc, _var1m, _var1muc,
-               std, _std1m, Base.sumabs, Base.sumabs2)
+               std, _std1m)
         for n in [0, 1, 2, 62, 63, 64, 65, 66]
             da = DataArray(randn(n))
             @same_behavior fn(da) fn(da.data)

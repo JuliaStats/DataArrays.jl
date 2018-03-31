@@ -142,8 +142,6 @@ end
                         @test_da_approx_eq maximum!(r, Areduc; skipmissing=skipmissing) safe_mapslices(maximum, Areduc, region, skipmissing)
                         @test_da_approx_eq minimum!(r, Areduc; skipmissing=skipmissing) safe_mapslices(minimum, Areduc, region, skipmissing)
                     end
-                    @test_da_approx_eq Base.sumabs!(r, Areduc; skipmissing=skipmissing) safe_mapslices(sum, abs(Areduc), region, skipmissing)
-                    @test_da_approx_eq Base.sumabs2!(r, Areduc; skipmissing=skipmissing) safe_mapslices(sum, abs2(Areduc), region, skipmissing)
                     @test_da_approx_eq mean!(r, Areduc; skipmissing=skipmissing) safe_mapslices(mean, Areduc, region, skipmissing)
                 end
 
@@ -151,8 +149,6 @@ end
                 @test_da_approx_eq prod(Areduc, region; skipmissing=skipmissing) safe_mapslices(prod, Areduc, region, skipmissing)
                 @test_da_approx_eq maximum(Areduc, region; skipmissing=skipmissing) safe_mapslices(maximum, Areduc, region, skipmissing)
                 @test_da_approx_eq minimum(Areduc, region; skipmissing=skipmissing) safe_mapslices(minimum, Areduc, region, skipmissing)
-                @test_da_approx_eq Base.sumabs(Areduc, region; skipmissing=skipmissing) safe_mapslices(sum, abs(Areduc), region, skipmissing)
-                @test_da_approx_eq Base.sumabs2(Areduc, region; skipmissing=skipmissing) safe_mapslices(sum, abs2(Areduc), region, skipmissing)
                 @test_da_approx_eq mean(Areduc, region; skipmissing=skipmissing) safe_mapslices(mean, Areduc, region, skipmissing)
 
                 if region != 5

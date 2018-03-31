@@ -146,12 +146,6 @@ for (fn, op) in ((:(Base.sum), +),
     end
 end
 
-for (fn, f, op) in ((:(Base.sumabs), abs, +),
-                    (:(Base.sumabs2), abs2, +))
-    @eval $fn(a::DataArray; skipmissing::Bool=false, skipna::Bool=false) =
-        mapreduce($f, $op, a; skipmissing=skipmissing, skipna=skipna)
-end
-
 ## mean
 
 Base.mean(a::DataArray; skipmissing::Bool=false, skipna::Bool=false) =
