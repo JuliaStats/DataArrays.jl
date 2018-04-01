@@ -303,22 +303,6 @@ for (basfn, Op) in [(:sum, +), (:prod, *),
     end
 end
 
-for (basfn, fbase, Fun) in [(:sumabs, :sum, abs),
-                            (:sumabs2, :sum, abs2),
-                            (:maxabs, :maximum, abs),
-                            (:minabs, :minimum, abs)]
-    fname = Expr(:., :Base, Base.Meta.quot(basfn))
-    fname! = Expr(:., :Base, Base.Meta.quot(Symbol(string(basfn, '!'))))
-    fbase! = Expr(:., :Base, Base.Meta.quot(Symbol(string(fbase, '!'))))
-    @eval begin
-        $(fname!)(r::AbstractArray, A::DataArray;
-                  init::Bool=true, skipmissing::Bool=false, skipna::Bool=false) =
-            $(fbase!)($(Fun), r, A; init=init, skipmissing=skipmissing, skipna=skipna)
-        $(fname)(A::DataArray, region; skipmissing::Bool=false, skipna::Bool=false) =
-            $(fbase)($(Fun), A, region; skipmissing=skipmissing, skipna=skipna)
-    end
-end
-
 ## mean
 
 function Base.mean!(R::AbstractArray{T}, A::DataArray;
