@@ -38,7 +38,7 @@ end
     test_count()
 
     # mapslices from Base, hacked to work for these cases
-    function safe_mapslices{T}(f::Function, A::AbstractArray{T}, region, skipmissing)
+    function safe_mapslices(f::Function, A::AbstractArray{T}, region, skipmissing) where T
         dims = intersect(region, 1:ndims(A))
         if isempty(dims)
             if skipmissing
