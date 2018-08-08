@@ -1,5 +1,5 @@
 module TestDataMatrixs
-    using Base.Test
+    using Test
     using DataArrays
 
     # Base.getindex(d::DataMatrix, i::SingleIndex, j::SingleIndex)

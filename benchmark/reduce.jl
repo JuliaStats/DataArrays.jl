@@ -2,7 +2,7 @@ module ReduceBenchmark
 using DataArrays, Benchmark
 
 # seed rng for more consistent timings
-srand(1776)
+Random.seed!(1776)
 
 const TEST_NAMES = [
     "Vector",

@@ -52,7 +52,7 @@ function cut(x::AbstractVector{S}, breaks::Vector{T}) where {S, T}
     end
     min_x, max_x = minimum(x), maximum(x)
     if breaks[1] > min_x
-        unshift!(breaks, min_x)
+        pushfirst!(breaks, min_x)
     end
     if breaks[end] < max_x
         push!(breaks, max_x)

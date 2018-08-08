@@ -9,12 +9,12 @@
     @test ismissing(a)
     @test b == 3.0
 
-    unshift!(dv, 3.0)
-    unshift!(dv, missing)
+    pushfirst!(dv, 3.0)
+    pushfirst!(dv, missing)
 
     @test isequal(dv, (@data [missing, 3.0, 1.0, 1.0, 1.0]))
 
-    a, b = shift!(dv), shift!(dv)
+    a, b = popfirst!(dv), popfirst!(dv)
     @test ismissing(a)
     @test b == 3.0
 

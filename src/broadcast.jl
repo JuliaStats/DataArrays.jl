@@ -16,7 +16,7 @@ end
 # Generate a branch for each possible combination of missing/not missing. This
 # gives good performance at the cost of 2^narrays branches.
 function gen_na_conds(f, nd, arrtype, outtype,
-    daidx=find(t -> t <: DataArray || t <: PooledDataArray, arrtype), pos=1, ismissing=())
+    daidx=findall(t -> t <: DataArray || t <: PooledDataArray, arrtype), pos=1, ismissing=())
 
     if pos > length(daidx)
         args = Any[Symbol("v_$(k)") for k = 1:length(arrtype)]

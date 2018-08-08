@@ -36,7 +36,7 @@ end
 
 gl(n::Integer, k::Integer) = gl(n, k, n*k)
 
-StatsBase.describe(X::DataVector) = StatsBase.describe(STDOUT, X)
+StatsBase.describe(X::DataVector) = StatsBase.describe(stdout, X)
 
 function StatsBase.describe(io::IO, X::AbstractDataVector{T}) where T<:Real
     nacount = sum(ismissing, X)

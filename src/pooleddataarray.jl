@@ -141,7 +141,7 @@ function PooledDataArray(d::AbstractArray{T, N},
                          m::AbstractArray{Bool, N},
                          r::Type{R} = DEFAULT_POOLED_REF_TYPE) where {T,R<:Integer,N}
     pool = convert(Vector{T}, unique(d[.!m]))
-    if method_exists(isless, (T, T))
+    if hasmethod(isless, (T, T))
         sort!(pool)
     end
     PooledDataArray(d, pool, m, r)
@@ -154,8 +154,8 @@ PooledDataArray(t::Type, r::Type{R}, dims::Tuple{Vararg{Int}}) where {R<:Integer
 PooledDataArray(t::Type, r::Type{R}, dims::Int...) where {R<:Integer} = PooledDataArray(Array(t, dims), trues(dims), r)
 
 # Construct an empty PooledDataVector of a specific type
-PooledDataArray(t::Type) = PooledDataArray(similar(Vector{t}(1),0), trues(0))
-PooledDataArray(t::Type, r::Type{R}) where {R<:Integer} = PooledDataArray(similar(Vector{t}(1),0), trues(0), r)
+PooledDataArray(t::Type) = PooledDataArray(similar(Vector{t}(undef, 1),0), trues(0))
+PooledDataArray(t::Type, r::Type{R}) where {R<:Integer} = PooledDataArray(similar(Vector{t}(undef, 1),0), trues(0), r)
 
 # Convert a BitArray to an Array{Bool} (m = missingness)
 # For some reason an additional method is needed but even that doesn't work
@@ -314,7 +314,7 @@ end
 function Base.unique(pda::PooledDataArray{T}) where T
     n = length(pda)
     nlevels = length(pda.pool)
-    unique_values = Vector{T}(0)
+    unique_values = Vector{T}()
     sizehint!(unique_values, nlevels)
     seen = Set{eltype(pda.refs)}()
 
@@ -490,7 +490,7 @@ function setlevels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
     # An missing in `v` is put in the pool; that will cause it to become missing
     for (k,v) in d
-        idx = findin(newpool, [k])
+        idx = findall(in([k]), newpool)
         if length(idx) == 1
             newpool[idx[1]] = v
         end
@@ -500,7 +500,7 @@ end
 
 function setlevels!(x::PooledDataArray{T,R}, d::Dict{T,T}) where {T,R}
     for (k,v) in d
-        idx = findin(x.pool, [k])
+        idx = findall(in([k]), x.pool)
         if length(idx) == 1
             x.pool[idx[1]] = v
         end
@@ -512,7 +512,7 @@ function setlevels!(x::PooledDataArray{T,R}, d::Dict{T,Any}) where {T,R} # this 
     newpool = copy(DataArray(x.pool))
     # An missing in `v` is put in the pool; that will cause it to become missing
     for (k,v) in d
-        idx = findin(newpool, [k])
+        idx = findall(in([k]), newpool)
         if length(idx) == 1
             newpool[idx[1]] = v
         end
@@ -563,7 +563,7 @@ end
 ##
 ##############################################################################
 
-Base.find(pdv::PooledDataVector{Bool}) = find(convert(Vector{Bool}, pdv, false))
+Base.find(pdv::PooledDataVector{Bool}) = findall(convert(Vector{Bool}, pdv, false))
 
 ##############################################################################
 ##
