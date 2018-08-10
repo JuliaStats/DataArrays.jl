@@ -43,7 +43,7 @@ mutable struct DataArray{T, N} <: AbstractDataArray{T, N}
         if eltype(d) >: Missing
             # If the original eltype is wider than the target eltype T, conversion may fail
             # in the presence of missings: we need to allocate a copy, leaving entries
-            # corresponding to missings uninitialized
+            # corresponding to missings undef
             if eltype(d) <: T
                 @inbounds for i in eachindex(d)
                     if isassigned(d, i) && ismissing(d, i)
@@ -86,7 +86,7 @@ function DataArray(d::Array, m::AbstractArray{Bool}) # -> DataArray{T}
 end
 
 function DataArray(T::Type, dims::Integer...) # -> DataArray{T}
-    return DataArray(Array{Missings.T(T)}(uninitialized, dims...), trues(dims...))
+    return DataArray(Array{Missings.T(T)}(undef, dims...), trues(dims...))
 end
 
 function DataArray(T::Type, dims::NTuple{N, Int}) where N # -> DataArray{T}
@@ -107,11 +107,11 @@ A 2-dimensional `DataArray` with element type `T`.
 """
 const DataMatrix{T} = DataArray{T, 2}
 
-Base.copy(d::DataArray) = Base.copy!(similar(d), d) # -> DataArray{T}
+Base.copy(d::DataArray) = Base.copyto!(similar(d), d) # -> DataArray{T}
 
-function Base.copy!(dest::DataArray, src::DataArray) # -> DataArray{T}
+function Base.copyto!(dest::DataArray, src::DataArray) # -> DataArray{T}
     if isbits(eltype(src)) && isbits(eltype(dest))
-        copy!(dest.data, src.data)
+        copyto!(dest.data, src.data)
     else
         # Elements of src_data are not necessarily initialized, so
         # only copy initialized elements
@@ -125,28 +125,28 @@ function Base.copy!(dest::DataArray, src::DataArray) # -> DataArray{T}
             end
         end
     end
-    copy!(dest.na, src.na)
+    copyto!(dest.na, src.na)
     dest
 end
 
-function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray) # -> DataArray{T}
-    copy!(dest, doffs, src, 1, length(src))
+function Base.copyto!(dest::DataArray, doffs::Integer, src::DataArray) # -> DataArray{T}
+    copyto!(dest, doffs, src, 1, length(src))
 end
 
 # redundant on Julia 0.4
-function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Integer) # -> DataArray{T}
+function Base.copyto!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Integer) # -> DataArray{T}
     soffs <= length(src) || throw(BoundsError())
-    copy!(dest, doffs, src, soffs, length(src)-soffs+1)
+    copyto!(dest, doffs, src, soffs, length(src)-soffs+1)
 end
 
-function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Integer, n::Integer) # -> DataArray{T}
+function Base.copyto!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Integer, n::Integer) # -> DataArray{T}
     if n == 0
         return dest
     elseif n < 0
         throw(ArgumentError("tried to copy n=$n elements, but n should be nonnegative"))
     end
     if isbits(eltype(src))
-        copy!(dest.data, doffs, src.data, soffs, n)
+        copyto!(dest.data, doffs, src.data, soffs, n)
     else
         # Elements of src_data are not necessarily initialized, so
         # only copy initialized elements
@@ -165,7 +165,7 @@ function Base.copy!(dest::DataArray, doffs::Integer, src::DataArray, soffs::Inte
             end
         end
     end
-    copy!(dest.na, doffs, src.na, soffs, n)
+    copyto!(dest.na, doffs, src.na, soffs, n)
     dest
 end
 
@@ -185,15 +185,15 @@ function Base.resize!(da::DataArray{T,1}, n::Int) where T
 end
 
 function Base.similar(da::DataArray, T::Type, dims::Dims) #-> DataArray{T}
-    return DataArray(Array{Missings.T(T)}(uninitialized, dims), trues(dims))
+    return DataArray(Array{Missings.T(T)}(undef, dims), trues(dims))
 end
 
 Base.size(d::DataArray) = size(d.data) # -> (Int...)
 Base.ndims(da::DataArray) = ndims(da.data) # -> Int
 Base.length(d::DataArray) = length(d.data) # -> Int
-Base.endof(da::DataArray) = endof(da.data) # -> Int
+Base.lastindex(da::DataArray) = lastindex(da.data) # -> Int
 
-function Base.find(da::DataArray{Bool}) # -> Array{Int}
+function Base.findall(da::DataArray{Bool}) # -> Array{Int}
     data = da.data
     ntrue = 0
     @inbounds @bitenumerate da.na i na begin
@@ -238,7 +238,7 @@ function Base.convert(
 ) where {S, T, N} # -> Array{S, N}
 
     replacementS = convert(S, replacement)
-    res = Array{S}(uninitialized, size(da))
+    res = Array{S}(undef, size(da))
     for i in 1:length(da)
         if da.na[i]
             res[i] = replacementS
@@ -267,16 +267,12 @@ struct EachFailMissing{T<:DataArray}
 end
 Missings.fail(da::DataArray) = EachFailMissing(da)
 Base.length(itr::EachFailMissing) = length(itr.da)
-Base.start(itr::EachFailMissing) = 1
-Base.done(itr::EachFailMissing, ind::Integer) = ind > length(itr)
-Base.eltype(itr::EachFailMissing) = Missings.T(eltype(itr.da))
-function Base.next(itr::EachFailMissing, ind::Integer)
-    if itr.da.na[ind]
-        throw(MissingException("missing value encountered in Missings.fail"))
-    else
-        (itr.da.data[ind], ind + 1)
-    end
+function Base.iterate(itr::EachFailMissing, st=1)
+    st > length(itr) && return nothing
+    itr.da.na[st] && throw(MissingException("missing value encountered in Missings.fail"))
+    return (itr.da.data[st], st + 1)
 end
+Base.eltype(itr::EachFailMissing) = Missings.T(eltype(itr.da))
 
 struct EachDropMissing{T<:DataArray}
     da::T
@@ -290,12 +286,11 @@ function _next_nonna_ind(da::DataArray, ind::Int)
     ind
 end
 Base.length(itr::EachDropMissing) = length(itr.da) - sum(itr.da.na)
-Base.start(itr::EachDropMissing) = _next_nonna_ind(itr.da, 0)
-Base.done(itr::EachDropMissing, ind::Int) = ind > length(itr.da)
-Base.eltype(itr::EachDropMissing) = Missings.T(eltype(itr.da))
-function Base.next(itr::EachDropMissing, ind::Int)
-    (itr.da.data[ind], _next_nonna_ind(itr.da, ind))
+function Base.iterate(itr::EachDropMissing, st=_next_nonna_ind(itr.da, 0))
+    st > length(itr.da) && return nothing
+    return (itr.da.data[st], _next_nonna_ind(itr.da, ind))
 end
+Base.eltype(itr::EachDropMissing) = Missings.T(eltype(itr.da))
 
 struct EachReplaceMissing{S<:DataArray, T}
     da::S
@@ -304,13 +299,12 @@ end
 Missings.replace(da::DataArray, replacement::Any) =
     EachReplaceMissing(da, replacement)
 Base.length(itr::EachReplaceMissing) = length(itr.da)
-Base.start(itr::EachReplaceMissing) = 1
-Base.done(itr::EachReplaceMissing, ind::Integer) = ind > length(itr)
-Base.eltype(itr::EachReplaceMissing) = Missings.T(eltype(itr.da))
-function Base.next(itr::EachReplaceMissing, ind::Integer)
-    item = itr.da.na[ind] ? itr.replacement : itr.da.data[ind]
-    (item, ind + 1)
+function Base.iterate(itr::EachReplaceMissing, st=1)
+    st > length(itr) && return nothing
+    item = itr.da.na[st] ? itr.replacement : itr.da.data[st]
+    return (item, st + 1)
 end
+Base.eltype(itr::EachReplaceMissing) = Missings.T(eltype(itr.da))
 
 Base.collect(itr::EachDropMissing{<:DataVector}) = itr.da.data[.!itr.da.na] # -> Vector
 Base.collect(itr::EachFailMissing{<:DataVector}) = copy(itr.da.data) # -> Vector
@@ -416,7 +410,7 @@ Get the unique values in `da` as well as the index of the first `missing` value
 in `da` if present, or 0 otherwise.
 """
 function finduniques(da::DataArray{T}) where T # -> Vector{T}, Int
-    out = Vector{T}(uninitialized, 0)
+    out = Vector{T}(undef, 0)
     seen = Set{T}()
     n = length(da)
     firstmissing = 0
@@ -439,7 +433,7 @@ function Base.unique(da::DataArray{T}) where T # -> DataVector{T}
     unique_values, firstmissing = finduniques(da)
     n = length(unique_values)
     if firstmissing > 0
-        res = DataArray(Vector{T}(uninitialized, n + 1))
+        res = DataArray(Vector{T}(undef, n + 1))
         i = 1
         for val in unique_values
             if i == firstmissing

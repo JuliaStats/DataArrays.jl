@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 @testset "Constructors" begin
     #
     # missings
@@ -130,9 +132,9 @@
     @test_nowarn convert(DataArray, falses(2, 2))
     @test_nowarn convert(DataArray, trues(2, 2))
 
-    @test_nowarn convert(DataArray, eye(3, 2))
-    @test_nowarn convert(DataArray, eye(2))
-    @test_nowarn convert(DataArray, diagm(Float64[pi, pi]))
+    @test_nowarn convert(DataArray, Matrix{Float64}(LinearAlgebra.I, 3, 2))
+    @test_nowarn convert(DataArray, Matrix{Float64}(LinearAlgebra.I, 2, 2))
+    @test_nowarn convert(DataArray, LinearAlgebra.diagm(0=>Float64[pi, pi]))
 
     @test DataArray([1 missing]) isa DataMatrix{Int}
     @test isequal(DataArray([1 missing]), [1 missing])

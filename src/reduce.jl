@@ -88,7 +88,7 @@ end
 # in Base, which is slow because it's type-unstable, but guarantees the
 # correct semantics
 const SafeMapFuns = Union{typeof(identity), typeof(abs), typeof(abs2),
-                            typeof(exp), typeof(log), typeof(Base.centralizedabs2fun)}
+                            typeof(exp), typeof(log), typeof(Statistics.centralizedabs2fun)}
 const SafeReduceFuns = Union{typeof(+), typeof(*), typeof(max), typeof(min)}
 function Base._mapreduce(f::SafeMapFuns, op::SafeReduceFuns, A::DataArray)
     any(A.na) && return missing
@@ -148,12 +148,12 @@ end
 
 ## mean
 
-Base.mean(a::DataArray; skipmissing::Bool=false, skipna::Bool=false) =
+Statistics.mean(a::DataArray; skipmissing::Bool=false, skipna::Bool=false) =
     sum(a; skipmissing=skipmissing, skipna=skipna) / (length(a.na)-(skipna || skipmissing ? countnz(a.na) : 0))
 
 ## variance
 
-function Base.varm(A::DataArray{T}, m::Number;
+function Statistics.varm(A::DataArray{T}, m::Number;
                    corrected::Bool=true, skipmissing::Bool=false, skipna::Bool=false) where T
     if skipna || skipmissing
         if skipna && !skipmissing
@@ -162,44 +162,44 @@ function Base.varm(A::DataArray{T}, m::Number;
 
         n = length(A)
         na = A.na
-
+        MT = typeof((zero(T) * zero(T) + zero(T) * zero(T)) / 2)
         nna = countnz(na)
-        nna == n && return convert(Base.momenttype(T), NaN)
-        nna == n-1 && return convert(Base.momenttype(T),
+        nna == n && return convert(MT, NaN)
+        nna == n-1 && return convert(MT,
                                      abs2(A.data[Base.findnextnot(na, 1)] - m)/(1 - corrected))
 
-        /(nna == 0 ? Base.centralize_sumabs2(A.data, m, 1, n) :
-                     mapreduce_impl_skipmissing(Base.centralizedabs2fun(m), +, A),
+        /(nna == 0 ? Statistics.centralize_sumabs2(A.data, m, 1, n) :
+                     mapreduce_impl_skipmissing(Statistics.centralizedabs2fun(m), +, A),
           n - nna - corrected)
     else
         any(A.na) && return missing
-        Base.varm(A.data, m; corrected=corrected)
+        Statistics.varm(A.data, m; corrected=corrected)
     end
 end
-Base.varm(A::DataArray{T}, m::Missing;
+Statistics.varm(A::DataArray{T}, m::Missing;
           corrected::Bool=true, skipmissing::Bool=false, skipna::Bool=false) where {T} = missing
 
-function Base.var(A::DataArray;
+function Statistics.var(A::DataArray;
                   corrected::Bool=true, mean=nothing, skipmissing::Bool=false, skipna::Bool=false)
-    mean == 0 ? Base.varm(A, 0; corrected=corrected, skipmissing=skipmissing, skipna=skipna) :
-    mean == nothing ? varm(A, Base.mean(A; skipmissing=skipmissing, skipna=skipna);
+    mean == 0 ? Statistics.varm(A, 0; corrected=corrected, skipmissing=skipmissing, skipna=skipna) :
+    mean == nothing ? varm(A, Statistics.mean(A; skipmissing=skipmissing, skipna=skipna);
                            corrected=corrected, skipmissing=skipmissing, skipna=skipna) :
     isa(mean, Union{Number,Missing}) ?
         varm(A, mean; corrected=corrected, skipmissing=skipmissing, skipna=skipna) :
         throw(ErrorException("Invalid value of mean."))
 end
 
-Base.stdm(A::DataArray, m::Number;
+Statistics.stdm(A::DataArray, m::Number;
           corrected::Bool=true, skipmissing::Bool=false, skipna::Bool=false) =
     sqrt(varm(A, m; corrected=corrected, skipmissing=skipmissing, skipna=skipna))
 
-Base.std(A::DataArray;
+Statistics.std(A::DataArray;
          corrected::Bool=true, mean=nothing, skipmissing::Bool=false, skipna::Bool=false) =
     sqrt(var(A; corrected=corrected, mean=mean, skipmissing=skipmissing, skipna=skipna))
 
 ## weighted mean
 
-function Base.mean(a::DataArray, w::Weights; skipmissing::Bool=false, skipna::Bool=false)
+function Statistics.mean(a::DataArray, w::Weights; skipmissing::Bool=false, skipna::Bool=false)
     if skipna || skipmissing
         v = a .* w.values
         sum(v; skipmissing=true) / sum(DataArray(w.values, v.na); skipmissing=true)
@@ -208,7 +208,7 @@ function Base.mean(a::DataArray, w::Weights; skipmissing::Bool=false, skipna::Bo
     end
 end
 
-function Base.mean(a::DataArray, w::Weights{W,V};
+function Statistics.mean(a::DataArray, w::Weights{W,V};
                    skipmissing::Bool=false, skipna::Bool=false) where {W,V<:DataArray}
     if skipna || skipmissing
         v = a .* w.values

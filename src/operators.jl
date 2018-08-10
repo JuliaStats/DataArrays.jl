@@ -1,14 +1,15 @@
-const unary_vector_operators = [:(Base.median),
+using Statistics
+const unary_vector_operators = [:(Statistics.median),
                                 :(StatsBase.mad),
-                                :(Base.norm),
+                                :(LinearAlgebra.norm),
                                 :(StatsBase.skewness),
                                 :(StatsBase.kurtosis)]
 
 # TODO: dist, iqr
 
-const binary_vector_operators = [:(Base.dot),
-                                 :(Base.cor),
-                                 :(Base.cov),
+const binary_vector_operators = [:(LinearAlgebra.dot),
+                                 :(Statistics.cor),
+                                 :(Statistics.cov),
                                  :(StatsBase.corspearman)]
 
 const rowwise_operators = [:rowminimums,
@@ -163,7 +164,7 @@ macro dataarray_binary_array(vectorfunc, scalarfunc)
                     data1 = $(atype == :DataArray || atype == :(DataArray{Bool}) ? :(a.data) : :a)
                     data2 = $(btype == :DataArray || btype == :(DataArray{Bool}) ? :(b.data) : :b)
                     res = Array{promote_op($vectorfunc, eltype(a), eltype(b))}(
-                        uninitialized, promote_shape(size(a), size(b)))
+                        undef, promote_shape(size(a), size(b)))
                     resna = $narule
                     @bitenumerate resna i na begin
                         if !na
@@ -210,8 +211,8 @@ end
 @dataarray_unary(-, Any, T)
 @dataarray_unary(!, Bool, T)
 
-# Treat ctranspose and * in a special way
-for (f, elf) in ((:(Base.ctranspose), :conj), (:(Base.transpose), :identity))
+# Treat adjoint and * in a special way
+for (f, elf) in ((:(Base.adjoint), :conj), (:(Base.transpose), :identity))
     @eval begin
         function $(f)(d::DataMatrix{T}) where T
             # (c)transpose in Base uses a cache-friendly algorithm for
@@ -307,7 +308,7 @@ end
 for f in (:(Base.acos), :(Base.acosh), :(Base.asin), :(Base.asinh), :(Base.atan), :(Base.atanh),
           :(Base.sin), :(Base.sinh), :(Base.cos), :(Base.cosh), :(Base.tan), :(Base.tanh),
           :(Base.exp), :(Base.exp2), :(Base.expm1), :(Base.log), :(Base.log10), :(Base.log1p),
-          :(Base.log2), :(Base.exponent), :(Base.sqrt), :(Base.gamma), :(Base.lgamma))
+          :(Base.log2), :(Base.exponent), :(Base.sqrt), :(SpecialFunctions.gamma), :(SpecialFunctions.lgamma))
     @eval begin
         @dataarray_unary $(f) AbstractFloat T
         @dataarray_unary $(f) Real Float64
@@ -419,7 +420,7 @@ end
 if isdefined(Base, :UniformScaling)
 
 function (+)(A::DataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ}
-    n = LinAlg.checksquare(A)
+    n = LinearAlgebra.checksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
     @inbounds for i = 1:n
@@ -432,7 +433,7 @@ end
 (+)(J::UniformScaling,A::DataArray{TA,2}) where {TA} = A + J
 
 function (-)(A::DataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ<:Number}
-    n = LinAlg.checksquare(A)
+    n = LinearAlgebra.checksquare(A)
     B = similar(A,promote_type(TA,TJ))
     copy!(B,A)
     @inbounds for i = 1:n
@@ -443,7 +444,7 @@ function (-)(A::DataArray{TA,2},J::UniformScaling{TJ}) where {TA,TJ<:Number}
     B
 end
 function (-)(J::UniformScaling{TJ},A::DataArray{TA,2}) where {TA,TJ<:Number}
-    n = LinAlg.checksquare(A)
+    n = LinearAlgebra.checksquare(A)
     B = -A
     @inbounds for i = 1:n
         if !B.na[i,i]
@@ -514,7 +515,7 @@ end
     DataArray(Array{T,N}(size(b)), trues(size(b)))
 @dataarray_binary_scalar(/, /, nothing, false)
 
-function Base.LinAlg.diff(dv::DataVector)
+function LinearAlgebra.diff(dv::DataVector)
     n = length(dv)
     new_data = diff(dv.data)
     new_na = falses(n - 1)
@@ -681,7 +682,7 @@ function rle(v::AbstractDataVector{T}) where T
     current_length = 1
     values = DataArray(T, n)
     total_values = 1
-    lengths = Vector{Int16}(uninitialized, n)
+    lengths = Vector{Int16}(undef, n)
     total_lengths = 1
     for i in 2:n
         if ismissing(v[i]) || ismissing(current_value)
