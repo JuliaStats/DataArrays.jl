@@ -144,11 +144,7 @@ macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype, swappable)
                 if swappable
                     # For /, Array/Number is valid but not Number/Array
                     # All other operators should be swappable
-                    if VERSION < v"0.7.0-DEV.357"
-                        map!(x->Expr(:macrocall, Symbol("@swappable"), x, scalarfunc), fns, fns)
-                    else
-                        map!(x->Expr(:macrocall, Symbol("@swappable"), LineNumberNode(@__LINE__), x, scalarfunc), fns, fns)
-                    end
+                    map!(x->Expr(:macrocall, Symbol("@swappable"), LineNumberNode(@__LINE__), x, scalarfunc), fns, fns)
                 end
                 Expr(:block, fns...)
             end

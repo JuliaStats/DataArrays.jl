@@ -1,5 +1,5 @@
 module TestDataVectors
-    using Base.Test
+    using Test
     using DataArrays
 
     # Base.getindex(d::DataVector, i::SingleIndex, j::SingleIndex)
@@ -18,10 +18,10 @@ module TestDataVectors
     pop!(da)
 
     # Base.unshift!{T}(dv::DataVector{T}, v::Missing)
-    unshift!(da, missing)
+    pushfirst!(da, missing)
 
     # Base.unshift!{S, T}(dv::DataVector{S}, v::T)
-    unshift!(da, -1)
+    pushfirst!(da, -1)
 
     # Base.shift!{T}(dv::DataVector{T})
     pop!(da)
@@ -40,13 +40,13 @@ module TestDataVectors
     pop!(pda)
 
     # Base.unshift!{T,R}(pdv::PooledDataVector{T,R}, v::Missing)
-    unshift!(pda, missing)
+    pushfirst!(pda, missing)
 
     # Base.unshift!{S,R,T}(pdv::PooledDataVector{S,R}, v::T)
-    unshift!(pda, 6)
+    pushfirst!(pda, 6)
 
     # Base.shift!(pdv::PooledDataVector) = pdv.pool[shift!(pdv.refs)]
-    shift!(pda)
+    popfirst!(pda)
 
     # Base.reverse(x::AbstractDataVector) = x[end:-1:1]
     reverse(da)

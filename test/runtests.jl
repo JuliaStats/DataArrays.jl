@@ -3,7 +3,7 @@
 #
 
 using Compat: uninitialized
-using Compat.Test, Compat.Dates, Compat.Printf
+using Test, Dates, Printf
 using DataArrays
 
 my_tests = ["abstractarray.jl",

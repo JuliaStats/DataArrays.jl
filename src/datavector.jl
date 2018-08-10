@@ -25,18 +25,18 @@ end
 
 function Base.unshift!(dv::DataVector{T}, v::Missing) where T
     ccall(:jl_array_grow_beg, Cvoid, (Any, UInt), dv.data, 1)
-    unshift!(dv.na, true)
+    pushfirst!(dv.na, true)
     return v
 end
 
 function Base.unshift!(dv::DataVector{S}, v::T) where {S, T}
-    unshift!(dv.data, v)
-    unshift!(dv.na, false)
+    pushfirst!(dv.data, v)
+    pushfirst!(dv.na, false)
     return v
 end
 
 function Base.shift!(dv::DataVector{T}) where T
-    d, m = shift!(dv.data), shift!(dv.na)
+    d, m = popfirst!(dv.data), popfirst!(dv.na)
     if m
         return missing
     else
@@ -114,17 +114,17 @@ end
 Base.pop!(pdv::PooledDataVector) = pdv.pool[pop!(pdv.refs)]
 
 function Base.unshift!(pdv::PooledDataVector{T,R}, v::Missing) where {T,R}
-    unshift!(pdv.refs, zero(R))
+    pushfirst!(pdv.refs, zero(R))
     return v
 end
 
 function Base.unshift!(pdv::PooledDataVector{S,R}, v::T) where {S,R,T}
     v = convert(S,v)
-    unshift!(pdv.refs, getpoolidx(pdv, v))
+    pushfirst!(pdv.refs, getpoolidx(pdv, v))
     return v
 end
 
-Base.shift!(pdv::PooledDataVector) = pdv.pool[shift!(pdv.refs)]
+Base.shift!(pdv::PooledDataVector) = pdv.pool[popfirst!(pdv.refs)]
 
 Base.reverse(x::AbstractDataVector) = x[end:-1:1]
 

@@ -1,5 +1,3 @@
-__precompile__()
-
 module DataArrays
     using Base: promote_op
     using Base.Cartesian, Reexport
@@ -7,7 +5,7 @@ module DataArrays
     @reexport using Missings
     using SpecialFunctions
     using Compat: AbstractRange, Nothing, Cvoid, uninitialized, invpermute!
-    using Compat.Printf, Compat.Dates
+    using Printf, Dates
 
     const DEFAULT_POOLED_REF_TYPE = UInt32
 
@@ -15,9 +13,7 @@ module DataArrays
 
     import StatsBase: autocor, inverse_rle, rle
 
-    if VERSION >= v"0.7.0-DEV.3165"
-        import Base.replace!
-    end
+    import Base.replace!
 
     export @data,
            @pdata,

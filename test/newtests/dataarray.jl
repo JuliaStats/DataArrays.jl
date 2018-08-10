@@ -2,7 +2,7 @@
 # TODO: Pull in existing tests into this file
 # TODO: Rename to TestDataArray
 module TestDataArrays
-    using DataArrays, Base.Test
+    using DataArrays, Test
 
     # DataArray{T, N}(d::Array{T, N}, m::BitArray{N} = falses(size(d)))
     DataArray([1, 2], falses(2))
@@ -109,7 +109,7 @@ module TestDataArrays
     eltype(DataArray(repeat([1, 2], outer = [1, 2, 2]), falses(2, 2, 2)))
 
     # Base.find(da::AbstractDataArray{Bool}) = find(array(da, false))
-    find(DataArray([false, true, true, false]))
+    findall(DataArray([false, true, true, false]))
 
     # function array{T}(da::DataArray{T})
     # array(DataArray([1, 0, 3], [false, true, false]))

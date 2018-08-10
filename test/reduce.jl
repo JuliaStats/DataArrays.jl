@@ -10,7 +10,7 @@ macro same_behavior(ex1, ex2)
 end
 
 @testset "Reduce" begin
-    srand(1337)
+    Random.seed!(1337)
 
     ## extended test of sum
 

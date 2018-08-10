@@ -52,7 +52,7 @@
 
         # getindex with AbstractVector{Bool}
         b = bitrand(10, 10)
-        rg = find(b)
+        rg = findall(b)
         v = A[b]
         for i = 1:length(rg)
             if na[rg[i]]
