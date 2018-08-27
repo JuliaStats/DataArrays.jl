@@ -14,6 +14,7 @@ makedocs(
 )
 
 deploydocs(
+    julia = "1.0",
     repo = "github.com/JuliaStats/DataArrays.jl.git",
     target = "build",
     deps = nothing,
