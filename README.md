@@ -11,6 +11,8 @@ Documentation:
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaStats.github.io/DataArrays.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaStats.github.io/DataArrays.jl/latest)
 
+THIS PACKAGE IS DEPRECATED with Julia versions above 0.7. Use `Array{Union{T, Missing}}` instead: see [this blog post](https://julialang.org/blog/2018/06/missing).
+
 The DataArrays package provides the `DataArray` type for working efficiently with [missing data](https://en.wikipedia.org/wiki/Missing_data)
 in Julia, based on the `missing` value from the [Missings.jl](https://github.com/JuliaData/Missings.jl) package.
 
