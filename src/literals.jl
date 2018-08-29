@@ -1,7 +1,7 @@
 function fixargs(args::Vector{Any}, stub::Any)
     n = length(args)
-    data = Array{Any}(uninitialized, n)
-    na = BitArray(uninitialized, n)
+    data = Array{Any}(undef, n)
+    na = BitArray(undef, n)
     for i in 1:n
         if args[i] == :missing || args[i] == :NA
             data[i] = stub
@@ -73,8 +73,8 @@ function parsematrix(ex::Expr)
     end
 
     nrows = length(rows)
-    datarows = Array{Expr}(uninitialized, nrows)
-    narows   = Array{Expr}(uninitialized, nrows)
+    datarows = Array{Expr}(undef, nrows)
+    narows   = Array{Expr}(undef, nrows)
     for irow in 1:nrows
         data, na = fixargs(ex.args[rows[irow]].args, stub)
         datarows[irow] = Expr(:row, data...)

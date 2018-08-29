@@ -63,7 +63,7 @@ function na_safe_rowmeans(dm::DataMatrix)
 end
 
 # TODO: Default to failure in the face of missings
-function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
+function LinearAlgebra.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
 
     # Make a copy of the data that we can alter in place
     dm = copy(D)
@@ -135,9 +135,9 @@ function Base.svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
     # Only return the SVD entries, not the imputation
     return (U[:, 1:k], D[1:k], V[:, 1:k])
 end
-Base.svd(dm::DataMatrix) = svd(dm, minimum(size(dm)))
+LinearAlgebra.svd(dm::DataMatrix) = svd(dm, minimum(size(dm)))
 
-function Base.eig(dm::DataMatrix)
+function LinearAlgebra.eigen(dm::DataMatrix)
     U, D, V = svd(dm)
-    return eig(U * diagm(D) * V')
+    return eigen(U * diagm(D) * V')
 end

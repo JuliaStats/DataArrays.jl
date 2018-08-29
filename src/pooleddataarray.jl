@@ -117,7 +117,7 @@ function PooledDataArray(d::AbstractArray{<:Union{T,Missing}, N},
         throw(ArgumentError("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))"))
     end
 
-    newrefs = Array{R,N}(uninitialized, size(d))
+    newrefs = Array{R,N}(undef, size(d))
     poolref = Dict{T, R}()
 
     # loop through once to fill the poolref dict
@@ -149,7 +149,7 @@ end
 
 # Construct an all-missing PooledDataVector of a specific type
 PooledDataArray(t::Type, dims::Tuple{Vararg{Int}}) = PooledDataArray(Array{t}(dims), trues(dims))
-PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array{t}(uninitialized, dims), trues(dims))
+PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array{t}(undef, dims), trues(dims))
 PooledDataArray(t::Type, r::Type{R}, dims::Tuple{Vararg{Int}}) where {R<:Integer} = PooledDataArray(Array{t}(dims), trues(dims), r)
 PooledDataArray(t::Type, r::Type{R}, dims::Int...) where {R<:Integer} = PooledDataArray(Array(t, dims), trues(dims), r)
 
@@ -198,7 +198,7 @@ end
 
 Base.size(pda::PooledDataArray) = size(pda.refs)
 Base.length(pda::PooledDataArray) = length(pda.refs)
-Base.endof(pda::PooledDataArray) = endof(pda.refs)
+Base.lastindex(pda::PooledDataArray) = lastindex(pda.refs)
 
 ##############################################################################
 ##
@@ -559,11 +559,11 @@ end
 
 ##############################################################################
 ##
-## find()
+## findall()
 ##
 ##############################################################################
 
-Base.find(pdv::PooledDataVector{Bool}) = findall(convert(Vector{Bool}, pdv, false))
+Base.findall(pdv::PooledDataVector{Bool}) = findall(convert(Vector{Bool}, pdv, false))
 
 ##############################################################################
 ##
@@ -859,7 +859,7 @@ Base.convert(::Type{PooledDataArray}, a::AbstractArray) =
 
 function Base.convert(::Type{DataArray{S,N}},
                       pda::PooledDataArray{T,R,N}) where {S,T,R<:Integer,N}
-    res = DataArray(Array{S}(uninitialized, size(pda)), BitArray(uninitialized, size(pda)))
+    res = DataArray(Array{S}(undef, size(pda)), BitArray(undef, size(pda)))
     for i in 1:length(pda)
         r = pda.refs[i]
         if r == 0 # TODO: Use zero(R)
@@ -909,7 +909,7 @@ function Base.convert(
     pda::PooledDataArray{T, R, N},
     replacement::Any) where {S, T, R, N}
 
-    res = Array{S}(uninitialized, size(pda))
+    res = Array{S}(undef, size(pda))
     replacementS = convert(S, replacement)
     for i in 1:length(pda)
         if pda.refs[i] == zero(R)

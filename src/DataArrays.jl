@@ -4,7 +4,6 @@ module DataArrays
     @reexport using StatsBase
     @reexport using Missings
     using SpecialFunctions
-    using Compat: AbstractRange, Nothing, Cvoid, uninitialized, invpermute!
     using Printf, Dates
 
     const DEFAULT_POOLED_REF_TYPE = UInt32

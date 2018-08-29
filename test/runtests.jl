@@ -2,7 +2,6 @@
 # Correctness Tests
 #
 
-using Compat: uninitialized
 using Test, Dates, Printf
 using DataArrays
 

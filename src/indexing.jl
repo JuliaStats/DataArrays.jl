@@ -62,7 +62,7 @@ function combine_pools!(pool, newpool)
     end
 
     # Find pool elements in existing array, or add them
-    poolidx = Vector{Int}(uninitialized, length(newpool))
+    poolidx = Vector{Int}(undef, length(newpool))
     for j = 1:length(newpool)
         poolidx[j] = Base.@get!(seen, newpool[j], (push!(pool, newpool[j]); i += 1))
     end
@@ -129,16 +129,17 @@ end
     N = length(I)
     quote
         $(Expr(:meta, :inline))
-        flipbits!(dest.na) # similar initializes with missings
+        dest.na .= .!(dest.na) # similar initializes with missings
         @nexprs $N d->(J_d = I[d])
         srcextr = daextract(src)
         destextr = daextract(dest)
         srcsz = size(src)
         D = eachindex(dest)
-        Ds = start(D)
+        Ds = iterate(D)
         @nloops $N j d->J_d begin
-            offset_0 = @ncall $N sub2ind srcsz j
-            d, Ds = next(D, Ds)
+            offset_0 = @ncall $N LinearIndices srcsz j
+            d, dstate = Ds
+            Ds = iterate(D, dstate)
             if unsafe_ismissing(src, srcextr, offset_0)
                 unsafe_dasetindex!(dest, destextr, missing, d)
             else

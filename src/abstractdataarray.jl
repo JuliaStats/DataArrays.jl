@@ -24,9 +24,10 @@ Base.eltype(d::AbstractDataArray{T, N}) where {T, N} = Union{T,Missing}
 
 # Generic iteration over AbstractDataArray's
 
-Base.start(x::AbstractDataArray) = 1
-Base.next(x::AbstractDataArray, state::Integer) = (x[state], state + 1)
-Base.done(x::AbstractDataArray, state::Integer) = state > length(x)
+function Base.iterate(x::AbstractDataArray, st=1)
+    st > length(x) && return nothing
+    return (x[st], st + 1)
+end
 
 # FIXME: type piracy
 """

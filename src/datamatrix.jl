@@ -1,2 +1,3 @@
 # Extract the matrix diagonal
-Base.diag(dm::DataMatrix{T}) where {T} = DataArray(diag(dm.data), diag(dm.na))
+using LinearAlgebra
+LinearAlgebra.diag(dm::DataMatrix{T}) where {T} = DataArray(diag(dm.data), diag(dm.na))
